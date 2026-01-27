@@ -11,158 +11,147 @@
             box-sizing: border-box;
             font-family: "Microsoft YaHei", Arial, sans-serif;
         }
+        
+        body {
+            background-color: #f7fee7;
+            padding: 20px;
+            min-height: 100vh;
+            overflow: hidden;
+        }
+        
         .container {
-            max-width: 100%;
-            margin: 20px auto;
+            width: 100%;
+            height: calc(100vh - 40px);
+            margin: 0 auto;
             padding: 20px;
             border: 1px solid #bef264;
-            border-radius: 8px;
-            box-shadow: 0 2px 10px rgba(217, 249, 157, 0.2);
+            border-radius: 12px;
+            box-shadow: 0 4px 20px rgba(217, 249, 157, 0.3);
             background-color: #fefee8;
-        }
-        .toolbar {
-            margin-bottom: 20px;
             display: flex;
-            gap: 10px;
+            flex-direction: column;
+        }
+        
+        .toolbar {
+            margin-bottom: 15px;
+            display: flex;
+            gap: 12px;
             align-items: center;
+            padding: 12px;
+            background-color: #f7fee7;
+            border-radius: 8px;
+            border: 1px solid #d9f99d;
             flex-wrap: wrap;
         }
+        
         #searchInput {
             flex: 1;
-            min-width: 200px;
-            padding: 10px 15px;
+            min-width: 300px;
+            padding: 12px 16px;
             border: 1px solid #d9f99d;
-            border-radius: 4px;
+            border-radius: 6px;
             font-size: 14px;
             background-color: white;
-            transition: border-color 0.3s;
+            transition: all 0.3s;
         }
+        
         #searchInput:focus {
             outline: none;
             border-color: #a3e635;
+            box-shadow: 0 0 0 3px rgba(163, 230, 53, 0.2);
         }
+        
         /* 按钮样式 */
-        #filterToggle, #addRowBtn, #saveBtn, #undoBtn, #redoBtn, #importBtn {
-            padding: 10px 20px;
+        .toolbar button {
+            padding: 10px 18px;
             background-color: #a3e635;
             color: #333;
             border: none;
-            border-radius: 4px;
+            border-radius: 6px;
             cursor: pointer;
-            transition: background-color 0.3s, transform 0.2s;
+            transition: all 0.3s;
             font-weight: 500;
+            white-space: nowrap;
+            font-size: 14px;
+            min-height: 40px;
         }
-        #filterToggle:hover, #addRowBtn:hover, #saveBtn:hover, #undoBtn:hover, #redoBtn:hover, #importBtn:hover {
+        
+        .toolbar button:hover {
             background-color: #84cc16;
-            transform: translateY(-1px);
+            transform: translateY(-2px);
+            box-shadow: 0 4px 8px rgba(132, 204, 22, 0.3);
         }
-        #filterToggle:active, #addRowBtn:active, #saveBtn:active, #undoBtn:active, #redoBtn:active, #importBtn:active {
+        
+        .toolbar button:active {
             transform: translateY(0);
         }
+        
         #filterToggle.active {
             background-color: #84cc16;
         }
+        
         .btn-disabled {
             background-color: #e9fbb8 !important;
             cursor: not-allowed !important;
             transform: none !important;
+            opacity: 0.6;
         }
+        
         #fileInput {
             display: none;
         }
         
-        /* 右键菜单 */
-        .context-menu {
-            position: absolute;
-            width: 200px;
-            background: white;
+        .table-section {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            min-height: 0;
+            overflow: hidden;
+            border-radius: 8px;
             border: 1px solid #d9f99d;
-            border-radius: 4px;
-            box-shadow: 0 2px 10px rgba(217, 249, 157, 0.2);
-            z-index: 1000;
-            display: none;
-        }
-        .context-menu-item {
-            padding: 8px 12px;
-            cursor: pointer;
-            transition: background-color 0.2s;
-            font-size: 13px;
-        }
-        .context-menu-item:hover {
-            background-color: #f7fee7;
-        }
-        .context-menu-separator {
-            height: 1px;
-            background-color: #bef264;
-            margin: 4px 0;
-        }
-        .menu-view-comment {
-            color: #ef5350;
-            font-weight: bold;
-        }
-        .menu-view-comment-text {
-            color: #333;
-            font-weight: normal;
-            white-space: normal;
-            word-break: break-word;
-            max-height: 100px;
-            overflow-y: auto;
-            background-color: #f9f9f9;
-            border: 1px solid #eee;
-            border-radius: 3px;
-            margin-top: 5px;
-            padding: 5px;
-            font-size: 12px;
-            line-height: 1.4;
+            background-color: white;
         }
         
-        /* I列表头链接 */
-        .header-link {
-            color: #4d7c0f !important;
-            cursor: pointer !important;
-            text-decoration: underline !important;
-        }
-        .header-link:hover {
-            color: #3f6212 !important;
-            background-color: #f7fee7 !important;
-        }
-        
-        /* 滚动容器 */
         .table-wrapper {
-            max-height: 70vh;
+            flex: 1;
             overflow: auto;
             position: relative;
             scrollbar-width: thin;
             scrollbar-color: #a3e635 #f7fee7;
         }
+        
         .table-wrapper::-webkit-scrollbar {
-            width: 8px;
-            height: 8px;
+            width: 10px;
+            height: 10px;
         }
+        
         .table-wrapper::-webkit-scrollbar-track {
             background: #f7fee7;
-            border-radius: 4px;
+            border-radius: 5px;
         }
+        
         .table-wrapper::-webkit-scrollbar-thumb {
             background-color: #a3e635;
-            border-radius: 4px;
+            border-radius: 5px;
         }
+        
         .table-wrapper::-webkit-scrollbar-thumb:hover {
             background-color: #84cc16;
         }
-
+        
         .table-container {
             min-width: 100%;
-            width: fit-content;
+            width: max-content;
+            background-color: white;
         }
-
+        
         /* 表格核心样式 */
         table {
-            width: fit-content;
+            width: max-content;
             border-collapse: separate;
             border-spacing: 0;
-            margin-top: 10px;
-            table-layout: fixed;
+            table-layout: auto;
+            font-size: 13px;
         }
         
         /* 行号列样式 */
@@ -171,13 +160,15 @@
             color: #3f6212 !important;
             font-weight: bold;
             text-align: center;
-            width: 40px !important;
-            min-width: 40px !important;
+            width: 50px !important;
+            min-width: 50px !important;
+            max-width: 50px !important;
             cursor: default;
             border-right: 2px solid #84cc16 !important;
             position: sticky;
             left: 0;
             z-index: 3;
+            padding: 8px 4px;
         }
         
         td.row-header {
@@ -185,13 +176,15 @@
             color: #4d7c0f !important;
             text-align: center;
             font-weight: bold;
-            width: 40px !important;
-            min-width: 40px !important;
+            width: 50px !important;
+            min-width: 50px !important;
+            max-width: 50px !important;
             cursor: pointer;
             border-right: 2px solid #84cc16 !important;
             position: sticky;
             left: 0;
             z-index: 2;
+            padding: 8px 4px;
         }
         
         th.row-header:hover, td.row-header:hover {
@@ -200,53 +193,62 @@
         
         th {
             border: 1px solid #bef264;
-            padding: 4px 8px;
+            padding: 8px 10px;
             text-align: left;
-            min-width: 80px;
+            min-width: 120px;
+            max-width: 200px;
             overflow: hidden;
             background-color: #f7fee7;
             font-weight: bold;
             position: sticky;
             top: 0;
             z-index: 2;
-            line-height: 1.2;
-            height: 36px;
+            line-height: 1.3;
+            height: 40px;
             color: #4d7c0f;
             cursor: pointer;
+            white-space: nowrap;
+            text-overflow: ellipsis;
         }
+        
         /* Excel式列分隔线 */
         th::after {
             content: '';
             position: absolute;
             top: 0;
             right: 0;
-            width: 3px;
+            width: 4px;
             height: 100%;
             cursor: col-resize;
             z-index: 5;
         }
+        
         th:hover::after {
             background-color: #a3e635;
         }
+        
         /* L表头特殊样式 */
         th[data-header="L"] {
             background-color: #f0f9e8;
         }
+        
         td {
             border: 1px solid #bef264;
-            padding: 4px 8px;
+            padding: 8px 10px;
             text-align: left;
-            min-width: 80px;
+            min-width: 120px;
+            max-width: 200px;
             overflow: hidden;
-            resize: none;
-            line-height: 1.2;
-            height: 36px;
+            line-height: 1.3;
+            height: 40px;
             cursor: text;
             position: relative;
             background-color: white;
             user-select: none;
+            white-space: nowrap;
+            text-overflow: ellipsis;
         }
-
+        
         /* 单元格内容 */
         .cell-content-wrapper {
             position: relative;
@@ -259,37 +261,54 @@
             overflow: hidden;
             text-overflow: ellipsis;
         }
+        
         /* 可编辑单元格 */
         td.editable {
             outline: none;
             user-select: text;
         }
+        
         td.editable:focus {
             background-color: #f7fee7;
             outline: 2px solid #a3e635;
+            outline-offset: -1px;
         }
+        
         /* 仅D列只读 */
-        td:nth-child(5) { /* 现在第5列是D列，因为增加了行号列 */
+        td[data-col="D"] {
             background-color: #fcfcec;
             color: #666;
             cursor: not-allowed;
             pointer-events: none;
         }
+        
         /* 颜色标记 */
-        .cell-yellow { background-color: #fff200 !important; color: #333 !important; }
-        .cell-red { background-color: #ef5350 !important; color: white !important; }
-        .cell-pink { background-color: #f8bbd9 !important; }
+        .cell-yellow { 
+            background-color: #fff200 !important; 
+            color: #333 !important; 
+        }
+        
+        .cell-red { 
+            background-color: #ef5350 !important; 
+            color: white !important; 
+        }
+        
+        .cell-pink { 
+            background-color: #f8bbd9 !important; 
+        }
+        
         /* 重复项标红 */
         .duplicate-cell {
             background-color: #ffebee !important;
             border: 1px solid #ef5350 !important;
         }
+        
         /* 备注小红点 */
         .has-comment::after {
             content: '';
             position: absolute;
-            bottom: 2px;
-            right: 2px;
+            bottom: 4px;
+            right: 4px;
             width: 6px;
             height: 6px;
             border-radius: 50%;
@@ -297,10 +316,12 @@
             z-index: 1;
             pointer-events: none;
         }
+        
         /* 表头编辑样式 */
         .header-cell {
             position: relative;
         }
+        
         .header-cell input {
             display: none;
             position: absolute;
@@ -308,7 +329,7 @@
             left: 0;
             width: 100%;
             height: 100%;
-            padding: 4px 8px;
+            padding: 8px 10px;
             border: 1px solid #a3e635;
             border-radius: 2px;
             outline: none;
@@ -317,9 +338,11 @@
             font-size: inherit;
             color: #4d7c0f;
         }
+        
         .header-cell.editing input {
             display: block;
         }
+        
         .header-cell span {
             display: block;
             width: 100%;
@@ -327,8 +350,21 @@
             text-overflow: ellipsis;
             white-space: nowrap;
         }
+        
         .header-cell.editing span {
             display: none;
+        }
+        
+        /* I列表头链接样式 */
+        .header-link {
+            color: #4d7c0f !important;
+            cursor: pointer !important;
+            text-decoration: underline !important;
+        }
+        
+        .header-link:hover {
+            color: #3f6212 !important;
+            background-color: #f7fee7 !important;
         }
         
         /* 选中样式 - 像Excel一样 */
@@ -363,10 +399,87 @@
             border: 1px solid #0ea5e9 !important;
         }
         
+        /* 右键菜单 */
+        .context-menu {
+            position: absolute;
+            width: 200px;
+            background: white;
+            border: 1px solid #d9f99d;
+            border-radius: 4px;
+            box-shadow: 0 2px 10px rgba(217, 249, 157, 0.2);
+            z-index: 1000;
+            display: none;
+        }
+        
+        .context-menu-item {
+            padding: 8px 12px;
+            cursor: pointer;
+            transition: background-color 0.2s;
+            font-size: 13px;
+        }
+        
+        .context-menu-item:hover {
+            background-color: #f7fee7;
+        }
+        
+        .context-menu-separator {
+            height: 1px;
+            background-color: #bef264;
+            margin: 4px 0;
+        }
+        
+        .menu-view-comment {
+            color: #ef5350;
+            font-weight: bold;
+        }
+        
+        .menu-view-comment-text {
+            color: #333;
+            font-weight: normal;
+            white-space: normal;
+            word-break: break-word;
+            max-height: 100px;
+            overflow-y: auto;
+            background-color: #f9f9f9;
+            border: 1px solid #eee;
+            border-radius: 3px;
+            margin-top: 5px;
+            padding: 5px;
+            font-size: 12px;
+            line-height: 1.4;
+        }
+        
         /* 搜索高亮 */
         .search-highlight {
             background-color: #fef08a !important;
             border: 1px solid #fbbf24 !important;
+        }
+        
+        /* 表格操作提示 */
+        .table-hint {
+            padding: 8px 15px;
+            background-color: #f7fee7;
+            border-bottom: 1px solid #d9f99d;
+            font-size: 12px;
+            color: #4d7c0f;
+            display: flex;
+            justify-content: space-between;
+        }
+        
+        .hint-text {
+            display: flex;
+            gap: 20px;
+        }
+        
+        .hint-item {
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
+        
+        .row-count {
+            font-weight: bold;
+            color: #3f6212;
         }
     </style>
     <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
@@ -384,18 +497,29 @@
             <button id="redoBtn" class="btn-disabled">恢复 (Ctrl+Y)</button>
         </div>
 
-        <div class="table-wrapper">
-            <div class="table-container">
-                <table id="dataTable">
-                    <thead class="sticky-header">
-                        <tr id="tableHeaderRow">
-                            <!-- 第一列是行号列，然后A-Z列表头由JS自动生成 -->
-                        </tr>
-                    </thead>
-                    <tbody id="tableTbody">
-                        <!-- 数据行由JS初始化 -->
-                    </tbody>
-                </table>
+        <div class="table-section">
+            <div class="table-hint">
+                <div class="hint-text">
+                    <div class="hint-item">点击<span style="color:#4d7c0f;font-weight:bold;">行号</span>选择整行</div>
+                    <div class="hint-item">点击<span style="color:#4d7c0f;font-weight:bold;">表头</span>选择整列</div>
+                    <div class="hint-item">按住<span style="color:#4d7c0f;font-weight:bold;">Ctrl</span>多选单元格</div>
+                </div>
+                <div class="row-count">共 <span id="rowCount">0</span> 行数据</div>
+            </div>
+            
+            <div class="table-wrapper">
+                <div class="table-container">
+                    <table id="dataTable">
+                        <thead class="sticky-header">
+                            <tr id="tableHeaderRow">
+                                <!-- 第一列是行号列，然后A-Z列表头由JS自动生成 -->
+                            </tr>
+                        </thead>
+                        <tbody id="tableTbody">
+                            <!-- 数据行由JS初始化 -->
+                        </tbody>
+                    </table>
+                </div>
             </div>
         </div>
     </div>
@@ -421,11 +545,12 @@
         // 全局配置
         const CONFIG = {
             maxCol: 'Z', // 横向到Z列
-            readOnlyCol: ['D'], // 仅D列只读（注意：现在D列是第5列，因为有行号列）
+            readOnlyCol: ['D'], // 仅D列只读
             calcHeaderCol: 'L', // 仅L表头有计算功能
             traceCodeCol: ['H','I','M','N'],
             countColForD: ['H','I','J','K','L','M','N']
         };
+        
         // 全局变量
         let isFilterActive = false;
         let originalRows = [];
@@ -438,7 +563,6 @@
         let redoStack = [];
         let isUndoRedo = false;
         let colLetters = [];
-        // 列宽拖动变量
         let isResizing = false;
         let resizeTh = null;
         let startX = 0;
@@ -452,6 +576,7 @@
             initSampleData();
             initColResize();
             originalRows = Array.from(document.querySelectorAll('#dataTable tbody tr'));
+            updateRowCount();
             saveToHistory();
 
             // 绑定所有事件
@@ -477,7 +602,6 @@
             return colLetters.indexOf(col);
         }
         
-        // 获取表头单元格元素（注意：现在列索引+1，因为第一列是行号列）
         function getHeaderCell(col) {
             return document.querySelector(`th[data-header="${col}"]`);
         }
@@ -490,34 +614,11 @@
         function setCellText(cell, text) {
             const wrapper = cell.querySelector('.cell-content-wrapper');
             if (wrapper) wrapper.textContent = text;
-            autoAdjustFontSize(cell);
         }
         
-        function autoAdjustFontSize(cell) {
-            const wrapper = cell.querySelector('.cell-content-wrapper');
-            if (!wrapper || !getCellText(cell)) {
-                wrapper.style.fontSize = '14px';
-                return;
-            }
-            const temp = document.createElement('span');
-            temp.style.cssText = 'position:absolute;visibility:hidden;white-space:nowrap;font-family:Microsoft YaHei;line-height:1.2;';
-            temp.textContent = getCellText(cell);
-            document.body.appendChild(temp);
-            const cellWidth = cell.offsetWidth - 16;
-            const cellHeight = cell.offsetHeight - 8;
-            let min = 6, max = 20, best = 14;
-            while (min <= max) {
-                const mid = Math.floor((min + max) / 2);
-                temp.style.fontSize = `${mid}px`;
-                if (temp.offsetWidth <= cellWidth && temp.offsetHeight <= cellHeight) {
-                    best = mid;
-                    min = mid + 1;
-                } else {
-                    max = mid - 1;
-                }
-            }
-            wrapper.style.fontSize = `${best}px`;
-            document.body.removeChild(temp);
+        function updateRowCount() {
+            const rowCount = document.querySelectorAll('#dataTable tbody tr').length;
+            document.getElementById('rowCount').textContent = rowCount;
         }
 
         // ========== 核心功能：目标表头（L）自动计算 ==========
@@ -553,7 +654,7 @@
             const rowNumHeader = document.createElement('th');
             rowNumHeader.className = 'row-header';
             rowNumHeader.textContent = '#';
-            rowNumHeader.style.width = '40px';
+            rowNumHeader.style.width = '50px';
             headerRow.appendChild(rowNumHeader);
             
             // 添加A-Z列表头
@@ -566,7 +667,7 @@
                 const th = document.createElement('th');
                 th.className = 'header-cell';
                 th.dataset.header = col;
-                th.style.width = '80px';
+                th.style.width = '120px';
                 if (col === 'I') th.classList.add('header-link');
                 if (col === CONFIG.calcHeaderCol) th.style.backgroundColor = '#f0f9e8';
                 const text = headerText[col] || '';
@@ -575,11 +676,10 @@
                     <input type="text" value="${text}" data-header="${col}">
                 `;
                 headerRow.appendChild(th);
-                autoAdjustFontSize(th);
                 
                 // 添加表头点击事件选择整列
                 th.addEventListener('click', function(e) {
-                    if (e.target.tagName === 'INPUT') return; // 避免编辑时触发选择
+                    if (e.target.tagName === 'INPUT' || e.target.closest('input')) return;
                     selectColumn(col);
                 });
             });
@@ -610,6 +710,8 @@
             setCellText(row2.querySelector('[data-col="E"]'), '50');
             setCellText(row2.querySelector('[data-col="H"]'), '0');
             tbody.appendChild(row2);
+            
+            updateRowCount();
         }
 
         // 创建新行（带行号）
@@ -620,7 +722,7 @@
             const rowNumCell = document.createElement('td');
             rowNumCell.className = 'row-header';
             rowNumCell.textContent = rowNum;
-            rowNumCell.style.width = '40px';
+            rowNumCell.style.width = '50px';
             tr.appendChild(rowNumCell);
             
             // 添加行号单元格点击事件
@@ -632,7 +734,7 @@
             colLetters.forEach(col => {
                 const td = document.createElement('td');
                 td.dataset.col = col;
-                td.style.width = '80px';
+                td.style.width = '120px';
                 td.innerHTML = '<div class="cell-content-wrapper"></div>';
                 if (CONFIG.readOnlyCol.includes(col)) {
                     td.contentEditable = false;
@@ -643,14 +745,12 @@
                     if (CONFIG.traceCodeCol.includes(col)) td.classList.add('trace-code');
                 }
                 bindCellEvents(td);
-                autoAdjustFontSize(td);
                 tr.appendChild(td);
             });
             return tr;
         }
 
         // ========== 行和列选择功能 ==========
-        // 选择整行
         function selectRow(row) {
             clearAllSelections();
             
@@ -669,11 +769,10 @@
             }
         }
         
-        // 选择整列
         function selectColumn(col) {
             clearAllSelections();
             
-            const colIndex = getHeaderIndex(col) + 2; // +2 因为第一列是行号列，nth-child从1开始
+            const colIndex = getHeaderIndex(col) + 2; // +2 因为第一列是行号列
             
             // 标记表头
             const header = getHeaderCell(col);
@@ -689,7 +788,7 @@
                 }
             });
             
-            // 设置主选中单元格为该列第一个可编辑单元格
+            // 设置主选中单元格
             const firstRow = document.querySelector('#dataTable tbody tr:first-child');
             if (firstRow) {
                 const firstCell = firstRow.querySelector(`td:nth-child(${colIndex})`);
@@ -700,7 +799,6 @@
             }
         }
         
-        // 清除所有选择
         function clearAllSelections() {
             // 清除单元格选择
             selectedCells.clear();
@@ -731,7 +829,7 @@
         function initColResize() {
             document.querySelectorAll('#dataTable thead th:not(.row-header)').forEach(th => {
                 th.addEventListener('mousedown', function(e) {
-                    if (e.clientX - this.getBoundingClientRect().right > -3) {
+                    if (e.clientX - this.getBoundingClientRect().right > -5) {
                         isResizing = true;
                         resizeTh = this;
                         startX = e.clientX;
@@ -744,7 +842,7 @@
             
             document.addEventListener('mousemove', function(e) {
                 if (!isResizing || !resizeTh) return;
-                const newWidth = Math.max(50, startWidth + (e.clientX - startX));
+                const newWidth = Math.max(80, startWidth + (e.clientX - startX));
                 resizeTh.style.width = `${newWidth}px`;
                 resizeTh.style.minWidth = `${newWidth}px`;
                 
@@ -752,10 +850,7 @@
                 document.querySelectorAll(`#dataTable tbody td:nth-child(${colIndex + 1})`).forEach(td => {
                     td.style.width = `${newWidth}px`;
                     td.style.minWidth = `${newWidth}px`;
-                    autoAdjustFontSize(td);
                 });
-                
-                autoAdjustFontSize(resizeTh);
             });
             
             document.addEventListener('mouseup', () => endResize());
@@ -785,7 +880,10 @@
         function initSearchInput() {
             const searchInput = document.getElementById('searchInput');
             searchInput.addEventListener('keydown', e => {
-                if (e.key === 'Enter') { e.preventDefault(); performSearch(); }
+                if (e.key === 'Enter') { 
+                    e.preventDefault(); 
+                    performSearch(); 
+                }
             });
             searchInput.addEventListener('input', () => {
                 if (!searchInput.value.trim()) {
@@ -815,7 +913,6 @@
                 const input = cell.querySelector('input');
                 
                 cell.addEventListener('click', function(e) {
-                    // 防止点击表头时触发列选择
                     if (e.target === cell || e.target === cell.querySelector('span')) {
                         cell.classList.add('editing');
                         input.value = getCellText(cell);
@@ -828,7 +925,6 @@
                     cell.classList.remove('editing');
                     if (getCellText(cell) !== input.value) {
                         setCellText(cell, input.value);
-                        autoAdjustFontSize(cell);
                         calcTargetHeader(CONFIG.calcHeaderCol);
                         !isUndoRedo && saveToHistory();
                     }
@@ -836,7 +932,10 @@
                 
                 input.addEventListener('blur', finishEdit);
                 input.addEventListener('keydown', e => {
-                    if (e.key === 'Enter') { e.preventDefault(); finishEdit(); }
+                    if (e.key === 'Enter') { 
+                        e.preventDefault(); 
+                        finishEdit(); 
+                    }
                 });
             });
         }
@@ -857,7 +956,6 @@
                     contextMenu.style.left = `${e.pageX}px`;
                     contextMenu.style.top = `${e.pageY}px`;
                 });
-                autoAdjustFontSize(cell);
             });
         }
 
@@ -902,7 +1000,6 @@
                         return;
                     }
                     
-                    // 获取所有需要操作的单元格
                     let cellsToProcess = [];
                     
                     if (selectedRows.size > 0) {
@@ -988,33 +1085,12 @@
             popup.document.close();
         }
 
-        // ========== I列表头跳转链接（改进版）==========
+        // ========== I列表头跳转链接（简化版）==========
         function initIHeaderLink() {
             const iHeader = document.querySelector('.header-link');
             iHeader.addEventListener('click', function(e) {
                 e.preventDefault();
-                const baseUrl = 'https://www.mashangfangxin.com/';
-                
-                // 优先使用当前选中的文本
-                let searchText = '';
-                const selection = window.getSelection();
-                if (selection && selection.toString().trim()) {
-                    searchText = selection.toString().trim();
-                }
-                
-                // 如果没有选中文本，提示用户输入
-                if (!searchText) {
-                    searchText = prompt('请输入搜索内容（将自动填充到网站搜索框）：', '');
-                    if (searchText === null) return;
-                }
-                
-                // 打开带搜索参数的页面
-                if (searchText) {
-                    const encodedText = encodeURIComponent(searchText);
-                    window.open(`${baseUrl}?search=${encodedText}`, '_blank');
-                } else {
-                    window.open(baseUrl, '_blank');
-                }
+                window.open('https://www.mashangfangxin.com/', '_blank');
             });
         }
 
@@ -1081,8 +1157,6 @@
             if (!td.classList.contains('editable')) return;
             
             let prevValue = getCellText(td);
-            
-            td.addEventListener('input', () => autoAdjustFontSize(td));
             
             td.addEventListener('blur', () => {
                 const currVal = getCellText(td);
@@ -1151,6 +1225,7 @@
             calculateDColumn();
             checkDuplicateCells();
             !isUndoRedo && saveToHistory();
+            updateRowCount();
         }
 
         function toggleDColumnFilter() {
@@ -1169,7 +1244,6 @@
                     return bVal - aVal;
                 });
                 
-                // 重新编号行号
                 filtered.forEach((row, index) => {
                     const rowNumCell = row.querySelector('.row-header');
                     if (rowNumCell) rowNumCell.textContent = index + 1;
@@ -1184,6 +1258,7 @@
                 });
             }
             !isUndoRedo && saveToHistory();
+            updateRowCount();
         }
 
         function calculateDColumn() {
@@ -1274,6 +1349,7 @@
                     checkDuplicateCells();
                     calcTargetHeader(CONFIG.calcHeaderCol);
                     saveToHistory();
+                    updateRowCount();
                     
                     alert(`成功导入${data.length-1}行数据！`);
                 } catch (err) {
@@ -1375,10 +1451,9 @@
             // 恢复表头
             colLetters.forEach((col, idx) => {
                 const th = getHeaderCell(col);
-                th.style.width = state.colWidths[idx] || '80px';
+                th.style.width = state.colWidths[idx] || '120px';
                 setCellText(th, state.headers[idx]);
                 th.querySelector('input').value = state.headers[idx];
-                autoAdjustFontSize(th);
             });
             
             // 恢复数据行
@@ -1395,7 +1470,7 @@
                 rowData.cells.forEach((cellData, idx) => {
                     const td = row.querySelector(`td[data-col="${cellData.col}"]`);
                     if (td) {
-                        td.style.width = cellData.width || '80px';
+                        td.style.width = cellData.width || '120px';
                         setCellText(td, cellData.content);
                         
                         cellData.classes.forEach(cls => td.classList.add(cls));
@@ -1412,7 +1487,6 @@
                         }
                         
                         bindCellEvents(td);
-                        autoAdjustFontSize(td);
                     }
                 });
                 
@@ -1425,6 +1499,7 @@
             
             calculateDColumn();
             checkDuplicateCells();
+            updateRowCount();
             updateUndoRedoButtons();
         }
 
