@@ -990,15 +990,15 @@
             alert(`单元格备注：\n\n${commentText}`);
         }
 
-        // ========== I列表头跳转链接（直接跳转）==========
-        function initIHeaderLink() {
-            const iHeader = document.querySelector('.header-link');
-            iHeader.addEventListener('click', function(e) {
-                e.preventDefault();
-                // 直接跳转，不弹出额外窗口
-                window.location.href = 'https://www.mashangfangxin.com/';
-            });
-        }
+       // ========== I列表头跳转链接（新开标签页直接跳转）==========
+function initIHeaderLink() {
+    const iHeader = document.querySelector('.header-link');
+    iHeader.addEventListener('click', function(e) {
+        e.preventDefault();
+        // 新开标签页跳转，_blank保证新窗口，noreferrer避免溯源，noopener提升安全性
+        window.open('https://www.mashangfangxin.com/', '_blank', 'noopener,noreferrer');
+    });
+}
 
         // ========== 键盘快捷键 ==========
         function initKeyboardShortcut() {
@@ -1456,3 +1456,4 @@
     </script>
 </body>
 </html>
+
