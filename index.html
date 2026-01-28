@@ -824,22 +824,38 @@
             initDragSelection();
         }
 
-        // 搜索功能 - 修改：回车后筛选行，不跳转到编辑
+        // 搜索功能 - 修复：允许删除和编辑搜索框
         function initSearchInput() {
             const searchInput = document.getElementById('searchInput');
+            
+            // 确保搜索框可以正常编辑
+            searchInput.addEventListener('input', function() {
+                const term = this.value.trim();
+                if (term === '' && lastSearchTerm !== '') {
+                    // 清空搜索框时显示所有行
+                    clearSearchHighlights();
+                    document.querySelectorAll('#dataTable tbody tr').forEach(row => {
+                        row.classList.remove('hidden');
+                    });
+                    lastSearchTerm = '';
+                    !isUndoRedo && saveToHistory();
+                } else if (term !== '') {
+                    // 有内容时实时搜索
+                    performSearch();
+                }
+            });
+            
             searchInput.addEventListener('keydown', e => {
                 if (e.key === 'Enter') { 
                     e.preventDefault(); 
                     performSearch(); 
                 }
             });
-            searchInput.addEventListener('input', () => {
-                const term = searchInput.value.trim();
-                if (!term && lastSearchTerm) {
-                    lastSearchTerm = '';
-                    clearSearchHighlights();
-                    document.querySelectorAll('#dataTable tbody tr').forEach(row => row.classList.remove('hidden'));
-                    saveToHistory();
+            
+            // 确保可以正常删除
+            searchInput.addEventListener('keyup', function(e) {
+                if (e.key === 'Delete' || e.key === 'Backspace') {
+                    // 正常删除操作
                 }
             });
         }
