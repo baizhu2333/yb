@@ -990,14 +990,36 @@
             alert(`单元格备注：\n\n${commentText}`);
         }
 
-       // ========== I列表头跳转链接（新开标签页直接跳转）==========
+// ========== I列表头跳转链接（新开标签页，防拦截版）==========
 function initIHeaderLink() {
     const iHeader = document.querySelector('.header-link');
-    iHeader.addEventListener('click', function(e) {
+    // 移除原有可能的重复事件
+    iHeader?.removeEventListener('click', handleIHeaderClick);
+    // 重新绑定点击事件
+    iHeader?.addEventListener('click', handleIHeaderClick);
+
+    // 独立的点击处理函数（提升稳定性）
+    function handleIHeaderClick(e) {
         e.preventDefault();
-        // 新开标签页跳转，_blank保证新窗口，noreferrer避免溯源，noopener提升安全性
-        window.open('https://www.mashangfangxin.com/', '_blank', 'noopener,noreferrer');
-    });
+        e.stopPropagation(); // 阻止事件冒泡被其他逻辑拦截
+        
+        const targetUrl = 'https://www.mashangfangxin.com/';
+        // 方案1：优先尝试直接新开标签页
+        const newTab = window.open(targetUrl, '_blank', 'noopener,noreferrer');
+        
+        // 方案2：如果被浏览器拦截，给出提示并提供手动跳转
+        if (!newTab || newTab.closed || typeof newTab === 'undefined') {
+            alert('跳转被浏览器拦截！请允许弹窗，或手动访问：\n' + targetUrl);
+            // 备用方案：创建临时a标签模拟跳转
+            const tempLink = document.createElement('a');
+            tempLink.href = targetUrl;
+            tempLink.target = '_blank';
+            tempLink.rel = 'noopener noreferrer';
+            document.body.appendChild(tempLink);
+            tempLink.click();
+            document.body.removeChild(tempLink);
+        }
+    }
 }
 
         // ========== 键盘快捷键 ==========
@@ -1456,4 +1478,5 @@ function initIHeaderLink() {
     </script>
 </body>
 </html>
+
 
