@@ -377,6 +377,21 @@
             border: 3px solid #38bdf8 !important;
         }
         
+        /* 拖选样式 */
+        .cell-drag-selected {
+            background-color: #e0f2fe !important;
+            border: 2px solid #38bdf8 !important;
+        }
+        
+        /* 选择框样式 */
+        .selection-box {
+            position: absolute;
+            background-color: rgba(56, 189, 248, 0.1);
+            border: 2px solid #38bdf8;
+            pointer-events: none;
+            z-index: 100;
+        }
+        
         /* 右键菜单 */
         .context-menu {
             position: absolute;
@@ -507,6 +522,14 @@
         let resizeTh = null;
         let startX = 0;
         let startWidth = 0;
+        
+        // 拖选相关变量
+        let isDragging = false;
+        let dragStartCell = null;
+        let isCtrlPressed = false;
+        let selectionBox = null;
+        let dragStartX = 0;
+        let dragStartY = 0;
 
         // 页面初始化
         document.addEventListener('DOMContentLoaded', function() {
@@ -721,6 +744,7 @@
             initContextMenuEvent();
             initKeyboardShortcut();
             initIHeaderLink();
+            initDragSelection();
         }
 
         function initSearchInput() {
@@ -786,25 +810,165 @@
             });
         }
 
+        // ========== 初始化拖选功能 ==========
+        function initDragSelection() {
+            // 创建选择框
+            selectionBox = document.createElement('div');
+            selectionBox.className = 'selection-box';
+            selectionBox.style.display = 'none';
+            document.querySelector('.table-wrapper').appendChild(selectionBox);
+            
+            // 监听Ctrl键状态
+            document.addEventListener('keydown', function(e) {
+                isCtrlPressed = e.ctrlKey;
+            });
+            
+            document.addEventListener('keyup', function(e) {
+                isCtrlPressed = e.ctrlKey;
+            });
+            
+            // 鼠标按下开始拖选
+            document.querySelectorAll('#dataTable td.editable').forEach(td => {
+                td.addEventListener('mousedown', function(e) {
+                    // 如果按下Ctrl键，启动拖选模式
+                    if (isCtrlPressed && e.button === 0) {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        
+                        // 清除现有选择
+                        if (!e.shiftKey) {
+                            clearAllSelections();
+                        }
+                        
+                        isDragging = true;
+                        dragStartCell = this;
+                        dragStartX = e.clientX;
+                        dragStartY = e.clientY;
+                        
+                        // 记录起始位置
+                        const rect = this.getBoundingClientRect();
+                        const tableRect = document.querySelector('.table-wrapper').getBoundingClientRect();
+                        
+                        selectionBox.style.left = (rect.left - tableRect.left) + 'px';
+                        selectionBox.style.top = (rect.top - tableRect.top) + 'px';
+                        selectionBox.style.width = rect.width + 'px';
+                        selectionBox.style.height = rect.height + 'px';
+                        selectionBox.style.display = 'block';
+                        
+                        // 选中起始单元格
+                        if (!selectedCells.has(this)) {
+                            selectedCells.add(this);
+                            this.classList.add('cell-drag-selected');
+                        }
+                        
+                        document.body.style.cursor = 'crosshair';
+                        
+                        // 阻止默认行为
+                        return false;
+                    }
+                });
+            });
+            
+            // 鼠标移动更新选择框
+            document.addEventListener('mousemove', function(e) {
+                if (!isDragging || !dragStartCell) return;
+                
+                e.preventDefault();
+                
+                const tableWrapper = document.querySelector('.table-wrapper');
+                const tableRect = tableWrapper.getBoundingClientRect();
+                
+                // 计算选择框的位置和大小
+                const startRect = dragStartCell.getBoundingClientRect();
+                const currentX = e.clientX;
+                const currentY = e.clientY;
+                
+                const left = Math.min(startRect.left, currentX);
+                const top = Math.min(startRect.top, currentY);
+                const right = Math.max(startRect.right, currentX);
+                const bottom = Math.max(startRect.bottom, currentY);
+                
+                // 更新选择框
+                selectionBox.style.left = (left - tableRect.left) + 'px';
+                selectionBox.style.top = (top - tableRect.top) + 'px';
+                selectionBox.style.width = (right - left) + 'px';
+                selectionBox.style.height = (bottom - top) + 'px';
+                
+                // 选中选择框内的所有单元格
+                selectCellsInArea(left, top, right, bottom);
+            });
+            
+            // 鼠标抬起结束拖选
+            document.addEventListener('mouseup', function(e) {
+                if (isDragging) {
+                    isDragging = false;
+                    selectionBox.style.display = 'none';
+                    document.body.style.cursor = 'default';
+                    
+                    // 更新选中单元格样式
+                    updateDragSelectedCells();
+                    
+                    // 保存历史记录
+                    !isUndoRedo && saveToHistory();
+                    
+                    dragStartCell = null;
+                }
+            });
+        }
+        
+        // 选择指定区域内的单元格
+        function selectCellsInArea(left, top, right, bottom) {
+            // 清除之前的拖选样式
+            document.querySelectorAll('.cell-drag-selected').forEach(cell => {
+                if (!selectedCells.has(cell)) {
+                    cell.classList.remove('cell-drag-selected');
+                }
+            });
+            
+            // 选中区域内所有可编辑单元格
+            document.querySelectorAll('#dataTable td.editable').forEach(td => {
+                const rect = td.getBoundingClientRect();
+                
+                // 检查单元格是否在选择区域内
+                if (rect.right > left && rect.left < right && 
+                    rect.bottom > top && rect.top < bottom) {
+                    
+                    if (!selectedCells.has(td)) {
+                        selectedCells.add(td);
+                        td.classList.add('cell-drag-selected');
+                    }
+                } else if (!selectedCells.has(td)) {
+                    // 不在区域内且未被选中的单元格清除拖选样式
+                    td.classList.remove('cell-drag-selected');
+                }
+            });
+        }
+        
+        // 更新拖选单元格的样式
+        function updateDragSelectedCells() {
+            selectedCells.forEach(cell => {
+                cell.classList.remove('cell-drag-selected');
+                cell.classList.add('cell-selected');
+            });
+        }
+
         function initCellBaseEvents() {
-            document.querySelectorAll('#dataTable td:not(.row-header)').forEach(cell => {
+            document.querySelectorAll('#dataTable td.editable').forEach(cell => {
                 cell.addEventListener('click', e => { 
+                    // 如果按着Ctrl键点击，切换选择状态
                     if (e.ctrlKey) {
-                        // Ctrl+点击实现多选
                         toggleCellSelection(cell);
-                    } else if (!e.shiftKey) {
-                        // 普通点击清空选择，只选当前单元格
+                    } 
+                    // 如果按着Shift键点击，选择范围
+                    else if (e.shiftKey && selectedCell) {
+                        selectCellRange(selectedCell, cell);
+                    }
+                    // 普通点击，只选择当前单元格
+                    else {
                         clearAllSelections();
                         selectCell(cell);
                     }
                     e.stopPropagation(); 
-                });
-                
-                // Shift+点击实现范围选择
-                cell.addEventListener('shiftclick', function(e) {
-                    if (selectedCell && selectedCell !== cell) {
-                        selectCellRange(selectedCell, cell);
-                    }
                 });
                 
                 cell.addEventListener('contextmenu', e => {
@@ -818,26 +982,6 @@
                     contextMenu.style.left = `${e.pageX}px`;
                     contextMenu.style.top = `${e.pageY}px`;
                 });
-            });
-            
-            // 监听Shift键按下状态，处理范围选择
-            let shiftPressed = false;
-            document.addEventListener('keydown', e => {
-                if (e.key === 'Shift') shiftPressed = true;
-            });
-            document.addEventListener('keyup', e => {
-                if (e.key === 'Shift') shiftPressed = false;
-            });
-            
-            // 重写点击事件，处理Shift+点击
-            document.addEventListener('click', e => {
-                if (shiftPressed && e.target.tagName === 'TD' && !e.target.classList.contains('row-header')) {
-                    const cell = e.target.closest('td[data-col]');
-                    if (cell) {
-                        const shiftClickEvent = new CustomEvent('shiftclick', { bubbles: true });
-                        cell.dispatchEvent(shiftClickEvent);
-                    }
-                }
             });
         }
 
@@ -883,7 +1027,7 @@
             // 选中范围内的所有单元格
             for (let i = minRow; i <= maxRow; i++) {
                 const row = rows[i];
-                const cells = row.querySelectorAll('td[data-col]');
+                const cells = row.querySelectorAll('td.editable');
                 for (let j = minCol; j <= maxCol; j++) {
                     const cell = cells[j];
                     if (cell) {
@@ -990,64 +1134,82 @@
             alert(`单元格备注：\n\n${commentText}`);
         }
 
-// ========== I列表头跳转链接（新开标签页，防拦截版）==========
-function initIHeaderLink() {
-    const iHeader = document.querySelector('.header-link');
-    // 移除原有可能的重复事件
-    iHeader?.removeEventListener('click', handleIHeaderClick);
-    // 重新绑定点击事件
-    iHeader?.addEventListener('click', handleIHeaderClick);
+        // ========== I列表头跳转链接（新开标签页，防拦截版）==========
+        function initIHeaderLink() {
+            const iHeader = document.querySelector('.header-link');
+            // 移除原有可能的重复事件
+            iHeader?.removeEventListener('click', handleIHeaderClick);
+            // 重新绑定点击事件
+            iHeader?.addEventListener('click', handleIHeaderClick);
 
-    // 独立的点击处理函数（提升稳定性）
-    function handleIHeaderClick(e) {
-        e.preventDefault();
-        e.stopPropagation(); // 阻止事件冒泡被其他逻辑拦截
-        
-        const targetUrl = 'https://www.mashangfangxin.com/';
-        // 方案1：优先尝试直接新开标签页
-        const newTab = window.open(targetUrl, '_blank', 'noopener,noreferrer');
-        
-        // 方案2：如果被浏览器拦截，给出提示并提供手动跳转
-        if (!newTab || newTab.closed || typeof newTab === 'undefined') {
-            alert('跳转被浏览器拦截！请允许弹窗，或手动访问：\n' + targetUrl);
-            // 备用方案：创建临时a标签模拟跳转
-            const tempLink = document.createElement('a');
-            tempLink.href = targetUrl;
-            tempLink.target = '_blank';
-            tempLink.rel = 'noopener noreferrer';
-            document.body.appendChild(tempLink);
-            tempLink.click();
-            document.body.removeChild(tempLink);
+            // 独立的点击处理函数（提升稳定性）
+            function handleIHeaderClick(e) {
+                e.preventDefault();
+                e.stopPropagation(); // 阻止事件冒泡被其他逻辑拦截
+                
+                const targetUrl = 'https://www.mashangfangxin.com/';
+                // 方案1：优先尝试直接新开标签页
+                const newTab = window.open(targetUrl, '_blank', 'noopener,noreferrer');
+                
+                // 方案2：如果被浏览器拦截，给出提示并提供手动跳转
+                if (!newTab || newTab.closed || typeof newTab === 'undefined') {
+                    alert('跳转被浏览器拦截！请允许弹窗，或手动访问：\n' + targetUrl);
+                    // 备用方案：创建临时a标签模拟跳转
+                    const tempLink = document.createElement('a');
+                    tempLink.href = targetUrl;
+                    tempLink.target = '_blank';
+                    tempLink.rel = 'noopener noreferrer';
+                    document.body.appendChild(tempLink);
+                    tempLink.click();
+                    document.body.removeChild(tempLink);
+                }
+            }
         }
-    }
-}
 
         // ========== 键盘快捷键 ==========
         function initKeyboardShortcut() {
             document.addEventListener('keydown', function(e) {
-                if (e.ctrlKey) {
-                    e.key === 'z' && (e.preventDefault(), undo());
-                    e.key === 'y' && (e.preventDefault(), redo());
+                // Ctrl+Z 撤销
+                if (e.ctrlKey && e.key === 'z') {
+                    e.preventDefault();
+                    undo();
+                    return;
                 }
                 
+                // Ctrl+Y 恢复
+                if (e.ctrlKey && e.key === 'y') {
+                    e.preventDefault();
+                    redo();
+                    return;
+                }
+                
+                // Delete 或 Backspace 键删除选中单元格内容
+                if ((e.key === 'Delete' || e.key === 'Backspace') && selectedCells.size > 0) {
+                    e.preventDefault();
+                    clearSelectedCells();
+                    return;
+                }
+                
+                // 方向键导航（只在有选中单元格时生效）
                 if (selectedCell && selectedCell.tagName === 'TD' && !e.ctrlKey && !e.altKey && !e.shiftKey) {
                     const row = selectedCell.parentElement;
                     const rows = Array.from(document.querySelectorAll('#dataTable tbody tr:not(.hidden)'));
                     const currentRowIndex = rows.indexOf(row);
-                    const cells = Array.from(row.querySelectorAll('td:not(.row-header)'));
+                    const cells = Array.from(row.querySelectorAll('td.editable'));
                     const currentCellIndex = cells.indexOf(selectedCell);
+                    
                     switch(e.key) {
                         case 'ArrowUp':
                             e.preventDefault();
                             if (currentRowIndex > 0) {
-                                const targetCell = rows[currentRowIndex-1].querySelectorAll('td:not(.row-header)')[currentCellIndex];
+                                const targetCell = rows[currentRowIndex-1].querySelectorAll('td.editable')[currentCellIndex];
                                 targetCell && selectCell(targetCell);
                             }
                             break;
                         case 'ArrowDown':
                             e.preventDefault();
                             if (currentRowIndex < rows.length-1) {
-                                const targetCell = rows[currentRowIndex+1].querySelectorAll('td:not(.row-header)')[currentCellIndex];
+                                const targetCell = rows[currentRowIndex+1].querySelectorAll('td.editable')[currentCellIndex];
                                 targetCell && selectCell(targetCell);
                             }
                             break;
@@ -1064,29 +1226,36 @@ function initIHeaderLink() {
             });
         }
 
+        // ========== 清除选中单元格内容 ==========
+        function clearSelectedCells() {
+            if (selectedCells.size === 0) return;
+            
+            // 跳过只读列（D列）
+            const editableCells = Array.from(selectedCells).filter(cell => {
+                return cell.classList.contains('editable') && !cell.classList.contains('row-header');
+            });
+            
+            if (editableCells.length === 0) return;
+            
+            // 清除内容
+            editableCells.forEach(cell => {
+                setCellText(cell, '');
+                // 如果是正在编辑的单元格，需要同步更新innerText
+                if (document.activeElement === cell) {
+                    cell.innerText = '';
+                }
+            });
+            
+            // 保存历史记录
+            !isUndoRedo && saveToHistory();
+            
+            // 更新相关功能
+            checkDuplicateCells();
+            calculateDColumn();
+        }
+
         // ========== 单元格事件 ==========
         function bindCellEvents(td) {
-            td.addEventListener('click', e => { 
-                if (e.ctrlKey) {
-                    toggleCellSelection(td);
-                } else if (!e.shiftKey) {
-                    selectCell(td);
-                }
-                e.stopPropagation(); 
-            });
-            
-            td.addEventListener('contextmenu', e => {
-                e.preventDefault();
-                if (!selectedCells.has(td)) {
-                    clearAllSelections();
-                    selectCell(td);
-                }
-                updateContextMenu();
-                contextMenu.style.display = 'block';
-                contextMenu.style.left = `${e.pageX}px`;
-                contextMenu.style.top = `${e.pageY}px`;
-            });
-            
             if (!td.classList.contains('editable')) return;
             
             let prevValue = getCellText(td);
@@ -1478,5 +1647,3 @@ function initIHeaderLink() {
     </script>
 </body>
 </html>
-
-
