@@ -125,29 +125,58 @@
             scrollbar-color: #a3e635 #f7fee7;
         }
         
-        /* 自定义滚动条样式 */
+        /* 自定义滚动条样式 - 右下角短滚动条 */
         .table-wrapper::-webkit-scrollbar {
-            width: 14px;
-            height: 14px;
+            width: 12px;
+            height: 12px;
         }
         
         .table-wrapper::-webkit-scrollbar-track {
-            background: #f7fee7;
-            border-radius: 7px;
+            background: transparent;
         }
         
         .table-wrapper::-webkit-scrollbar-thumb {
             background-color: #a3e635;
-            border-radius: 7px;
-            border: 3px solid #f7fee7;
+            border-radius: 6px;
+            border: 2px solid #f7fee7;
+        }
+        
+        /* 水平滚动条只显示在右下角，长度30% */
+        .table-wrapper::-webkit-scrollbar:horizontal {
+            height: 12px;
+        }
+        
+        .table-wrapper::-webkit-scrollbar-thumb:horizontal {
+            background-color: #a3e635;
+            border-radius: 6px;
+            width: 30% !important;
+            min-width: 60px;
+            position: absolute;
+            right: 0;
+        }
+        
+        /* 垂直滚动条只显示在右下角，高度30% */
+        .table-wrapper::-webkit-scrollbar:vertical {
+            width: 12px;
+        }
+        
+        .table-wrapper::-webkit-scrollbar-thumb:vertical {
+            background-color: #a3e635;
+            border-radius: 6px;
+            height: 30% !important;
+            min-height: 60px;
+            position: absolute;
+            bottom: 0;
         }
         
         .table-wrapper::-webkit-scrollbar-thumb:hover {
             background-color: #84cc16;
         }
         
+        /* 右下角交叉区域样式 */
         .table-wrapper::-webkit-scrollbar-corner {
             background-color: #f7fee7;
+            border-radius: 0 0 6px 0;
         }
         
         .table-container {
@@ -161,7 +190,7 @@
             width: max-content;
             border-collapse: separate;
             border-spacing: 0;
-            table-layout: fixed; /* 改为fixed布局 */
+            table-layout: fixed;
         }
         
         /* 行号列样式 */
@@ -179,7 +208,7 @@
             left: 0;
             z-index: 3;
             padding: 8px 2px !important;
-            font-size: 15px; /* 字体大一号 */
+            font-size: 15px;
             height: 40px !important;
         }
         
@@ -196,7 +225,7 @@
             left: 0;
             z-index: 2;
             padding: 8px 2px !important;
-            font-size: 15px; /* 字体大一号 */
+            font-size: 15px;
             height: 40px !important;
         }
         
@@ -204,7 +233,7 @@
             border: 2px solid #bef264;
             padding: 8px 10px;
             text-align: left;
-            min-width: 30px !important; /* 允许非常小的宽度 */
+            min-width: 30px !important;
             max-width: 400px;
             background-color: #f7fee7;
             font-weight: bold;
@@ -215,25 +244,28 @@
             height: 40px !important;
             color: #4d7c0f;
             white-space: nowrap;
-            font-size: 17px; /* 字体大一号 */
+            font-size: 17px;
             overflow: hidden;
             text-overflow: ellipsis;
         }
         
-        /* Excel式列分隔线 */
-        th::after {
-            content: '';
+        /* 列宽调整手柄（右上角角标）- 核心优化 */
+        .col-resize-handle {
             position: absolute;
-            top: 0;
-            right: 0;
-            width: 6px;
-            height: 100%;
+            top: 2px;
+            right: 2px;
+            width: 12px;
+            height: 12px;
+            border-radius: 3px;
+            background-color: #a3e635;
             cursor: col-resize;
             z-index: 5;
+            opacity: 0.7;
+            transition: opacity 0.2s;
         }
-        
-        th:hover::after {
-            background-color: #a3e635;
+        .col-resize-handle:hover {
+            opacity: 1;
+            background-color: #84cc16;
         }
         
         /* L表头特殊样式 */
@@ -243,9 +275,9 @@
         
         td {
             border: 2px solid #bef264;
-            padding: 8px 10px;
-            text-align: left;
-            min-width: 30px !important; /* 允许非常小的宽度 */
+            padding: 8px 10px !important;
+            text-align: left !important;
+            min-width: 30px !important;
             max-width: 400px;
             line-height: 1.3;
             height: 40px !important;
@@ -253,14 +285,15 @@
             position: relative;
             background-color: white;
             user-select: none;
-            font-size: 16px; /* 字体大一号 */
-            /* 关键：强制内容适应 */
+            font-size: 16px;
             overflow: hidden !important;
             white-space: nowrap;
             text-overflow: ellipsis;
+            word-wrap: break-word;
+            word-break: break-all;
         }
         
-        /* 单元格内容 - 关键修改 */
+        /* 单元格内容容器 */
         .cell-content-wrapper {
             position: relative;
             width: 100%;
@@ -270,11 +303,13 @@
             white-space: nowrap;
             overflow: hidden;
             text-overflow: ellipsis;
-            font-size: 16px; /* 字体大一号 */
-            text-align: left;
-            /* 关键：强制内容适应容器 */
+            font-size: 16px;
+            text-align: left !important;
             max-width: 100%;
             min-width: 0;
+            flex-shrink: 1;
+            padding: 0 !important;
+            margin: 0 !important;
         }
         
         /* 可编辑单元格 */
@@ -298,17 +333,15 @@
             text-align: left !important;
         }
         
-        /* 颜色标记 */
+        /* 单元格颜色标记 */
         .cell-yellow { 
             background-color: #fff200 !important; 
             color: #333 !important; 
         }
-        
         .cell-red { 
             background-color: #ef5350 !important; 
             color: white !important; 
         }
-        
         .cell-pink { 
             background-color: #f8bbd9 !important; 
         }
@@ -339,7 +372,6 @@
             text-align: left !important;
             overflow: hidden;
         }
-        
         .header-cell input {
             display: none;
             position: absolute;
@@ -353,26 +385,23 @@
             outline: none;
             background: white;
             font-weight: bold;
-            font-size: 17px; /* 字体大一号 */
+            font-size: 17px;
             color: #4d7c0f;
             text-align: left;
             overflow: hidden;
             text-overflow: ellipsis;
         }
-        
         .header-cell.editing input {
             display: block;
         }
-        
         .header-cell span {
             display: block;
             width: 100%;
             overflow: hidden;
             text-overflow: ellipsis;
             white-space: nowrap;
-            text-align: left;
+            text-align: left !important;
         }
-        
         .header-cell.editing span {
             display: none;
         }
@@ -384,25 +413,22 @@
             text-decoration: underline !important;
             text-align: left !important;
         }
-        
         .header-link:hover {
             color: #1565c0 !important;
             background-color: #f7fee7 !important;
         }
         
-        /* 选中样式 - 像Excel一样 */
+        /* 单元格选中样式 */
         .cell-selected {
             background-color: #e0f2fe !important;
             border: 3px solid #38bdf8 !important;
         }
-        
-        /* 拖选样式 */
         .cell-drag-selected {
             background-color: #e0f2fe !important;
             border: 2px solid #38bdf8 !important;
         }
         
-        /* 选择框样式 */
+        /* 拖选框样式 */
         .selection-box {
             position: absolute;
             background-color: rgba(56, 189, 248, 0.1);
@@ -422,29 +448,24 @@
             z-index: 1000;
             display: none;
         }
-        
         .context-menu-item {
             padding: 12px 16px;
             cursor: pointer;
             transition: background-color 0.2s;
             font-size: 15px;
         }
-        
         .context-menu-item:hover {
             background-color: #f7fee7;
         }
-        
         .context-menu-separator {
             height: 2px;
             background-color: #bef264;
             margin: 8px 0;
         }
-        
         .menu-view-comment {
             color: #ef5350;
             font-weight: bold;
         }
-        
         .menu-view-comment-text {
             color: #333;
             font-weight: normal;
@@ -472,7 +493,7 @@
 <body>
     <div class="container">
         <div class="toolbar">
-            <input type="text" id="searchInput" placeholder="输入条码（≥8位）或药品名称，回车搜索...">
+            <input type="text" id="searchInput" placeholder="输入条码或药品名称，筛选A列或B列包含的内容...">
             <button id="filterToggle">筛选＞0</button>
             <button id="addRowBtn">新增药品</button>
             <button id="importBtn">导入Excel</button>
@@ -487,13 +508,9 @@
                 <div class="table-container">
                     <table id="dataTable">
                         <thead class="sticky-header">
-                            <tr id="tableHeaderRow">
-                                <!-- 第一列是行号列，然后A-Z列表头由JS自动生成 -->
-                            </tr>
+                            <tr id="tableHeaderRow"></tr>
                         </thead>
-                        <tbody id="tableTbody">
-                            <!-- 数据行由JS初始化 -->
-                        </tbody>
+                        <tbody id="tableTbody"></tbody>
                     </table>
                 </div>
             </div>
@@ -520,9 +537,9 @@
     <script>
         // 全局配置
         const CONFIG = {
-            maxCol: 'Z', // 横向到Z列
-            readOnlyCol: ['D'], // 仅D列只读
-            calcHeaderCol: 'L', // 仅L表头有计算功能
+            maxCol: 'Z',
+            readOnlyCol: ['D'],
+            calcHeaderCol: 'L',
             traceCodeCol: ['H','I','M','N'],
             countColForD: ['H','I','J','K','L','M','N']
         };
@@ -541,8 +558,6 @@
         let resizeTh = null;
         let startX = 0;
         let startWidth = 0;
-        
-        // 拖选相关变量
         let isDragging = false;
         let dragStartCell = null;
         let isCtrlPressed = false;
@@ -559,18 +574,14 @@
             initColResize();
             originalRows = Array.from(document.querySelectorAll('#dataTable tbody tr'));
             saveToHistory();
-
-            // 绑定所有事件
             initAllEvents();
-            // 初始化L表头计算
             calcTargetHeader(CONFIG.calcHeaderCol);
-            // 辅助功能初始化
             calculateDColumn();
             checkDuplicateCells();
             updateUndoRedoButtons();
         });
 
-        // ========== 核心工具函数 ==========
+        // 核心工具函数
         function generateColLetters(maxCol) {
             const letters = [];
             for (let i = 'A'.charCodeAt(0); i <= maxCol.charCodeAt(0); i++) {
@@ -578,89 +589,77 @@
             }
             return letters;
         }
-        
-        function getHeaderIndex(col) {
-            return colLetters.indexOf(col);
-        }
-        
-        function getHeaderCell(col) {
-            return document.querySelector(`th[data-header="${col}"]`);
-        }
-        
+        function getHeaderIndex(col) { return colLetters.indexOf(col); }
+        function getHeaderCell(col) { return document.querySelector(`th[data-header="${col}"]`); }
         function getCellText(cell) {
             const wrapper = cell.querySelector('.cell-content-wrapper');
             return wrapper ? wrapper.textContent.trim() : '';
         }
-        
         function setCellText(cell, text) {
             const wrapper = cell.querySelector('.cell-content-wrapper');
             if (wrapper) {
                 wrapper.textContent = text;
+                wrapper.style.paddingLeft = '0';
+                wrapper.style.marginLeft = '0';
             }
         }
 
-        // ========== 核心功能：目标表头（L）自动计算 ==========
+        // L表头自动计算
         function calcTargetHeader(targetCol) {
             const targetCell = getHeaderCell(targetCol);
             if (!targetCell) return;
             const targetIndex = getHeaderIndex(targetCol);
-            const prev1Index = targetIndex - 1;
-            const prev2Index = targetIndex - 2;
-            
+            const prev1Index = targetIndex - 1, prev2Index = targetIndex - 2;
             if (prev2Index < 0 || prev1Index < 0) {
                 setCellText(targetCell, '列数不足');
                 targetCell.querySelector('input').value = '列数不足';
                 return;
             }
-            
-            const prev2Col = colLetters[prev2Index];
-            const prev1Col = colLetters[prev1Index];
+            const prev2Col = colLetters[prev2Index], prev1Col = colLetters[prev1Index];
             const prev2Val = parseFloat(getCellText(getHeaderCell(prev2Col))) || 0;
             const prev1Val = parseFloat(getCellText(getHeaderCell(prev1Col))) || 0;
             const result = (prev2Val - prev1Val).toFixed(1);
-            
             setCellText(targetCell, result);
             targetCell.querySelector('input').value = result;
             calculateDColumn();
         }
 
-        // ========== 表格初始化 ==========
+        // 表格初始化
         function initTableHeader() {
             const headerRow = document.getElementById('tableHeaderRow');
-            
-            // 添加行号列表头
+            // 行号列
             const rowNumHeader = document.createElement('th');
             rowNumHeader.className = 'row-header';
             rowNumHeader.textContent = '#';
             rowNumHeader.style.width = '40px';
             headerRow.appendChild(rowNumHeader);
-            
-            // 添加A-Z列表头
+            // A-Z列
             const headerText = {
                 A: '条码', B: '药品名称', C: '价', D: '无', E: 'h', F: '备注',
                 H: 'Q02000000', I: '点击访问网站', J: '240', K: '126.8', L: '计算值'
             };
-            
             colLetters.forEach(col => {
                 const th = document.createElement('th');
                 th.className = 'header-cell';
                 th.dataset.header = col;
-                th.style.width = '150px'; // 初始宽度稍大
-                th.style.minWidth = '30px'; // 关键：允许非常小的最小宽度
+                th.style.width = '150px';
+                th.style.minWidth = '30px';
                 if (col === 'I') th.classList.add('header-link');
                 if (col === CONFIG.calcHeaderCol) th.style.backgroundColor = '#f0f9e8';
                 const text = headerText[col] || '';
-                th.innerHTML = `
-                    <div class="cell-content-wrapper"><span>${text}</span></div>
-                    <input type="text" value="${text}" data-header="${col}">
-                `;
+                th.innerHTML = `<div class="cell-content-wrapper"><span>${text}</span></div><input type="text" value="${text}" data-header="${col}">`;
+                // 添加列宽调整角标
+                const resizeHandle = document.createElement('div');
+                resizeHandle.className = 'col-resize-handle';
+                th.appendChild(resizeHandle);
                 headerRow.appendChild(th);
             });
         }
 
+        // 示例数据
         function initSampleData() {
             const tbody = document.getElementById('tableTbody');
-            // 示例行1
+            // 行1
             const row1 = createNewRow(1);
             setCellText(row1.querySelector('[data-col="A"]'), '6934114761936');
             setCellText(row1.querySelector('[data-col="B"]'), 'bt生脉饮党参方盾克康福');
@@ -671,11 +670,10 @@
             setCellText(row1.querySelector('[data-col="J"]'), '240');
             setCellText(row1.querySelector('[data-col="K"]'), '126.8');
             setCellText(row1.querySelector('[data-col="L"]'), '113.2');
-            // 亮黄色标记
             row1.querySelector('[data-col="B"]').classList.add('cell-yellow');
             row1.querySelector('[data-col="C"]').classList.add('cell-yellow');
             tbody.appendChild(row1);
-            // 示例行2
+            // 行2
             const row2 = createNewRow(2);
             setCellText(row2.querySelector('[data-col="A"]'), '6975782860026');
             setCellText(row2.querySelector('[data-col="B"]'), 'ybx橡一活络油医用退热凝胶湖北5');
@@ -685,23 +683,21 @@
             tbody.appendChild(row2);
         }
 
-        // 创建新行（带行号）
+        // 创建新行
         function createNewRow(rowNum) {
             const tr = document.createElement('tr');
-            
-            // 添加行号单元格
+            // 行号单元格
             const rowNumCell = document.createElement('td');
             rowNumCell.className = 'row-header';
             rowNumCell.textContent = rowNum;
             rowNumCell.style.width = '40px';
             tr.appendChild(rowNumCell);
-            
-            // 添加数据列
+            // 数据列
             colLetters.forEach(col => {
                 const td = document.createElement('td');
                 td.dataset.col = col;
-                td.style.width = '150px'; // 初始宽度稍大
-                td.style.minWidth = '30px'; // 关键：允许非常小的最小宽度
+                td.style.width = '150px';
+                td.style.minWidth = '30px';
                 td.innerHTML = '<div class="cell-content-wrapper"></div>';
                 if (CONFIG.readOnlyCol.includes(col)) {
                     td.contentEditable = false;
@@ -711,59 +707,52 @@
                     td.contentEditable = true;
                     if (CONFIG.traceCodeCol.includes(col)) td.classList.add('trace-code');
                 }
-                // 确保内容可以溢出并隐藏
                 td.style.overflow = 'hidden';
+                td.style.textAlign = 'left';
+                td.style.paddingLeft = '10px';
                 bindCellEvents(td);
                 tr.appendChild(td);
             });
             return tr;
         }
 
-        // ========== 列宽拖动 - 关键修复 ==========
+        // 列宽调整（右上角角标拖动）- 核心优化
         function initColResize() {
-            document.querySelectorAll('#dataTable thead th:not(.row-header)').forEach(th => {
-                th.addEventListener('mousedown', function(e) {
-                    if (e.clientX - this.getBoundingClientRect().right > -5) {
-                        isResizing = true;
-                        resizeTh = this;
-                        startX = e.clientX;
-                        startWidth = this.offsetWidth;
-                        document.body.style.cursor = 'col-resize';
-                        e.preventDefault();
-                        
-                        // 阻止文本选择和拖拽
-                        document.body.style.userSelect = 'none';
-                        document.body.style.webkitUserSelect = 'none';
-                    }
+            document.querySelectorAll('.col-resize-handle').forEach(handle => {
+                handle.addEventListener('mousedown', function(e) {
+                    isResizing = true;
+                    resizeTh = this.parentElement;
+                    startX = e.clientX;
+                    startWidth = resizeTh.offsetWidth;
+                    document.body.style.cursor = 'col-resize';
+                    e.preventDefault();
+                    e.stopPropagation();
+                    document.body.style.userSelect = 'none';
+                    document.body.style.webkitUserSelect = 'none';
+                    const overlay = document.createElement('div');
+                    overlay.style.cssText = 'position: fixed;top:0;left:0;width:100%;height:100%;z-index:9999;cursor:col-resize;background:transparent;';
+                    overlay.id = 'resize-overlay';
+                    document.body.appendChild(overlay);
                 });
             });
-            
             document.addEventListener('mousemove', function(e) {
                 if (!isResizing || !resizeTh) return;
-                // 关键：允许拖到非常小的宽度，最小15像素
-                const newWidth = Math.max(15, startWidth + (e.clientX - startX));
+                const newWidth = Math.max(20, startWidth + (e.clientX - startX));
                 resizeTh.style.width = `${newWidth}px`;
                 resizeTh.style.minWidth = `${newWidth}px`;
-                
                 const colIndex = Array.from(resizeTh.parentElement.children).indexOf(resizeTh);
-                const dataCol = colLetters[colIndex - 1]; // -1因为第一列是行号列
-                
-                // 更新该列所有单元格的宽度
+                const dataCol = colLetters[colIndex - 1];
                 document.querySelectorAll(`#dataTable tbody td[data-col="${dataCol}"]`).forEach(td => {
                     td.style.width = `${newWidth}px`;
                     td.style.minWidth = `${newWidth}px`;
                 });
-                
-                // 阻止默认行为
                 e.preventDefault();
                 e.stopPropagation();
             });
-            
-            document.addEventListener('mouseup', () => endResize());
-            document.addEventListener('mouseleave', () => endResize());
-            
-            function endResize() {
+            document.addEventListener('mouseup', function(e) {
                 if (isResizing) {
+                    const overlay = document.getElementById('resize-overlay');
+                    overlay && overlay.remove();
                     isResizing = false;
                     resizeTh = null;
                     document.body.style.cursor = 'default';
@@ -771,10 +760,21 @@
                     document.body.style.webkitUserSelect = '';
                     !isUndoRedo && saveToHistory();
                 }
-            }
+            });
+            document.addEventListener('mouseleave', function() {
+                if (isResizing) {
+                    const overlay = document.getElementById('resize-overlay');
+                    overlay && overlay.remove();
+                    isResizing = false;
+                    resizeTh = null;
+                    document.body.style.cursor = 'default';
+                    document.body.style.userSelect = '';
+                    document.body.style.webkitUserSelect = '';
+                }
+            });
         }
 
-        // ========== 所有事件绑定 ==========
+        // 所有事件绑定
         function initAllEvents() {
             initSearchInput();
             initButtonEvents();
@@ -786,13 +786,11 @@
             initDragSelection();
         }
 
+        // 搜索功能
         function initSearchInput() {
             const searchInput = document.getElementById('searchInput');
             searchInput.addEventListener('keydown', e => {
-                if (e.key === 'Enter') { 
-                    e.preventDefault(); 
-                    performSearch(); 
-                }
+                if (e.key === 'Enter') { e.preventDefault(); performSearch(); }
             });
             searchInput.addEventListener('input', () => {
                 if (!searchInput.value.trim()) {
@@ -801,14 +799,39 @@
                 }
             });
         }
+        function performSearch() {
+            const term = document.getElementById('searchInput').value.trim();
+            if (!term) {
+                document.querySelectorAll('#dataTable tbody tr').forEach(row => row.classList.remove('hidden'));
+                saveToHistory();
+                return;
+            }
+            let firstVisible = null;
+            document.querySelectorAll('#dataTable tbody tr').forEach(row => {
+                const aText = getCellText(row.querySelector('[data-col="A"]')).toLowerCase();
+                const bText = getCellText(row.querySelector('[data-col="B"]')).toLowerCase();
+                const match = aText.includes(term.toLowerCase()) || bText.includes(term.toLowerCase());
+                if (match) {
+                    row.classList.remove('hidden');
+                    firstVisible = firstVisible || row;
+                } else {
+                    row.classList.add('hidden');
+                }
+            });
+            if (firstVisible) {
+                const hCell = firstVisible.querySelector('[data-col="H"]');
+                hCell && selectCell(hCell);
+            }
+            !isUndoRedo && saveToHistory();
+        }
 
+        // 按钮事件
         function initButtonEvents() {
             document.getElementById('filterToggle').addEventListener('click', function() {
                 isFilterActive = !isFilterActive;
                 toggleDColumnFilter();
                 this.classList.toggle('active', isFilterActive);
             });
-            
             document.getElementById('addRowBtn').addEventListener('click', addNewRow);
             document.getElementById('fileInput').addEventListener('change', handleExcelImport);
             document.getElementById('importBtn').addEventListener('click', () => document.getElementById('fileInput').click());
@@ -817,10 +840,10 @@
             document.getElementById('redoBtn').addEventListener('click', redo);
         }
 
+        // 表头编辑
         function initHeaderEditEvent() {
             document.querySelectorAll('.header-cell:not(.header-link)').forEach(cell => {
                 const input = cell.querySelector('input');
-                
                 cell.addEventListener('click', function(e) {
                     if (e.target === cell || e.target === cell.querySelector('span')) {
                         cell.classList.add('editing');
@@ -829,7 +852,6 @@
                         e.stopPropagation();
                     }
                 });
-                
                 const finishEdit = () => {
                     cell.classList.remove('editing');
                     if (getCellText(cell) !== input.value) {
@@ -838,152 +860,91 @@
                         !isUndoRedo && saveToHistory();
                     }
                 };
-                
                 input.addEventListener('blur', finishEdit);
                 input.addEventListener('keydown', e => {
-                    if (e.key === 'Enter') { 
-                        e.preventDefault(); 
-                        finishEdit(); 
-                    }
+                    if (e.key === 'Enter') { e.preventDefault(); finishEdit(); }
                 });
             });
         }
 
-        // ========== 初始化拖选功能 ==========
+        // 拖选功能
         function initDragSelection() {
-            // 创建选择框
             selectionBox = document.createElement('div');
             selectionBox.className = 'selection-box';
             selectionBox.style.display = 'none';
             document.querySelector('.table-wrapper').appendChild(selectionBox);
-            
-            // 监听Ctrl键状态
-            document.addEventListener('keydown', function(e) {
-                isCtrlPressed = e.ctrlKey;
-            });
-            
-            document.addEventListener('keyup', function(e) {
-                isCtrlPressed = e.ctrlKey;
-            });
-            
-            // 鼠标按下开始拖选
+            document.addEventListener('keydown', function(e) { isCtrlPressed = e.ctrlKey; });
+            document.addEventListener('keyup', function(e) { isCtrlPressed = e.ctrlKey; });
             document.querySelectorAll('#dataTable td.editable').forEach(td => {
                 td.addEventListener('mousedown', function(e) {
-                    // 如果按下Ctrl键，启动拖选模式
                     if (isCtrlPressed && e.button === 0) {
                         e.preventDefault();
                         e.stopPropagation();
-                        
-                        // 清除现有选择
-                        if (!e.shiftKey) {
-                            clearAllSelections();
-                        }
-                        
+                        if (!e.shiftKey) clearAllSelections();
                         isDragging = true;
                         dragStartCell = this;
                         dragStartX = e.clientX;
                         dragStartY = e.clientY;
-                        
-                        // 记录起始位置
                         const rect = this.getBoundingClientRect();
                         const tableRect = document.querySelector('.table-wrapper').getBoundingClientRect();
-                        
                         selectionBox.style.left = (rect.left - tableRect.left) + 'px';
                         selectionBox.style.top = (rect.top - tableRect.top) + 'px';
                         selectionBox.style.width = rect.width + 'px';
                         selectionBox.style.height = rect.height + 'px';
                         selectionBox.style.display = 'block';
-                        
-                        // 选中起始单元格
                         if (!selectedCells.has(this)) {
                             selectedCells.add(this);
                             this.classList.add('cell-drag-selected');
                         }
-                        
                         document.body.style.cursor = 'crosshair';
-                        
-                        // 阻止默认行为
                         return false;
                     }
                 });
             });
-            
-            // 鼠标移动更新选择框
             document.addEventListener('mousemove', function(e) {
                 if (!isDragging || !dragStartCell) return;
-                
                 e.preventDefault();
-                
                 const tableWrapper = document.querySelector('.table-wrapper');
                 const tableRect = tableWrapper.getBoundingClientRect();
-                
-                // 计算选择框的位置和大小
                 const startRect = dragStartCell.getBoundingClientRect();
-                const currentX = e.clientX;
-                const currentY = e.clientY;
-                
+                const currentX = e.clientX, currentY = e.clientY;
                 const left = Math.min(startRect.left, currentX);
                 const top = Math.min(startRect.top, currentY);
                 const right = Math.max(startRect.right, currentX);
                 const bottom = Math.max(startRect.bottom, currentY);
-                
-                // 更新选择框
                 selectionBox.style.left = (left - tableRect.left) + 'px';
                 selectionBox.style.top = (top - tableRect.top) + 'px';
                 selectionBox.style.width = (right - left) + 'px';
                 selectionBox.style.height = (bottom - top) + 'px';
-                
-                // 选中选择框内的所有单元格
                 selectCellsInArea(left, top, right, bottom);
             });
-            
-            // 鼠标抬起结束拖选
             document.addEventListener('mouseup', function(e) {
                 if (isDragging) {
                     isDragging = false;
                     selectionBox.style.display = 'none';
                     document.body.style.cursor = 'default';
-                    
-                    // 更新选中单元格样式
                     updateDragSelectedCells();
-                    
-                    // 保存历史记录
                     !isUndoRedo && saveToHistory();
-                    
                     dragStartCell = null;
                 }
             });
         }
-        
-        // 选择指定区域内的单元格
         function selectCellsInArea(left, top, right, bottom) {
-            // 清除之前的拖选样式
             document.querySelectorAll('.cell-drag-selected').forEach(cell => {
-                if (!selectedCells.has(cell)) {
-                    cell.classList.remove('cell-drag-selected');
-                }
+                if (!selectedCells.has(cell)) cell.classList.remove('cell-drag-selected');
             });
-            
-            // 选中区域内所有可编辑单元格
             document.querySelectorAll('#dataTable td.editable').forEach(td => {
                 const rect = td.getBoundingClientRect();
-                
-                // 检查单元格是否在选择区域内
-                if (rect.right > left && rect.left < right && 
-                    rect.bottom > top && rect.top < bottom) {
-                    
+                if (rect.right > left && rect.left < right && rect.bottom > top && rect.top < bottom) {
                     if (!selectedCells.has(td)) {
                         selectedCells.add(td);
                         td.classList.add('cell-drag-selected');
                     }
                 } else if (!selectedCells.has(td)) {
-                    // 不在区域内且未被选中的单元格清除拖选样式
                     td.classList.remove('cell-drag-selected');
                 }
             });
         }
-        
-        // 更新拖选单元格的样式
         function updateDragSelectedCells() {
             selectedCells.forEach(cell => {
                 cell.classList.remove('cell-drag-selected');
@@ -991,31 +952,18 @@
             });
         }
 
+        // 单元格基础事件
         function initCellBaseEvents() {
             document.querySelectorAll('#dataTable td.editable').forEach(cell => {
-                cell.addEventListener('click', e => { 
-                    // 如果按着Ctrl键点击，切换选择状态
-                    if (e.ctrlKey) {
-                        toggleCellSelection(cell);
-                    } 
-                    // 如果按着Shift键点击，选择范围
-                    else if (e.shiftKey && selectedCell) {
-                        selectCellRange(selectedCell, cell);
-                    }
-                    // 普通点击，只选择当前单元格
-                    else {
-                        clearAllSelections();
-                        selectCell(cell);
-                    }
-                    e.stopPropagation(); 
+                cell.addEventListener('click', e => {
+                    if (e.ctrlKey) toggleCellSelection(cell);
+                    else if (e.shiftKey && selectedCell) selectCellRange(selectedCell, cell);
+                    else { clearAllSelections(); selectCell(cell); }
+                    e.stopPropagation();
                 });
-                
                 cell.addEventListener('contextmenu', e => {
                     e.preventDefault();
-                    if (!selectedCells.has(cell)) {
-                        clearAllSelections();
-                        selectCell(cell);
-                    }
+                    if (!selectedCells.has(cell)) { clearAllSelections(); selectCell(cell); }
                     updateContextMenu();
                     contextMenu.style.display = 'block';
                     contextMenu.style.left = `${e.pageX}px`;
@@ -1023,47 +971,26 @@
                 });
             });
         }
-
-        // 切换单元格选中状态（Ctrl+点击）
         function toggleCellSelection(cell) {
             if (selectedCells.has(cell)) {
                 selectedCells.delete(cell);
                 cell.classList.remove('cell-selected');
-                if (selectedCell === cell) {
-                    selectedCell = selectedCells.size > 0 ? Array.from(selectedCells).pop() : null;
-                }
+                if (selectedCell === cell) selectedCell = selectedCells.size > 0 ? Array.from(selectedCells).pop() : null;
             } else {
                 selectedCells.add(cell);
                 cell.classList.add('cell-selected');
                 selectedCell = cell;
             }
-            
-            // 更新选中单元格的高亮样式
-            if (selectedCell) {
-                selectedCell.style.outline = '3px solid #a3e635';
-            }
+            if (selectedCell) selectedCell.style.outline = '3px solid #a3e635';
         }
-
-        // 选择单元格范围（Shift+点击）
         function selectCellRange(startCell, endCell) {
             clearAllSelections();
-            
-            const startRow = startCell.parentElement;
-            const endRow = endCell.parentElement;
+            const startRow = startCell.parentElement, endRow = endCell.parentElement;
             const rows = Array.from(document.querySelectorAll('#dataTable tbody tr'));
-            const startRowIdx = rows.indexOf(startRow);
-            const endRowIdx = rows.indexOf(endRow);
-            
-            const startColIdx = getHeaderIndex(startCell.dataset.col);
-            const endColIdx = getHeaderIndex(endCell.dataset.col);
-            
-            // 确定范围边界
-            const minRow = Math.min(startRowIdx, endRowIdx);
-            const maxRow = Math.max(startRowIdx, endRowIdx);
-            const minCol = Math.min(startColIdx, endColIdx);
-            const maxCol = Math.max(startColIdx, endColIdx);
-            
-            // 选中范围内的所有单元格
+            const startRowIdx = rows.indexOf(startRow), endRowIdx = rows.indexOf(endRow);
+            const startColIdx = getHeaderIndex(startCell.dataset.col), endColIdx = getHeaderIndex(endCell.dataset.col);
+            const minRow = Math.min(startRowIdx, endRowIdx), maxRow = Math.max(startRowIdx, endRowIdx);
+            const minCol = Math.min(startColIdx, endColIdx), maxCol = Math.max(startColIdx, endColIdx);
             for (let i = minRow; i <= maxRow; i++) {
                 const row = rows[i];
                 const cells = row.querySelectorAll('td.editable');
@@ -1075,63 +1002,35 @@
                     }
                 }
             }
-            
             selectedCell = endCell;
             selectedCell.style.outline = '3px solid #a3e635';
         }
 
+        // 右键菜单
         function updateContextMenu() {
             const commentPreview = document.getElementById('commentPreview');
-            
             if (selectedCells.size > 0) {
                 let allComments = [];
-                selectedCells.forEach(cell => {
-                    if (cell.dataset.comment) {
-                        allComments.push(cell.dataset.comment);
-                    }
-                });
-                
-                if (allComments.length > 0) {
-                    commentPreview.innerHTML = allComments.join('<br>---<br>');
-                    commentPreview.style.display = 'block';
-                } else {
-                    commentPreview.innerHTML = '无备注';
-                    commentPreview.style.display = 'block';
-                }
+                selectedCells.forEach(cell => { if (cell.dataset.comment) allComments.push(cell.dataset.comment); });
+                commentPreview.innerHTML = allComments.length > 0 ? allComments.join('<br>---<br>') : '无备注';
+                commentPreview.style.display = 'block';
             } else if (selectedCell && selectedCell.tagName === 'TD') {
-                const comment = selectedCell.dataset.comment;
-                commentPreview.innerHTML = comment || '无备注';
+                commentPreview.innerHTML = selectedCell.dataset.comment || '无备注';
                 commentPreview.style.display = 'block';
             } else {
                 commentPreview.innerHTML = '';
                 commentPreview.style.display = 'none';
             }
         }
-
         function initContextMenuEvent() {
             contextMenu.querySelectorAll('.context-menu-item').forEach(item => {
                 item.addEventListener('click', function() {
                     if (!selectedCell && selectedCells.size === 0) return;
-                    
                     const action = this.dataset.action;
-                    
-                    if (action === 'view-comment') {
-                        showCommentDialog();
-                        contextMenu.style.display = 'none';
-                        return;
-                    }
-                    
-                    let cellsToProcess = [];
-                    
-                    if (selectedCells.size > 0) {
-                        cellsToProcess = Array.from(selectedCells);
-                    } else if (selectedCell) {
-                        cellsToProcess = [selectedCell];
-                    }
-                    
+                    if (action === 'view-comment') { showCommentDialog(); contextMenu.style.display = 'none'; return; }
+                    let cellsToProcess = selectedCells.size > 0 ? Array.from(selectedCells) : (selectedCell ? [selectedCell] : []);
                     cellsToProcess.forEach(cell => {
                         if (!cell || cell.tagName !== 'TD') return;
-                        
                         switch(action) {
                             case 'mark-red': setCellColor(cell, 'red'); break;
                             case 'mark-yellow': setCellColor(cell, 'yellow'); break;
@@ -1141,26 +1040,17 @@
                             case 'clear-color': setCellColor(cell, 'clear'); break;
                         }
                     });
-                    
                     if (['mark-red','mark-yellow','mark-pink','clear-color','add-comment','clear-comment'].includes(action)) {
                         !isUndoRedo && saveToHistory();
                     }
                     contextMenu.style.display = 'none';
                 });
             });
-            
-            document.addEventListener('click', () => {
-                contextMenu.style.display = 'none';
-            });
+            document.addEventListener('click', () => { contextMenu.style.display = 'none'; });
         }
-
         function showCommentDialog() {
             let comments = [];
-            
-            const cellsToCheck = selectedCells.size > 0 ? 
-                Array.from(selectedCells) : 
-                (selectedCell ? [selectedCell] : []);
-            
+            const cellsToCheck = selectedCells.size > 0 ? Array.from(selectedCells) : (selectedCell ? [selectedCell] : []);
             cellsToCheck.forEach(cell => {
                 if (cell && cell.dataset.comment) {
                     const row = cell.parentElement;
@@ -1168,32 +1058,22 @@
                     comments.push(`第${rowNum}行 ${cell.dataset.col}列: ${cell.dataset.comment}`);
                 }
             });
-            
             const commentText = comments.length > 0 ? comments.join('\n\n') : '无备注信息';
             alert(`单元格备注：\n\n${commentText}`);
         }
 
-        // ========== I列表头跳转链接（新开标签页，防拦截版）==========
+        // I列表头链接
         function initIHeaderLink() {
             const iHeader = document.querySelector('.header-link');
-            // 移除原有可能的重复事件
             iHeader?.removeEventListener('click', handleIHeaderClick);
-            // 重新绑定点击事件
             iHeader?.addEventListener('click', handleIHeaderClick);
-
-            // 独立的点击处理函数（提升稳定性）
             function handleIHeaderClick(e) {
                 e.preventDefault();
-                e.stopPropagation(); // 阻止事件冒泡被其他逻辑拦截
-                
+                e.stopPropagation();
                 const targetUrl = 'https://www.mashangfangxin.com/';
-                // 方案1：优先尝试直接新开标签页
                 const newTab = window.open(targetUrl, '_blank', 'noopener,noreferrer');
-                
-                // 方案2：如果被浏览器拦截，给出提示并提供手动跳转
                 if (!newTab || newTab.closed || typeof newTab === 'undefined') {
                     alert('跳转被浏览器拦截！请允许弹窗，或手动访问：\n' + targetUrl);
-                    // 备用方案：创建临时a标签模拟跳转
                     const tempLink = document.createElement('a');
                     tempLink.href = targetUrl;
                     tempLink.target = '_blank';
@@ -1205,38 +1085,50 @@
             }
         }
 
-        // ========== 键盘快捷键 ==========
+        // 键盘快捷键（新增Ctrl+Home/Ctrl+End）- 核心需求
         function initKeyboardShortcut() {
             document.addEventListener('keydown', function(e) {
                 // Ctrl+Z 撤销
-                if (e.ctrlKey && e.key === 'z') {
-                    e.preventDefault();
-                    undo();
-                    return;
-                }
-                
+                if (e.ctrlKey && e.key === 'z') { e.preventDefault(); undo(); return; }
                 // Ctrl+Y 恢复
-                if (e.ctrlKey && e.key === 'y') {
+                if (e.ctrlKey && e.key === 'y') { e.preventDefault(); redo(); return; }
+                // Ctrl+Home 回到首行首个可编辑单元格
+                if (e.ctrlKey && e.key === 'Home') {
                     e.preventDefault();
-                    redo();
+                    const firstRow = document.querySelector('#dataTable tbody tr');
+                    if (firstRow) {
+                        const firstCell = firstRow.querySelector('td.editable');
+                        firstCell && selectCell(firstCell);
+                    }
                     return;
                 }
-                
-                // Delete 或 Backspace 键删除选中单元格内容
+                // Ctrl+End 回到最后一行最后一个可编辑单元格
+                if (e.ctrlKey && e.key === 'End') {
+                    e.preventDefault();
+                    const rows = document.querySelectorAll('#dataTable tbody tr');
+                    if (rows.length > 0) {
+                        const lastRow = rows[rows.length - 1];
+                        const editableCells = lastRow.querySelectorAll('td.editable');
+                        if (editableCells.length > 0) {
+                            const lastCell = editableCells[editableCells.length - 1];
+                            selectCell(lastCell);
+                        }
+                    }
+                    return;
+                }
+                // Delete/Backspace 清除选中内容
                 if ((e.key === 'Delete' || e.key === 'Backspace') && selectedCells.size > 0) {
                     e.preventDefault();
                     clearSelectedCells();
                     return;
                 }
-                
-                // 方向键导航（只在有选中单元格时生效）
+                // 方向键导航
                 if (selectedCell && selectedCell.tagName === 'TD' && !e.ctrlKey && !e.altKey && !e.shiftKey) {
                     const row = selectedCell.parentElement;
                     const rows = Array.from(document.querySelectorAll('#dataTable tbody tr:not(.hidden)'));
                     const currentRowIndex = rows.indexOf(row);
                     const cells = Array.from(row.querySelectorAll('td.editable'));
                     const currentCellIndex = cells.indexOf(selectedCell);
-                    
                     switch(e.key) {
                         case 'ArrowUp':
                             e.preventDefault();
@@ -1265,40 +1157,26 @@
             });
         }
 
-        // ========== 清除选中单元格内容 ==========
+        // 清除选中单元格内容
         function clearSelectedCells() {
             if (selectedCells.size === 0) return;
-            
-            // 跳过只读列（D列）
             const editableCells = Array.from(selectedCells).filter(cell => {
                 return cell.classList.contains('editable') && !cell.classList.contains('row-header');
             });
-            
             if (editableCells.length === 0) return;
-            
-            // 清除内容
             editableCells.forEach(cell => {
                 setCellText(cell, '');
-                // 如果是正在编辑的单元格，需要同步更新innerText
-                if (document.activeElement === cell) {
-                    cell.innerText = '';
-                }
+                if (document.activeElement === cell) cell.innerText = '';
             });
-            
-            // 保存历史记录
             !isUndoRedo && saveToHistory();
-            
-            // 更新相关功能
             checkDuplicateCells();
             calculateDColumn();
         }
 
-        // ========== 单元格事件 ==========
+        // 单元格事件绑定
         function bindCellEvents(td) {
             if (!td.classList.contains('editable')) return;
-            
             let prevValue = getCellText(td);
-            
             td.addEventListener('blur', () => {
                 const currVal = getCellText(td);
                 if (currVal !== prevValue && !isUndoRedo) {
@@ -1308,7 +1186,6 @@
                 checkDuplicateCells();
                 calculateDColumn();
             });
-            
             td.addEventListener('keydown', function(e) {
                 if (e.key === 'Enter') {
                     e.preventDefault();
@@ -1323,14 +1200,12 @@
                 }
             });
         }
-
         function handleEnterKeyMove(cell) {
             const row = cell.parentElement;
             const rows = Array.from(document.querySelectorAll('#dataTable tbody tr:not(.hidden)'));
             const currentRowIdx = rows.indexOf(row);
             const cells = Array.from(row.querySelectorAll('td.editable'));
             const currentCellIdx = cells.indexOf(cell);
-
             if (currentCellIdx < cells.length - 1) {
                 selectCell(cells[currentCellIdx + 1]);
                 return;
@@ -1343,10 +1218,9 @@
             selectCell(cell);
         }
 
-        // ========== 业务功能 ==========
+        // 业务功能
         function selectCell(cell) {
             clearAllSelections();
-            
             selectedCell = cell;
             if (cell.tagName === 'TD') {
                 cell.style.outline = '3px solid #a3e635';
@@ -1355,20 +1229,14 @@
                 if (cell.classList.contains('editable')) cell.focus();
             }
         }
-
-        // 清空所有选择
         function clearAllSelections() {
-            // 清除单元格选择
             selectedCells.forEach(cell => {
                 cell.classList.remove('cell-selected');
                 cell.style.outline = '';
             });
             selectedCells.clear();
-            
-            // 清除主选中单元格
             selectedCell = null;
         }
-
         function addNewRow() {
             const tbody = document.getElementById('tableTbody');
             const rowCount = tbody.querySelectorAll('tr').length;
@@ -1380,7 +1248,6 @@
             checkDuplicateCells();
             !isUndoRedo && saveToHistory();
         }
-
         function toggleDColumnFilter() {
             const tbody = document.getElementById('tableTbody');
             tbody.innerHTML = '';
@@ -1396,7 +1263,6 @@
                     const bVal = parseFloat(getCellText(bCell)) || 0;
                     return bVal - aVal;
                 });
-                
                 filtered.forEach((row, index) => {
                     const rowNumCell = row.querySelector('.row-header');
                     if (rowNumCell) rowNumCell.textContent = index + 1;
@@ -1412,7 +1278,6 @@
             }
             !isUndoRedo && saveToHistory();
         }
-
         function calculateDColumn() {
             document.querySelectorAll('#dataTable tbody tr').forEach(row => {
                 const dCell = row.querySelector('[data-col="D"]');
@@ -1425,26 +1290,23 @@
                 setCellText(dCell, count.toString());
             });
         }
-
         function checkDuplicateCells() {
             const excludeCols = ['C','D','E','F','G'];
             const valueMap = new Map();
-            
             document.querySelectorAll('#dataTable tbody td[data-col]').forEach(cell => {
                 const col = cell.dataset.col;
                 const text = getCellText(cell).trim();
-                if (excludeCols.includes(col) || !text || text === '0' || parseFloat(text) === 0) return;
+                if (excludeCols.includes(col) || !text) return;
+                const numValue = parseFloat(text);
+                if (!isNaN(numValue) && numValue >= 0 && numValue <= 10) return;
                 if (!valueMap.has(text)) valueMap.set(text, []);
                 valueMap.get(text).push(cell);
             });
-            
             document.querySelectorAll('.duplicate-cell').forEach(cell => cell.classList.remove('duplicate-cell'));
-            
             valueMap.forEach((cells, val) => {
                 if (cells.length > 1) cells.forEach(cell => cell.classList.add('duplicate-cell'));
             });
         }
-
         function addCellComment(cell) {
             clearCellComment(cell);
             const comment = prompt('请输入备注：', cell.dataset.comment || '');
@@ -1452,12 +1314,10 @@
             cell.dataset.comment = comment.trim();
             cell.classList.add('has-comment');
         }
-        
         function clearCellComment(cell) {
             delete cell.dataset.comment;
             cell.classList.remove('has-comment');
         }
-
         function setCellColor(cell, color) {
             cell.classList.remove('cell-red', 'cell-yellow', 'cell-pink');
             if (color !== 'clear') cell.classList.add(`cell-${color}`);
@@ -1465,7 +1325,7 @@
             wrapper.style.color = color === 'red' ? 'white' : '#333';
         }
 
-        // ========== Excel导入导出 ==========
+        // Excel导入（同步颜色/批注）- 核心需求
         function handleExcelImport(e) {
             const file = e.target.files[0];
             if (!file || !['xlsx','xlsm'].includes(file.name.split('.').pop().toLowerCase())) {
@@ -1476,33 +1336,100 @@
             const reader = new FileReader();
             reader.onload = function(e) {
                 try {
-                    const wb = XLSX.read(new Uint8Array(e.target.result), { type: 'array' });
+                    const wb = XLSX.read(new Uint8Array(e.target.result), { 
+                        type: 'array',
+                        cellStyles: true,
+                        cellComments: true
+                    });
                     const sheet = wb.Sheets[wb.SheetNames[0]];
-                    const data = XLSX.utils.sheet_to_json(sheet, { header: 1 });
+                    const data = XLSX.utils.sheet_to_json(sheet, { header: 1, raw: false });
+                    const cellRefs = XLSX.utils.decode_range(sheet['!ref'] || 'A1');
                     if (data.length <= 1) { alert('无有效数据！'); return; }
-                    
                     const tbody = document.getElementById('tableTbody');
                     tbody.innerHTML = '';
-                    
+                    // 计算列宽
+                    const colMaxLengths = new Array(colLetters.length).fill(0);
+                    const headerRow = data[0] || [];
+                    headerRow.forEach((val, idx) => {
+                        if (idx < colMaxLengths.length) {
+                            const text = String(val || '').trim();
+                            colMaxLengths[idx] = Math.max(colMaxLengths[idx], text.length);
+                        }
+                    });
+                    // 收集样式和批注
+                    const cellStylesMap = {};
+                    for (let r = cellRefs.s.r; r <= cellRefs.e.r; r++) {
+                        for (let c = cellRefs.s.c; c <= cellRefs.e.c; c++) {
+                            const cellAddress = XLSX.utils.encode_cell({r, c});
+                            const cell = sheet[cellAddress];
+                            if (!cell) continue;
+                            // 匹配背景色（黄色/粉色）
+                            let bgColor = '';
+                            if (cell.s && cell.s.fill && cell.s.fill.fgColor && cell.s.fill.fgColor.rgb) {
+                                const rgb = cell.s.fill.fgColor.rgb || cell.s.fill.fgColor.theme;
+                                if (rgb && (rgb.includes('FFFF00') || rgb.includes('FFF200') || rgb === '6')) bgColor = 'yellow';
+                                else if (rgb && (rgb.includes('F8BBD0') || rgb.includes('F8BBD9') || rgb === '4')) bgColor = 'pink';
+                            }
+                            // 提取批注
+                            let comment = '';
+                            if (cell.c) comment = cell.c.t || '';
+                            cellStylesMap[cellAddress] = { bgColor, comment };
+                        }
+                    }
+                    // 处理数据行
+                    const rowsData = [];
                     for (let i = 1; i < data.length; i++) {
-                        const rowData = data[i];
-                        const newRow = createNewRow(i);
+                        const rowData = data[i] || [];
+                        rowsData.push({ values: rowData, styles: cellStylesMap });
                         rowData.forEach((val, idx) => {
-                            const col = colLetters[idx];
-                            if (!col) return;
+                            if (idx < colMaxLengths.length) {
+                                const text = String(val || '').trim();
+                                colMaxLengths[idx] = Math.max(colMaxLengths[idx], text.length);
+                            }
+                        });
+                    }
+                    // 设置列宽
+                    colLetters.forEach((col, idx) => {
+                        const th = getHeaderCell(col);
+                        if (th) {
+                            const contentLength = colMaxLengths[idx] || 0;
+                            const calculatedWidth = Math.max(80, Math.min(300, contentLength * 8 + 20));
+                            th.style.width = calculatedWidth + 'px';
+                            th.style.minWidth = calculatedWidth + 'px';
+                        }
+                    });
+                    // 渲染行并绑定样式/批注
+                    rowsData.forEach((rowData, rowIndex) => {
+                        const newRow = createNewRow(rowIndex + 1);
+                        colLetters.forEach((col, colIndex) => {
                             const cell = newRow.querySelector(`[data-col="${col}"]`);
-                            cell && setCellText(cell, val || '');
+                            if (cell) {
+                                const th = getHeaderCell(col);
+                                if (th) {
+                                    cell.style.width = th.style.width;
+                                    cell.style.minWidth = th.style.minWidth;
+                                }
+                                const val = rowData.values[colIndex];
+                                if (val !== undefined && val !== null) setCellText(cell, String(val).trim());
+                                // 应用背景色
+                                const cellAddress = XLSX.utils.encode_cell({r: rowIndex + 1, c: colIndex});
+                                const cellStyle = rowData.styles[cellAddress] || {};
+                                if (cellStyle.bgColor) setCellColor(cell, cellStyle.bgColor);
+                                // 应用批注
+                                if (cellStyle.comment) {
+                                    cell.dataset.comment = cellStyle.comment.trim();
+                                    cell.classList.add('has-comment');
+                                }
+                            }
                         });
                         tbody.appendChild(newRow);
-                    }
-                    
+                    });
                     originalRows = Array.from(document.querySelectorAll('#dataTable tbody tr'));
                     calculateDColumn();
                     checkDuplicateCells();
                     calcTargetHeader(CONFIG.calcHeaderCol);
                     saveToHistory();
-                    
-                    alert(`成功导入${data.length-1}行数据！`);
+                    alert(`成功导入${data.length-1}行数据！列宽、背景色、批注已同步。`);
                 } catch (err) {
                     alert('导入失败，请检查文件！');
                     console.error(err);
@@ -1512,36 +1439,52 @@
             reader.readAsArrayBuffer(file);
         }
 
+        // Excel导出（同步颜色/批注）- 核心需求
         function saveToExcel() {
             try {
-                // 收集表头（不包括行号列表头）
+                // 收集表头
                 const headerRow = ['#'];
                 colLetters.forEach(col => {
                     headerRow.push(getCellText(getHeaderCell(col)) || col);
                 });
-                
                 const rows = [headerRow];
-                
-                // 收集数据行
-                document.querySelectorAll('#dataTable tbody tr:not(.hidden)').forEach(row => {
+                const cellStyles = {};
+                const cellComments = {};
+                // 收集数据行、样式、批注
+                document.querySelectorAll('#dataTable tbody tr:not(.hidden)').forEach((row, rowIndex) => {
                     const rowData = [];
                     // 行号
                     const rowNumCell = row.querySelector('.row-header');
                     rowData.push(rowNumCell ? rowNumCell.textContent : '');
-                    
                     // 数据列
-                    colLetters.forEach(col => {
+                    colLetters.forEach((col, colIndex) => {
                         const cell = row.querySelector(`[data-col="${col}"]`);
                         let text = getCellText(cell) || '';
-                        if (cell && cell.dataset.comment) text += `【备注：${cell.dataset.comment}】`;
+                        const cellAddress = XLSX.utils.encode_cell({r: rowIndex + 1, c: colIndex + 1});
+                        // 记录背景色样式
+                        if (cell.classList.contains('cell-yellow')) {
+                            cellStyles[cellAddress] = {
+                                fill: { fgColor: { rgb: 'FFFF00' }, patternType: 'solid' }
+                            };
+                        } else if (cell.classList.contains('cell-pink')) {
+                            cellStyles[cellAddress] = {
+                                fill: { fgColor: { rgb: 'F8BBD0' }, patternType: 'solid' }
+                            };
+                        }
+                        // 记录批注
+                        if (cell.dataset.comment) {
+                            cellComments[cellAddress] = { t: cell.dataset.comment };
+                        }
                         rowData.push(text);
                     });
                     rows.push(rowData);
                 });
-                
                 // 生成Excel
                 const wb = XLSX.utils.book_new();
                 const ws = XLSX.utils.aoa_to_sheet(rows);
+                // 绑定样式和批注
+                ws['!styles'] = cellStyles;
+                ws['!comments'] = cellComments;
                 XLSX.utils.book_append_sheet(wb, ws, '药品数据');
                 const date = new Date();
                 const fileName = `药品数据_${date.getFullYear()}${(date.getMonth()+1).toString().padStart(2,0)}${date.getDate().toString().padStart(2,0)}.xlsx`;
@@ -1553,7 +1496,7 @@
             }
         }
 
-        // ========== 撤销/恢复功能 ==========
+        // 撤销/恢复
         function saveToHistory() {
             if (isUndoRedo) return;
             redoStack = [];
@@ -1579,7 +1522,6 @@
             if (historyStack.length > 50) historyStack.shift();
             updateUndoRedoButtons();
         }
-
         function undo() {
             if (historyStack.length <= 1) return;
             isUndoRedo = true;
@@ -1588,7 +1530,6 @@
             isUndoRedo = false;
             updateUndoRedoButtons();
         }
-
         function redo() {
             if (redoStack.length === 0) return;
             isUndoRedo = true;
@@ -1597,7 +1538,6 @@
             isUndoRedo = false;
             updateUndoRedoButtons();
         }
-
         function restoreTableState(state) {
             // 恢复表头
             colLetters.forEach((col, idx) => {
@@ -1606,82 +1546,48 @@
                 setCellText(th, state.headers[idx]);
                 th.querySelector('input').value = state.headers[idx];
             });
-            
             // 恢复数据行
             const tbody = document.getElementById('tableTbody');
             tbody.innerHTML = '';
-            
             state.rows.forEach((rowData, rowIndex) => {
                 const row = createNewRow(rowIndex + 1);
                 if (rowData.rowNum) {
                     const rowNumCell = row.querySelector('.row-header');
                     if (rowNumCell) rowNumCell.textContent = rowData.rowNum;
                 }
-                
                 rowData.cells.forEach((cellData, idx) => {
                     const td = row.querySelector(`td[data-col="${cellData.col}"]`);
                     if (td) {
                         td.style.width = cellData.width || '150px';
                         setCellText(td, cellData.content);
-                        
                         cellData.classes.forEach(cls => td.classList.add(cls));
                         if (cellData.comment) {
                             td.dataset.comment = cellData.comment;
                             td.classList.add('has-comment');
                         }
-                        
                         if (CONFIG.readOnlyCol.includes(cellData.col)) {
                             td.contentEditable = false;
                         } else {
                             td.classList.add('editable');
                             td.contentEditable = true;
                         }
-                        
                         bindCellEvents(td);
                     }
                 });
-                
                 tbody.appendChild(row);
             });
-            
             isFilterActive = state.filterActive;
             document.getElementById('filterToggle').classList.toggle('active', isFilterActive);
             originalRows = Array.from(document.querySelectorAll('#dataTable tbody tr'));
-            
             calculateDColumn();
             checkDuplicateCells();
             updateUndoRedoButtons();
         }
-
         function updateUndoRedoButtons() {
             const undoBtn = document.getElementById('undoBtn');
             const redoBtn = document.getElementById('redoBtn');
             undoBtn.classList.toggle('btn-disabled', historyStack.length <= 1);
             redoBtn.classList.toggle('btn-disabled', redoStack.length === 0);
-        }
-
-        function performSearch() {
-            const term = document.getElementById('searchInput').value.trim();
-            if (!term) return;
-            const isBarcode = term.length >= 8 && /^[A-Za-z0-9]+$/.test(term);
-            let firstVisible = null;
-            document.querySelectorAll('#dataTable tbody tr').forEach(row => {
-                const aText = getCellText(row.querySelector('[data-col="A"]'));
-                const bText = getCellText(row.querySelector('[data-col="B"]'));
-                const match = isBarcode ? aText === term : bText.includes(term);
-                if (match) {
-                    row.classList.remove('hidden');
-                    firstVisible = firstVisible || row;
-                } else {
-                    row.classList.add('hidden');
-                }
-            });
-            
-            if (firstVisible) {
-                const hCell = firstVisible.querySelector('[data-col="H"]');
-                hCell && selectCell(hCell);
-            }
-            !isUndoRedo && saveToHistory();
         }
     </script>
 </body>
