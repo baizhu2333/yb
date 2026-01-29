@@ -195,7 +195,7 @@
             table-layout: fixed;
         }
         
-        /* 行号列样式 - 字号调小为14px */
+        /* 行号列样式 - 字号调小为14px + 鼠标指针改为手型 */
         th.row-header {
             background-color: #e5f5d7 !important;
             color: #3f6212 !important;
@@ -204,7 +204,7 @@
             width: 40px !important;
             min-width: 40px !important;
             max-width: 40px !important;
-            cursor: default;
+            cursor: pointer; /* 鼠标手型，提示可点击 */
             border-right: 1px solid #84cc16 !important;
             position: sticky;
             left: 0;
@@ -222,6 +222,7 @@
             width: 40px !important;
             min-width: 40px !important;
             max-width: 40px !important;
+            cursor: pointer; /* 鼠标手型，提示可点击 */
             border-right: 1px solid #84cc16 !important;
             position: sticky;
             left: 0;
@@ -229,6 +230,11 @@
             padding: 5px 2px !important;
             font-size: 14px !important; /* 原17px，调小为14px */
             height: 27px !important;
+        }
+        
+        /* 新增：整行选中的模糊背景样式（不改变原有单元格选中样式） */
+        tr.row-selected {
+            background-color: rgba(224, 242, 254, 0.3) !important; /* 浅蓝色模糊背景 */
         }
         
         th {
@@ -293,6 +299,7 @@
             text-overflow: ellipsis;
             word-wrap: break-word;
             word-break: break-all;
+            color: #333 !important; /* 强制所有单元格字体黑色，优先级最高 */
         }
         
         /* A列特殊样式 - 宽度左移1mm：130px→123px、内容字体14px */
@@ -396,6 +403,7 @@
             padding: 0 !important;
             margin: 0 !important;
             padding-left: 2px !important;
+            color: inherit !important; /* 继承td的黑色字体，取消单独设置 */
         }
         
         /* 仅差异化设置内容字体，标题字体统一继承th的19px */
@@ -445,22 +453,20 @@
             text-align: left !important;
         }
         
-        /* 单元格颜色标记 */
+        /* 单元格颜色标记 - 统一背景色，字体强制黑色 */
         .cell-yellow { 
             background-color: #fff200 !important; 
-            color: #333 !important; 
         }
         .cell-red { 
             background-color: #ef5350 !important; 
-            color: white !important; 
         }
         .cell-pink { 
             background-color: #f8bbd9 !important; 
         }
         
-        /* 重复项标红 */
+        /* 重复项标红 - 与标红样式完全一致，背景#ef5350，字体黑色 */
         .duplicate-cell {
-            background-color: #ffebee !important;
+            background-color: #ef5350 !important;
             border: 1px solid #ef5350 !important;
         }
         
@@ -537,7 +543,7 @@
             z-index: 100;
         }
         
-        /* 右键菜单 */
+        /* 右键菜单：备注功能与标颜色互换位置 - 所有批注改为备注 */
         .context-menu {
             position: absolute;
             width: 220px;
@@ -621,7 +627,7 @@
             100% { opacity: 0; transform: translateY(-20px); }
         }
         
-        /* Excel式批注样式 */
+        /* Excel式备注弹出框 - 所有批注改为备注 */
         .cell-comment-popup {
             position: absolute;
             background-color: #ffffe1;
@@ -697,7 +703,7 @@
         </div>
     </div>
 
-    <!-- 右键菜单：备注功能与标颜色互换位置 -->
+    <!-- 右键菜单：备注功能与标颜色互换位置 - 所有批注改为备注 -->
     <div class="context-menu" id="cellContextMenu">
         <div class="context-menu-item menu-view-comment" data-action="view-comment">
             查看备注
@@ -713,7 +719,7 @@
         <div class="context-menu-item" data-action="clear-color">清除颜色</div>
     </div>
 
-    <!-- Excel式批注弹出框 -->
+    <!-- Excel式备注弹出框 - 所有批注改为备注 -->
     <div class="cell-comment-popup" id="cellCommentPopup"></div>
 
     <!-- 存储状态提示 -->
@@ -877,7 +883,7 @@
             rowNumHeader.textContent = '#';
             rowNumHeader.style.width = '40px';
             headerRow.appendChild(rowNumHeader);
-            // A-Z列 - 修改E列为"hyj"，F列为"上限"，G列为"备注"
+            // A-Z列 - 修改E列为"hyj"，F列为"上限"，G列为"备注"（批注改回备注）
             const headerText = {
                 A: '条码', B: '药品名称', C: '价', D: '无', E: 'hyj', F: '上限', G: '备注',
                 H: 'Q02000000', I: '点击访问网站', J: '240', K: '126.8', L: '计算值'
@@ -1066,9 +1072,10 @@
             initCellBaseEvents();
             initContextMenuEvent();
             initKeyboardShortcut();
-            initIHeaderLink();
+            initIHeaderLink(); // 修复后的I列链接跳转
             initDragSelection();
-            initCommentPopup();
+            initCommentPopup(); // 备注弹出框，批注改回备注
+            initRowNumberClick(); // 新增：行号点击整行选中事件
             
             // 监听Ctrl键状态
             document.addEventListener('keydown', function(e) {
@@ -1083,7 +1090,44 @@
             });
         }
 
-        // 初始化Excel式批注弹出功能
+        // 新增：行号点击整行选中事件（核心需求）
+        function initRowNumberClick() {
+            // 委托事件，兼容动态新增行
+            document.getElementById('dataTable').addEventListener('click', function(e) {
+                const rowHeader = e.target.closest('.row-header');
+                if (!rowHeader) return; // 不是行号，直接返回
+                const tr = rowHeader.parentElement;
+                if (!tr || tr.tagName !== 'TR') return;
+                
+                e.preventDefault();
+                e.stopPropagation();
+                
+                // 清除所有选中（单元格+整行）
+                clearAllSelections();
+                document.querySelectorAll('#dataTable tr.row-selected').forEach(r => {
+                    r.classList.remove('row-selected');
+                });
+                
+                // 标记整行选中的模糊背景
+                tr.classList.add('row-selected');
+                
+                // 选中当前行所有可编辑单元格（保持原有单元格选中逻辑）
+                const editableCells = tr.querySelectorAll('td.editable');
+                editableCells.forEach(cell => {
+                    selectedCells.add(cell);
+                    cell.classList.add('cell-selected');
+                });
+                
+                // 设置默认选中单元格为第一个可编辑单元格
+                if (editableCells.length > 0) {
+                    selectedCell = editableCells[0];
+                    selectedCell.style.outline = '3px solid #a3e635';
+                    selectedCell.focus();
+                }
+            });
+        }
+
+        // 初始化Excel式备注弹出功能 - 所有批注改为备注
         function initCommentPopup() {
             // 为所有有备注的单元格添加鼠标事件
             document.addEventListener('mouseover', function(e) {
@@ -1106,7 +1150,7 @@
                 }
             });
             
-            // 鼠标移动到批注弹出框上时不清除
+            // 鼠标移动到备注弹出框上时不清除
             commentPopup.addEventListener('mouseover', function() {
                 clearTimeout(commentMouseLeaveTimer);
             });
@@ -1460,8 +1504,8 @@
                             case 'mark-red': setCellColor(cell, 'red'); break;
                             case 'mark-yellow': setCellColor(cell, 'yellow'); break;
                             case 'mark-pink': setCellColor(cell, 'pink'); break;
-                            case 'add-comment': addCellComment(cell); break;
-                            case 'clear-comment': clearCellComment(cell); break;
+                            case 'add-comment': addCellComment(cell); break; // 备注
+                            case 'clear-comment': clearCellComment(cell); break; // 备注
                             case 'clear-color': setCellColor(cell, 'clear'); break;
                         }
                     });
@@ -1477,6 +1521,7 @@
             });
         }
         
+        // 查看备注弹窗 - 所有批注改为备注
         function showCommentDialog() {
             let comments = [];
             const cellsToCheck = selectedCells.size > 0 ? Array.from(selectedCells) : (selectedCell ? [selectedCell] : []);
@@ -1491,19 +1536,18 @@
             alert(`单元格备注：\n\n${commentText}`);
         }
 
-        // I列表头链接 - 修改：移除右键功能，直接点击打开
+        // I列表头链接 - 修复点击无反应问题，保留直接点击打开/拦截提示/备用跳转，无其他修改
         function initIHeaderLink() {
             const iHeader = document.querySelector('.header-link');
-            iHeader?.removeEventListener('click', handleIHeaderClick);
-            iHeader?.addEventListener('click', handleIHeaderClick);
-            iHeader?.addEventListener('contextmenu', function(e) {
-                e.preventDefault(); // 阻止右键菜单
-            });
-            function handleIHeaderClick(e) {
+            if (!iHeader) return;
+            // 直接绑定点击事件，移除重复的事件清除逻辑（核心修复）
+            iHeader.addEventListener('click', function(e) {
                 e.preventDefault();
                 e.stopPropagation();
                 const targetUrl = 'https://www.mashangfangxin.com/';
+                // 尝试打开新标签
                 const newTab = window.open(targetUrl, '_blank', 'noopener,noreferrer');
+                // 浏览器拦截时的备用方案（原有逻辑不变）
                 if (!newTab || newTab.closed || typeof newTab === 'undefined') {
                     alert('跳转被浏览器拦截！请允许弹窗，或手动访问：\n' + targetUrl);
                     const tempLink = document.createElement('a');
@@ -1514,7 +1558,11 @@
                     tempLink.click();
                     document.body.removeChild(tempLink);
                 }
-            }
+            });
+            // 阻止右键菜单（原有逻辑不变）
+            iHeader.addEventListener('contextmenu', function(e) {
+                e.preventDefault();
+            });
         }
 
         // 键盘快捷键（新增Ctrl+Home/Ctrl+End）- 核心需求
@@ -1548,10 +1596,16 @@
                     }
                     return;
                 }
-                // Delete/Backspace 清除选中内容
+                // Delete/Backspace 清除选中内容 - 核心修改：区分整行选中和单个/多个单元格选中
                 if ((e.key === 'Delete' || e.key === 'Backspace') && selectedCells.size > 0) {
                     e.preventDefault();
-                    clearSelectedCells();
+                    // 判断是否为整行选中（存在row-selected类的行，且选中的是该行所有可编辑单元格）
+                    const selectedRows = document.querySelectorAll('#dataTable tr.row-selected');
+                    if (selectedRows.length === 1) {
+                        clearSelectedRow(selectedRows[0]); // 整行清除：内容+格式+备注
+                    } else {
+                        clearSelectedCells(); // 单元格清除：仅清内容，保留格式
+                    }
                     return;
                 }
                 // 方向键导航
@@ -1589,7 +1643,36 @@
             });
         }
 
-        // 清除选中单元格内容
+        // 核心新增：整行清除（内容+所有颜色格式+备注）
+        function clearSelectedRow(row) {
+            if (!row || row.tagName !== 'TR') return;
+            // 获取该行所有单元格（含只读D列，D列仅清计算值，恢复为0）
+            const allCells = row.querySelectorAll('td[data-col]');
+            allCells.forEach(cell => {
+                // 1. 清除内容：D列恢复为0，其他列清空
+                if (CONFIG.readOnlyCol.includes(cell.dataset.col)) {
+                    setCellText(cell, '0');
+                } else {
+                    setCellText(cell, '');
+                    if (document.activeElement === cell) cell.innerText = '';
+                }
+                // 2. 清除所有颜色格式
+                cell.classList.remove('cell-red', 'cell-yellow', 'cell-pink', 'duplicate-cell', 'search-highlight');
+                // 3. 清除备注及红点指示器
+                clearCellComment(cell);
+            });
+            // 清除整行选中样式
+            row.classList.remove('row-selected');
+            // 清除单元格选中状态
+            clearAllSelections();
+            // 保存历史+本地存储，重新计算D列和重复项
+            !isUndoRedo && saveToHistory();
+            saveToLocalStorageDelayed();
+            calculateDColumn();
+            checkDuplicateCells();
+        }
+
+        // 清除选中单元格内容（仅清内容，保留格式）- 原有逻辑不变
         function clearSelectedCells() {
             if (selectedCells.size === 0) return;
             const editableCells = Array.from(selectedCells).filter(cell => {
@@ -1656,6 +1739,11 @@
 
         // 业务功能
         function selectCell(cell) {
+            // 清除整行选中样式
+            document.querySelectorAll('#dataTable tr.row-selected').forEach(r => {
+                r.classList.remove('row-selected');
+            });
+            // 清除单元格选中
             clearAllSelections();
             selectedCell = cell;
             if (cell.tagName === 'TD') {
@@ -1754,7 +1842,7 @@
         // 添加备注：移除has-comment类，仅保留右上角红点
         function addCellComment(cell) {
             clearCellComment(cell);
-            const comment = prompt('请输入备注：', cell.dataset.comment || '');
+            const comment = prompt('请输入备注：', cell.dataset.comment || ''); // 批注改回备注
             if (comment === null || comment.trim() === '') return;
             cell.dataset.comment = comment.trim();
             
@@ -1778,14 +1866,14 @@
             }
         }
         
+        // 设置单元格颜色 - 移除字体颜色修改，仅保留背景色变化
         function setCellColor(cell, color) {
             cell.classList.remove('cell-red', 'cell-yellow', 'cell-pink');
             if (color !== 'clear') cell.classList.add(`cell-${color}`);
-            const wrapper = cell.querySelector('.cell-content-wrapper');
-            wrapper.style.color = color === 'red' ? 'white' : '#333';
+            // 移除所有字体颜色设置代码，确保字体始终为黑色
         }
 
-        // Excel导入（同步颜色/批注）- 确保批注同步到悬浮备注，移除has-comment类
+        // Excel导入（同步颜色/备注）- 确保备注同步到悬浮备注，移除has-comment类
         function handleExcelImport(e) {
             const file = e.target.files[0];
             if (!file || !['xlsx','xlsm'].includes(file.name.split('.').pop().toLowerCase())) {
@@ -1816,24 +1904,25 @@
                             colMaxLengths[idx] = Math.max(colMaxLengths[idx], text.length);
                         }
                     });
-                    // 收集样式和批注
+                    // 收集样式和备注
                     const cellStylesMap = {};
                     for (let r = cellRefs.s.r; r <= cellRefs.e.r; r++) {
                         for (let c = cellRefs.s.c; c <= cellRefs.e.c; c++) {
                             const cellAddress = XLSX.utils.encode_cell({r, c});
                             const cell = sheet[cellAddress];
                             if (!cell) continue;
-                            // 匹配背景色（黄色/粉色）
+                            // 匹配背景色（黄色/粉色/红色）
                             let bgColor = '';
                             if (cell.s && cell.s.fill && cell.s.fill.fgColor && cell.s.fill.fgColor.rgb) {
                                 const rgb = cell.s.fill.fgColor.rgb || cell.s.fill.fgColor.theme;
                                 if (rgb && (rgb.includes('FFFF00') || rgb.includes('FFF200') || rgb === '6')) bgColor = 'yellow';
                                 else if (rgb && (rgb.includes('F8BBD0') || rgb.includes('F8BBD9') || rgb === '4')) bgColor = 'pink';
+                                else if (rgb && (rgb.includes('EF5350') || rgb.includes('FF0000') || rgb === '3')) bgColor = 'red';
                             }
-                            // 提取批注 - 确保从XLSX文件中正确提取批注
+                            // 提取备注 - 确保从XLSX文件中正确提取备注
                             let comment = '';
                             if (cell.c) {
-                                // XLSX批注可能以对象形式存在，需要提取文本
+                                // XLSX备注可能以对象形式存在，需要提取文本
                                 comment = typeof cell.c === 'string' ? cell.c : (cell.c.t || '');
                             }
                             cellStylesMap[cellAddress] = { bgColor, comment };
@@ -1863,7 +1952,7 @@
                             }
                         }
                     });
-                    // 渲染行并绑定样式/批注
+                    // 渲染行并绑定样式/备注
                     const rowsData = data.slice(1).map(row => ({ values: row, styles: cellStylesMap }));
                     rowsData.forEach((rowData, rowIndex) => {
                         const newRow = createNewRow(rowIndex + 1);
@@ -1881,10 +1970,10 @@
                                 const cellAddress = XLSX.utils.encode_cell({r: rowIndex + 1, c: colIndex});
                                 const cellStyle = rowData.styles[cellAddress] || {};
                                 if (cellStyle.bgColor) setCellColor(cell, cellStyle.bgColor);
-                                // 应用批注 - 仅添加红点指示器，移除has-comment类
+                                // 应用备注 - 仅添加红点指示器，移除has-comment类
                                 if (cellStyle.comment && cellStyle.comment.trim() !== '') {
                                     cell.dataset.comment = cellStyle.comment.trim();
-                                    // 添加批注指示器
+                                    // 添加备注指示器
                                     const indicator = document.createElement('div');
                                     indicator.className = 'comment-indicator';
                                     cell.appendChild(indicator);
@@ -1899,7 +1988,7 @@
                     calcTargetHeader(CONFIG.calcHeaderCol);
                     saveToHistory();
                     saveToLocalStorageDelayed(); // 保存到本地存储
-                    alert(`成功导入${data.length-1}行数据！列宽、背景色、批注已同步，并已保存到本地存储。`);
+                    alert(`成功导入${data.length-1}行数据！列宽、背景色、备注已同步，并已保存到本地存储。`);
                 } catch (err) {
                     alert('导入失败，请检查文件！');
                     console.error(err);
@@ -1909,7 +1998,7 @@
             reader.readAsArrayBuffer(file);
         }
 
-        // Excel导出 - 核心修改：保存到桌面，同步颜色/批注
+        // Excel导出 - 核心修改：移除showSaveFilePicker，改为纯浏览器下载，解决crdownload文件问题
         function saveToExcel() {
             try {
                 // 收集表头
@@ -1920,7 +2009,7 @@
                 const rows = [headerRow];
                 const cellStyles = {};
                 const cellComments = {};
-                // 收集数据行、样式、批注
+                // 收集数据行、样式、备注
                 document.querySelectorAll('#dataTable tbody tr:not(.hidden)').forEach((row, rowIndex) => {
                     const rowData = [];
                     // 行号
@@ -1940,8 +2029,12 @@
                             cellStyles[cellAddress] = {
                                 fill: { fgColor: { rgb: 'F8BBD0' }, patternType: 'solid' }
                             };
+                        } else if (cell.classList.contains('cell-red') || cell.classList.contains('duplicate-cell')) {
+                            cellStyles[cellAddress] = {
+                                fill: { fgColor: { rgb: 'EF5350' }, patternType: 'solid' }
+                            };
                         }
-                        // 记录批注 - 从悬浮备注同步到XLSX
+                        // 记录备注 - 从悬浮备注同步到XLSX
                         if (cell.dataset.comment) {
                             cellComments[cellAddress] = { t: cell.dataset.comment };
                         }
@@ -1952,7 +2045,7 @@
                 // 生成Excel
                 const wb = XLSX.utils.book_new();
                 const ws = XLSX.utils.aoa_to_sheet(rows);
-                // 绑定样式和批注
+                // 绑定样式和备注
                 if (Object.keys(cellStyles).length > 0) {
                     ws['!styles'] = cellStyles;
                 }
@@ -1960,33 +2053,19 @@
                     ws['!comments'] = cellComments;
                 }
                 XLSX.utils.book_append_sheet(wb, ws, '药品数据');
-                const date = new Date();
-                const fileName = `药品数据_${date.getFullYear()}${(date.getMonth()+1).toString().padStart(2,0)}${date.getDate().toString().padStart(2,0)}.xlsx`;
                 
-                // 核心修改：保存到桌面（兼容主流浏览器）
-                const blob = new Blob([XLSX.write(wb, { bookType: 'xlsx', type: 'array' })], {
-                    type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
-                });
-                // 创建文件句柄，指定保存到桌面
-                window.showSaveFilePicker({
-                    suggestedName: fileName,
-                    startIn: 'desktop', // 关键：默认打开桌面目录
-                    types: [{
-                        description: 'Excel文件',
-                        accept: {
-                            'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet': ['.xlsx']
-                        }
-                    }]
-                }).then(async (handle) => {
-                    const writable = await handle.createWritable();
-                    await writable.write(blob);
-                    await writable.close();
-                    alert(`保存成功！文件已保存到桌面：\n${fileName}`);
-                }).catch(err => {
-                    // 兼容旧浏览器，降级为默认下载
-                    XLSX.writeFile(wb, fileName);
-                    alert(`保存成功（兼容模式）：\n${fileName}\n请从浏览器下载栏移动到桌面`);
-                });
+                // 文件名规则不变：yb数据+年月日+空格时分（补0）
+                const date = new Date();
+                const year = date.getFullYear();
+                const month = (date.getMonth() + 1).toString().padStart(2, '0');
+                const day = date.getDate().toString().padStart(2, '0');
+                const hour = date.getHours().toString().padStart(2, '0');
+                const minute = date.getMinutes().toString().padStart(2, '0');
+                const fileName = `yb数据${year}${month}${day} ${hour}${minute}.xlsx`;
+
+                // 核心修改：纯浏览器下载，移除showSaveFilePicker，解决crdownload残留问题
+                XLSX.writeFile(wb, fileName);
+                alert(`保存成功！文件已开始下载：\n${fileName}\n可在浏览器下载栏找到文件`);
             } catch (err) {
                 alert('保存失败！');
                 console.error(err);
@@ -2027,7 +2106,7 @@
             }
         }
         
-        // 延迟保存到本地存储（防抖）
+        // 延迟保存到本地存储（防抖）- 核心修改：500ms → 5000ms（5秒）
         function saveToLocalStorageDelayed() {
             if (isInitializing) return;
             
@@ -2036,12 +2115,12 @@
                 clearTimeout(autoSaveTimer);
             }
             
-            // 设置新的计时器，500ms后保存
+            // 设置新的计时器，5000ms（5秒）后保存
             autoSaveTimer = setTimeout(() => {
                 if (saveToLocalStorage()) {
                     showStorageStatus('数据已自动保存');
                 }
-            }, 500);
+            }, 5000); // 原500改为5000，实现5秒自动保存
         }
         
         // 从本地存储加载数据 - 同步宽度修改，移除has-comment类
@@ -2153,8 +2232,6 @@
                 return false;
             }
         }
-        
-        // 已删除：clearLocalStorage 函数（清除本地数据功能）
         
         // 显示存储状态提示
         function showStorageStatus(message) {
