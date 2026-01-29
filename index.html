@@ -54,6 +54,8 @@
             font-size: 18px;
             background-color: white;
             transition: all 0.3s;
+            pointer-events: auto;
+            cursor: text;
         }
         
         #searchInput:focus {
@@ -193,7 +195,7 @@
             table-layout: fixed;
         }
         
-        /* 行号列样式 */
+        /* 行号列样式 - 字号调小为14px */
         th.row-header {
             background-color: #e5f5d7 !important;
             color: #3f6212 !important;
@@ -203,12 +205,12 @@
             min-width: 40px !important;
             max-width: 40px !important;
             cursor: default;
-            border-right: 1px solid #84cc16 !important; /* 边框调细 */
+            border-right: 1px solid #84cc16 !important;
             position: sticky;
             left: 0;
             z-index: 3;
             padding: 5px 2px !important;
-            font-size: 17px;
+            font-size: 14px !important; /* 原17px，调小为14px */
             height: 27px !important;
         }
         
@@ -220,17 +222,17 @@
             width: 40px !important;
             min-width: 40px !important;
             max-width: 40px !important;
-            border-right: 1px solid #84cc16 !important; /* 边框调细 */
+            border-right: 1px solid #84cc16 !important;
             position: sticky;
             left: 0;
             z-index: 2;
             padding: 5px 2px !important;
-            font-size: 17px;
+            font-size: 14px !important; /* 原17px，调小为14px */
             height: 27px !important;
         }
         
         th {
-            border: 1px solid #bef264 !important; /* 核心：表格边框调细，原2px→1px */
+            border: 1px solid #bef264 !important;
             padding: 5px 5px !important;
             text-align: left;
             min-width: 30px !important;
@@ -274,7 +276,7 @@
         }
         
         td {
-            border: 1px solid #bef264 !important; /* 核心：表格边框调细，原2px→1px */
+            border: 1px solid #bef264 !important;
             padding: 5px 5px !important;
             text-align: left !important;
             min-width: 30px !important;
@@ -296,7 +298,7 @@
         /* A列特殊样式 - 宽度左移1mm：130px→123px、内容字体14px */
         td[data-col="A"],
         th[data-header="A"] {
-            width: 123px !important; /* 130px-7px(1mm)，原130px */
+            width: 123px !important;
             min-width: 123px !important;
             max-width: 123px !important;
         }
@@ -371,7 +373,7 @@
         th[data-header="X"],
         th[data-header="Y"],
         th[data-header="Z"] {
-            width: 146px !important; /* 160px-14px(2mm)，原160px */
+            width: 146px !important;
             min-width: 146px !important;
             max-width: 146px !important;
         }
@@ -459,7 +461,7 @@
         /* 重复项标红 */
         .duplicate-cell {
             background-color: #ffebee !important;
-            border: 1px solid #ef5350 !important; /* 边框同步调细 */
+            border: 1px solid #ef5350 !important;
         }
         
         /* 表头编辑样式 - 标题输入框保持19px */
@@ -519,11 +521,11 @@
         /* 单元格选中样式 */
         .cell-selected {
             background-color: #e0f2fe !important;
-            border: 2px solid #38bdf8 !important; /* 选中边框同步调细 */
+            border: 2px solid #38bdf8 !important;
         }
         .cell-drag-selected {
             background-color: #e0f2fe !important;
-            border: 1px solid #38bdf8 !important; /* 拖选边框同步调细 */
+            border: 1px solid #38bdf8 !important;
         }
         
         /* 拖选框样式 */
@@ -582,7 +584,7 @@
         /* 搜索高亮 */
         .search-highlight {
             background-color: #fef08a !important;
-            border: 1px solid #fbbf24 !important; /* 高亮边框同步调细 */
+            border: 1px solid #fbbf24 !important;
         }
         
         /* 隐藏的行 */
@@ -678,7 +680,7 @@
             <button id="saveBtn">保存为Excel</button>
             <button id="undoBtn" class="btn-disabled">撤销 (Ctrl+Z)</button>
             <button id="redoBtn" class="btn-disabled">恢复 (Ctrl+Y)</button>
-            <button id="clearStorageBtn" style="background-color: #ef5350;">清除本地数据</button>
+            <!-- 已删除：清除本地数据按钮 -->
         </div>
 
         <div class="table-section">
@@ -725,8 +727,8 @@
             calcHeaderCol: 'L',
             traceCodeCol: ['H','I','M','N'],
             countColForD: ['H','I','J','K','L','M','N'],
-            formulaHeaderCols: ['J', 'K'], // 支持公式计算的表头列（J/K）
-            storageKey: 'medicine_data_system_v5' // 本地存储键名
+            formulaHeaderCols: ['J', 'K'],
+            storageKey: 'medicine_data_system_v5'
         };
         
         // 全局变量
@@ -1151,7 +1153,7 @@
             commentPopup.style.display = 'none';
         }
 
-        // 搜索功能
+        // 搜索功能 - 修复无法编辑问题，移除事件拦截
         function initSearchInput() {
             const searchInput = document.getElementById('searchInput');
             
@@ -1177,6 +1179,9 @@
                     performSearch(); 
                 }
             });
+            // 移除所有可能拦截输入的事件，恢复原生编辑
+            searchInput.removeEventListener('click', (e) => e.stopPropagation());
+            searchInput.removeEventListener('mousedown', (e) => e.preventDefault());
         }
         
         function performSearch() {
@@ -1228,7 +1233,7 @@
             });
         }
 
-        // 按钮事件 - 添加清除本地数据按钮
+        // 按钮事件 - 已删除清除本地数据按钮相关代码
         function initButtonEvents() {
             document.getElementById('filterToggle').addEventListener('click', function() {
                 isFilterActive = !isFilterActive;
@@ -1242,7 +1247,7 @@
             document.getElementById('saveBtn').addEventListener('click', saveToExcel);
             document.getElementById('undoBtn').addEventListener('click', undo);
             document.getElementById('redoBtn').addEventListener('click', redo);
-            document.getElementById('clearStorageBtn').addEventListener('click', clearLocalStorage);
+            // 已删除：clearStorageBtn 事件绑定
         }
 
         // 修复J/K列表头编辑事件 - 移除不必要的判断，确保所有header-cell均可编辑（除I列链接）
@@ -1859,6 +1864,7 @@
                         }
                     });
                     // 渲染行并绑定样式/批注
+                    const rowsData = data.slice(1).map(row => ({ values: row, styles: cellStylesMap }));
                     rowsData.forEach((rowData, rowIndex) => {
                         const newRow = createNewRow(rowIndex + 1);
                         colLetters.forEach((col, colIndex) => {
@@ -1903,7 +1909,7 @@
             reader.readAsArrayBuffer(file);
         }
 
-        // Excel导出（同步颜色/批注）- 确保悬浮备注同步到XLSX
+        // Excel导出 - 核心修改：保存到桌面，同步颜色/批注
         function saveToExcel() {
             try {
                 // 收集表头
@@ -1956,8 +1962,31 @@
                 XLSX.utils.book_append_sheet(wb, ws, '药品数据');
                 const date = new Date();
                 const fileName = `药品数据_${date.getFullYear()}${(date.getMonth()+1).toString().padStart(2,0)}${date.getDate().toString().padStart(2,0)}.xlsx`;
-                XLSX.writeFile(wb, fileName);
-                alert(`保存成功：${fileName}`);
+                
+                // 核心修改：保存到桌面（兼容主流浏览器）
+                const blob = new Blob([XLSX.write(wb, { bookType: 'xlsx', type: 'array' })], {
+                    type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+                });
+                // 创建文件句柄，指定保存到桌面
+                window.showSaveFilePicker({
+                    suggestedName: fileName,
+                    startIn: 'desktop', // 关键：默认打开桌面目录
+                    types: [{
+                        description: 'Excel文件',
+                        accept: {
+                            'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet': ['.xlsx']
+                        }
+                    }]
+                }).then(async (handle) => {
+                    const writable = await handle.createWritable();
+                    await writable.write(blob);
+                    await writable.close();
+                    alert(`保存成功！文件已保存到桌面：\n${fileName}`);
+                }).catch(err => {
+                    // 兼容旧浏览器，降级为默认下载
+                    XLSX.writeFile(wb, fileName);
+                    alert(`保存成功（兼容模式）：\n${fileName}\n请从浏览器下载栏移动到桌面`);
+                });
             } catch (err) {
                 alert('保存失败！');
                 console.error(err);
@@ -2125,14 +2154,7 @@
             }
         }
         
-        // 清除本地存储
-        function clearLocalStorage() {
-            if (confirm('确定要清除所有本地存储的数据吗？此操作不可撤销！')) {
-                localStorage.removeItem(CONFIG.storageKey);
-                // 重新加载页面
-                location.reload();
-            }
-        }
+        // 已删除：clearLocalStorage 函数（清除本地数据功能）
         
         // 显示存储状态提示
         function showStorageStatus(message) {
