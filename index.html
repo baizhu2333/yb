@@ -203,34 +203,34 @@
             min-width: 40px !important;
             max-width: 40px !important;
             cursor: default;
-            border-right: 2px solid #84cc16 !important;
+            border-right: 1px solid #84cc16 !important; /* 边框调细 */
             position: sticky;
             left: 0;
             z-index: 3;
             padding: 5px 2px !important;
             font-size: 17px;
-            height: 30px !important;
+            height: 27px !important;
         }
         
         td.row-header {
             background-color: #f0f9e8 !important;
             color: #4d7c0f !important;
-            text-align: center;
             font-weight: bold;
+            text-align: center;
             width: 40px !important;
             min-width: 40px !important;
             max-width: 40px !important;
-            border-right: 2px solid #84cc16 !important;
+            border-right: 1px solid #84cc16 !important; /* 边框调细 */
             position: sticky;
             left: 0;
             z-index: 2;
             padding: 5px 2px !important;
             font-size: 17px;
-            height: 30px !important;
+            height: 27px !important;
         }
         
         th {
-            border: 2px solid #bef264;
+            border: 1px solid #bef264 !important; /* 核心：表格边框调细，原2px→1px */
             padding: 5px 5px !important;
             text-align: left;
             min-width: 30px !important;
@@ -241,7 +241,7 @@
             top: 0;
             z-index: 2;
             line-height: 1.3;
-            height: 30px !important;
+            height: 27px !important;
             color: #4d7c0f;
             white-space: nowrap;
             font-size: 19px;
@@ -274,13 +274,13 @@
         }
         
         td {
-            border: 2px solid #bef264;
+            border: 1px solid #bef264 !important; /* 核心：表格边框调细，原2px→1px */
             padding: 5px 5px !important;
             text-align: left !important;
             min-width: 30px !important;
             max-width: 400px;
             line-height: 1.3;
-            height: 30px !important;
+            height: 27px !important;
             cursor: text;
             position: relative;
             background-color: white;
@@ -293,19 +293,18 @@
             word-break: break-all;
         }
         
-        /* A列特殊样式 - 宽度缩小3mm（原140px→130px）、字体缩小3个字号 */
+        /* A列特殊样式 - 宽度左移1mm：130px→123px、内容字体14px */
         td[data-col="A"],
         th[data-header="A"] {
-            width: 130px !important; /* 核心修改：缩小3mm，原140px→130px */
-            min-width: 130px !important;
-            max-width: 130px !important;
-            font-size: 15px !important; /* 字体缩小3个字号（原18/19→15） */
+            width: 123px !important; /* 130px-7px(1mm)，原130px */
+            min-width: 123px !important;
+            max-width: 123px !important;
         }
         
         /* C列特殊宽度 - 5个数字那么宽 */
         td[data-col="C"],
         th[data-header="C"] {
-            width: 70px !important; /* 5个数字的宽度 */
+            width: 70px !important;
             min-width: 70px !important;
             max-width: 70px !important;
         }
@@ -313,7 +312,7 @@
         /* E列宽度与C列相同 - 5个数字那么宽 */
         td[data-col="E"],
         th[data-header="E"] {
-            width: 70px !important; /* 与C列相同，5个数字的宽度 */
+            width: 70px !important;
             min-width: 70px !important;
             max-width: 70px !important;
         }
@@ -333,7 +332,7 @@
             max-width: 40px !important;
         }
         
-        /* H到Z列特殊样式 - 核心修改：字体缩小6个字号（原18/19→12）、宽度保留160px */
+        /* H到Z列特殊样式 - 宽度左移2mm：160px→146px、内容字体11px */
         td[data-col="H"],
         td[data-col="I"],
         td[data-col="J"],
@@ -372,10 +371,9 @@
         th[data-header="X"],
         th[data-header="Y"],
         th[data-header="Z"] {
-            width: 160px !important; /* 保留原有宽度，保证20位追溯码显示 */
-            min-width: 160px !important;
-            max-width: 160px !important;
-            font-size: 12px !important; /* 核心修改：总共缩小6个字号，从18/19→12 */
+            width: 146px !important; /* 160px-14px(2mm)，原160px */
+            min-width: 146px !important;
+            max-width: 146px !important;
         }
         
         /* 单元格内容容器 */
@@ -398,10 +396,9 @@
             padding-left: 2px !important;
         }
         
-        /* A列和H-Z列字体同步 - A列15px、H-Z列12px */
-        td[data-col="A"] .cell-content-wrapper,
-        th[data-header="A"] .cell-content-wrapper {
-            font-size: 15px !important; /* A列保持原有缩小3个字号的样式 */
+        /* 仅差异化设置内容字体，标题字体统一继承th的19px */
+        td[data-col="A"] .cell-content-wrapper {
+            font-size: 14px !important;
         }
         td[data-col="H"] .cell-content-wrapper,
         td[data-col="I"] .cell-content-wrapper,
@@ -421,27 +418,8 @@
         td[data-col="W"] .cell-content-wrapper,
         td[data-col="X"] .cell-content-wrapper,
         td[data-col="Y"] .cell-content-wrapper,
-        td[data-col="Z"] .cell-content-wrapper,
-        th[data-header="H"] .cell-content-wrapper,
-        th[data-header="I"] .cell-content-wrapper,
-        th[data-header="J"] .cell-content-wrapper,
-        th[data-header="K"] .cell-content-wrapper,
-        th[data-header="L"] .cell-content-wrapper,
-        th[data-header="M"] .cell-content-wrapper,
-        th[data-header="N"] .cell-content-wrapper,
-        th[data-header="O"] .cell-content-wrapper,
-        th[data-header="P"] .cell-content-wrapper,
-        th[data-header="Q"] .cell-content-wrapper,
-        th[data-header="R"] .cell-content-wrapper,
-        th[data-header="S"] .cell-content-wrapper,
-        th[data-header="T"] .cell-content-wrapper,
-        th[data-header="U"] .cell-content-wrapper,
-        th[data-header="V"] .cell-content-wrapper,
-        th[data-header="W"] .cell-content-wrapper,
-        th[data-header="X"] .cell-content-wrapper,
-        th[data-header="Y"] .cell-content-wrapper,
-        th[data-header="Z"] .cell-content-wrapper {
-            font-size: 12px !important; /* 核心修改：H-Z列内容容器同步缩小到12px */
+        td[data-col="Z"] .cell-content-wrapper {
+            font-size: 11px !important;
         }
         
         /* 可编辑单元格 */
@@ -481,7 +459,7 @@
         /* 重复项标红 */
         .duplicate-cell {
             background-color: #ffebee !important;
-            border: 2px solid #ef5350 !important;
+            border: 1px solid #ef5350 !important; /* 边框同步调细 */
         }
         
         /* 备注小红点 */
@@ -498,7 +476,7 @@
             pointer-events: none;
         }
         
-        /* 表头编辑样式 */
+        /* 表头编辑样式 - 标题输入框保持19px */
         .header-cell {
             position: relative;
             text-align: left !important;
@@ -517,7 +495,7 @@
             outline: none;
             background: white;
             font-weight: bold;
-            font-size: 19px;
+            font-size: 19px !important;
             color: #4d7c0f;
             text-align: left;
             overflow: hidden;
@@ -545,6 +523,7 @@
             cursor: pointer !important;
             text-decoration: underline !important;
             text-align: left !important;
+            font-size: 19px !important;
         }
         .header-link:hover {
             color: #1565c0 !important;
@@ -554,11 +533,11 @@
         /* 单元格选中样式 */
         .cell-selected {
             background-color: #e0f2fe !important;
-            border: 3px solid #38bdf8 !important;
+            border: 2px solid #38bdf8 !important; /* 选中边框同步调细 */
         }
         .cell-drag-selected {
             background-color: #e0f2fe !important;
-            border: 2px solid #38bdf8 !important;
+            border: 1px solid #38bdf8 !important; /* 拖选边框同步调细 */
         }
         
         /* 拖选框样式 */
@@ -617,7 +596,7 @@
         /* 搜索高亮 */
         .search-highlight {
             background-color: #fef08a !important;
-            border: 2px solid #fbbf24 !important;
+            border: 1px solid #fbbf24 !important; /* 高亮边框同步调细 */
         }
         
         /* 隐藏的行 */
@@ -759,6 +738,7 @@
             calcHeaderCol: 'L',
             traceCodeCol: ['H','I','M','N'],
             countColForD: ['H','I','J','K','L','M','N'],
+            formulaHeaderCols: ['J', 'K'], // 支持公式计算的表头列（J/K）
             storageKey: 'medicine_data_system_v5' // 本地存储键名
         };
         
@@ -859,6 +839,25 @@
                 wrapper.style.marginLeft = '0';
             }
         }
+        // 公式计算核心函数（支持+、-、*、/、()，以=或--开头，--自动转为=）
+        function calculateFormula(formula) {
+            if (!formula) return formula;
+            // 核心修改：将--开头的内容自动转为=开头，实现--和=等效
+            const newFormula = formula.startsWith('--') ? '=' + formula.slice(2) : formula;
+            if (!newFormula.startsWith('=')) return formula;
+            try {
+                // 提取等号后表达式，做安全校验（仅保留数字、+-*/().）
+                const expr = newFormula.slice(1).replace(/[^0-9\+\-\*\/\.\(\)]/g, '');
+                if (!expr) return formula;
+                // 安全执行表达式（避免恶意代码）
+                const result = Function(`'use strict'; return (${expr})`)();
+                // 非数字返回原公式，数字保留1位小数（统一格式）
+                return isNaN(result) || !isFinite(result) ? formula : Number(result).toFixed(1);
+            } catch (e) {
+                // 公式错误返回原内容
+                return formula;
+            }
+        }
 
         // L表头自动计算
         function calcTargetHeader(targetCol) {
@@ -899,19 +898,19 @@
                 th.className = 'header-cell';
                 th.dataset.header = col;
                 
-                // 设置列宽 - 核心修改：A列宽度130px（缩小3mm）
+                // 设置列宽 - 同步CSS的宽度修改（A列123px、H-Z列146px）
                 if (col === 'A') {
-                    th.style.width = '130px'; // 核心修改：缩小3mm，原140px→130px
-                    th.style.minWidth = '130px';
+                    th.style.width = '123px';
+                    th.style.minWidth = '123px';
                 } else if (col === 'C' || col === 'E') {
-                    th.style.width = '70px'; // C列和E列相同，5个数字的宽度
+                    th.style.width = '70px';
                     th.style.minWidth = '70px';
                 } else if (col === 'D' || col === 'F') {
-                    th.style.width = '40px'; // 2个数字的宽度
+                    th.style.width = '40px';
                     th.style.minWidth = '40px';
                 } else if (col >= 'H' && col <= 'Z') {
-                    th.style.width = '160px'; // 保留原有宽度，保证20位追溯码显示
-                    th.style.minWidth = '160px';
+                    th.style.width = '146px';
+                    th.style.minWidth = '146px';
                 } else {
                     th.style.width = '150px';
                     th.style.minWidth = '30px';
@@ -959,7 +958,7 @@
             tbody.appendChild(row2);
         }
 
-        // 创建新行 - 核心修改：A列宽度130px（缩小3mm）
+        // 创建新行 - 同步CSS的宽度修改（A列123px、H-Z列146px）
         function createNewRow(rowNum) {
             const tr = document.createElement('tr');
             // 行号单元格
@@ -967,25 +966,27 @@
             rowNumCell.className = 'row-header';
             rowNumCell.textContent = rowNum;
             rowNumCell.style.width = '40px';
+            rowNumCell.style.height = '27px';
             tr.appendChild(rowNumCell);
             // 数据列
             colLetters.forEach(col => {
                 const td = document.createElement('td');
                 td.dataset.col = col;
+                td.style.height = '27px';
                 
-                // 设置列宽 - 核心修改：A列宽度130px（缩小3mm）
+                // 设置列宽 - 同步CSS修改
                 if (col === 'A') {
-                    td.style.width = '130px'; // 核心修改：缩小3mm，原140px→130px
-                    td.style.minWidth = '130px';
+                    td.style.width = '123px';
+                    td.style.minWidth = '123px';
                 } else if (col === 'C' || col === 'E') {
-                    td.style.width = '70px'; // C列和E列相同，5个数字的宽度
+                    td.style.width = '70px';
                     td.style.minWidth = '70px';
                 } else if (col === 'D' || col === 'F') {
-                    td.style.width = '40px'; // 2个数字的宽度
+                    td.style.width = '40px';
                     td.style.minWidth = '40px';
                 } else if (col >= 'H' && col <= 'Z') {
-                    td.style.width = '160px'; // 保留原有宽度，保证20位追溯码显示
-                    td.style.minWidth = '160px';
+                    td.style.width = '146px';
+                    td.style.minWidth = '146px';
                 } else {
                     td.style.width = '150px';
                     td.style.minWidth = '30px';
@@ -1072,7 +1073,7 @@
         function initAllEvents() {
             initSearchInput();
             initButtonEvents();
-            initHeaderEditEvent();
+            initHeaderEditEvent(); // 修复J/K列表头编辑事件
             initCellBaseEvents();
             initContextMenuEvent();
             initKeyboardShortcut();
@@ -1257,31 +1258,44 @@
             document.getElementById('clearStorageBtn').addEventListener('click', clearLocalStorage);
         }
 
-        // 表头编辑
+        // 修复J/K列表头编辑事件 - 移除不必要的判断，确保所有header-cell均可编辑（除I列链接）
         function initHeaderEditEvent() {
             document.querySelectorAll('.header-cell:not(.header-link)').forEach(cell => {
                 const input = cell.querySelector('input');
+                const col = cell.dataset.header;
+                // 移除原有事件拦截，直接绑定点击编辑
                 cell.addEventListener('click', function(e) {
-                    if (e.target === cell || e.target === cell.querySelector('span')) {
-                        cell.classList.add('editing');
-                        input.value = getCellText(cell);
-                        input.focus();
-                        e.stopPropagation();
-                    }
+                    e.stopPropagation(); // 阻止事件冒泡，避免被其他事件拦截
+                    cell.classList.add('editing');
+                    input.value = getCellText(cell);
+                    input.focus();
+                    input.select(); // 选中输入框内容，方便直接编辑
                 });
+                // 表头编辑完成（失焦/回车）- J/K列执行公式计算（支持--和=）
                 const finishEdit = () => {
                     cell.classList.remove('editing');
-                    if (getCellText(cell) !== input.value) {
-                        setCellText(cell, input.value);
-                        calcTargetHeader(CONFIG.calcHeaderCol);
+                    // 公式计算仅对J/K列生效，其他列直接取输入值
+                    const finalValue = CONFIG.formulaHeaderCols.includes(col) 
+                        ? calculateFormula(input.value) 
+                        : input.value;
+                    // 内容变化才更新，避免重复计算
+                    if (getCellText(cell) !== finalValue) {
+                        setCellText(cell, finalValue);
+                        input.value = finalValue; // 同步输入框值
+                        calcTargetHeader(CONFIG.calcHeaderCol); // 重新计算L列
                         !isUndoRedo && saveToHistory();
-                        saveToLocalStorageDelayed(); // 保存到本地存储
+                        saveToLocalStorageDelayed();
                     }
                 };
                 input.addEventListener('blur', finishEdit);
                 input.addEventListener('keydown', e => {
-                    if (e.key === 'Enter') { e.preventDefault(); finishEdit(); }
+                    if (e.key === 'Enter') { 
+                        e.preventDefault(); 
+                        finishEdit(); 
+                    }
                 });
+                // 阻止输入框事件冒泡
+                input.addEventListener('click', e => e.stopPropagation());
             });
         }
 
@@ -1325,7 +1339,8 @@
                 const tableWrapper = document.querySelector('.table-wrapper');
                 const tableRect = tableWrapper.getBoundingClientRect();
                 const startRect = dragStartCell.getBoundingClientRect();
-                const currentX = e.clientX, currentY = e.clientY;
+                const currentX = e.clientX;
+                const currentY = e.clientY;
                 const left = Math.min(startRect.left, currentX);
                 const top = Math.min(startRect.top, currentY);
                 const right = Math.max(startRect.right, currentX);
@@ -1844,13 +1859,13 @@
                             }
                         });
                     }
-                    // 设置列宽（按新规则 - A列130px）
+                    // 设置列宽（同步修改：A列123px、H-Z列146px）
                     colLetters.forEach((col, idx) => {
                         const th = getHeaderCell(col);
                         if (th) {
                             if (col === 'A') {
-                                th.style.width = '130px'; // 核心修改：导入时A列宽度130px
-                                th.style.minWidth = '130px';
+                                th.style.width = '123px';
+                                th.style.minWidth = '123px';
                             } else if (col === 'C' || col === 'E') {
                                 th.style.width = '70px';
                                 th.style.minWidth = '70px';
@@ -1858,8 +1873,8 @@
                                 th.style.width = '40px';
                                 th.style.minWidth = '40px';
                             } else if (col >= 'H' && col <= 'Z') {
-                                th.style.width = '160px';
-                                th.style.minWidth = '160px';
+                                th.style.width = '146px';
+                                th.style.minWidth = '146px';
                             } else {
                                 const contentLength = colMaxLengths[idx] || 0;
                                 const calculatedWidth = Math.max(80, Math.min(300, contentLength * 8 + 20));
@@ -2026,7 +2041,7 @@
             }, 500);
         }
         
-        // 从本地存储加载数据 - 核心修改：加载时A列宽度130px
+        // 从本地存储加载数据 - 同步宽度修改（A列123px、H-Z列146px）
         function loadFromLocalStorage() {
             try {
                 const savedData = localStorage.getItem(CONFIG.storageKey);
@@ -2046,20 +2061,27 @@
                 const tbody = document.getElementById('tableTbody');
                 tbody.innerHTML = '';
                 
-                // 恢复表头 - 核心修改：A列强制130px
+                // 恢复表头 - 同步宽度修改
                 colLetters.forEach((col, idx) => {
                     const th = getHeaderCell(col);
                     if (th) {
-                        // 核心修改：A列强制130px，忽略本地存储的宽度
+                        // 强制使用修改后的宽度，忽略本地存储的旧宽度
                         if (col === 'A') {
-                            th.style.width = '130px';
-                            th.style.minWidth = '130px';
+                            th.style.width = '123px';
+                            th.style.minWidth = '123px';
+                        } else if (col === 'C' || col === 'E') {
+                            th.style.width = '70px';
+                            th.style.minWidth = '70px';
+                        } else if (col === 'D' || col === 'F') {
+                            th.style.width = '40px';
+                            th.style.minWidth = '40px';
+                        } else if (col >= 'H' && col <= 'Z') {
+                            th.style.width = '146px';
+                            th.style.minWidth = '146px';
                         } else {
-                            th.style.width = data.colWidths && data.colWidths[idx] ? data.colWidths[idx] : 
-                                (col === 'C' || col === 'E' ? '70px' : 
-                                 col === 'D' || col === 'F' ? '40px' : 
-                                 col >= 'H' && col <= 'Z' ? '160px' : '150px');
+                            th.style.width = data.colWidths && data.colWidths[idx] ? data.colWidths[idx] : '150px';
                         }
+                        th.style.height = '27px';
                         if (data.headers && data.headers[idx] !== undefined) {
                             setCellText(th, data.headers[idx]);
                             th.querySelector('input').value = data.headers[idx];
@@ -2067,22 +2089,29 @@
                     }
                 });
                 
-                // 恢复数据行 - 核心修改：A列强制130px
+                // 恢复数据行 - 同步宽度修改
                 data.rows.forEach((rowData, rowIndex) => {
                     const newRow = createNewRow(rowIndex + 1);
                     rowData.cells.forEach((cellData, idx) => {
                         const td = newRow.querySelector(`td[data-col="${cellData.col}"]`);
                         if (td) {
-                            // 核心修改：A列强制130px，忽略本地存储的宽度
+                            // 强制使用修改后的宽度，忽略本地存储的旧宽度
                             if (cellData.col === 'A') {
-                                td.style.width = '130px';
-                                td.style.minWidth = '130px';
+                                td.style.width = '123px';
+                                td.style.minWidth = '123px';
+                            } else if (cellData.col === 'C' || cellData.col === 'E') {
+                                td.style.width = '70px';
+                                td.style.minWidth = '70px';
+                            } else if (cellData.col === 'D' || cellData.col === 'F') {
+                                td.style.width = '40px';
+                                td.style.minWidth = '40px';
+                            } else if (cellData.col >= 'H' && cellData.col <= 'Z') {
+                                td.style.width = '146px';
+                                td.style.minWidth = '146px';
                             } else {
-                                td.style.width = cellData.width || 
-                                    (cellData.col === 'C' || cellData.col === 'E' ? '70px' : 
-                                     cellData.col === 'D' || cellData.col === 'F' ? '40px' : 
-                                     cellData.col >= 'H' && cellData.col <= 'Z' ? '160px' : '150px');
+                                td.style.width = cellData.width || '150px';
                             }
+                            td.style.height = '27px';
                             setCellText(td, cellData.content);
                             cellData.classes.forEach(cls => td.classList.add(cls));
                             if (cellData.comment) {
@@ -2191,25 +2220,32 @@
             saveToLocalStorageDelayed(); // 保存到本地存储
         }
         
-        // 恢复表格状态 - 核心修改：A列强制130px
+        // 恢复表格状态 - 同步宽度修改
         function restoreTableState(state) {
-            // 恢复表头 - 核心修改：A列强制130px
+            // 恢复表头 - 同步宽度修改
             colLetters.forEach((col, idx) => {
                 const th = getHeaderCell(col);
-                // 核心修改：A列强制130px，忽略历史记录的宽度
+                // 强制使用修改后的宽度
                 if (col === 'A') {
-                    th.style.width = '130px';
-                    th.style.minWidth = '130px';
+                    th.style.width = '123px';
+                    th.style.minWidth = '123px';
+                } else if (col === 'C' || col === 'E') {
+                    th.style.width = '70px';
+                    th.style.minWidth = '70px';
+                } else if (col === 'D' || col === 'F') {
+                    th.style.width = '40px';
+                    th.style.minWidth = '40px';
+                } else if (col >= 'H' && col <= 'Z') {
+                    th.style.width = '146px';
+                    th.style.minWidth = '146px';
                 } else {
-                    th.style.width = state.colWidths[idx] || 
-                        (col === 'C' || col === 'E' ? '70px' : 
-                         col === 'D' || col === 'F' ? '40px' : 
-                         col >= 'H' && col <= 'Z' ? '160px' : '150px');
+                    th.style.width = state.colWidths[idx] || '150px';
                 }
+                th.style.height = '27px';
                 setCellText(th, state.headers[idx]);
                 th.querySelector('input').value = state.headers[idx];
             });
-            // 恢复数据行 - 核心修改：A列强制130px
+            // 恢复数据行 - 同步宽度修改
             const tbody = document.getElementById('tableTbody');
             tbody.innerHTML = '';
             state.rows.forEach((rowData, rowIndex) => {
@@ -2221,17 +2257,23 @@
                 rowData.cells.forEach((cellData, idx) => {
                     const td = row.querySelector(`td[data-col="${cellData.col}"]`);
                     if (td) {
-                        // 核心修改：A列强制130px，忽略历史记录的宽度
+                        // 强制使用修改后的宽度
                         if (cellData.col === 'A') {
-                            td.style.width = '130px';
-                            td.style.minWidth = '130px';
+                            td.style.width = '123px';
+                            td.style.minWidth = '123px';
+                        } else if (cellData.col === 'C' || cellData.col === 'E') {
+                            td.style.width = '70px';
+                            td.style.minWidth = '70px';
+                        } else if (cellData.col === 'D' || cellData.col === 'F') {
+                            td.style.width = '40px';
+                            td.style.minWidth = '40px';
+                        } else if (cellData.col >= 'H' && cellData.col <= 'Z') {
+                            td.style.width = '146px';
+                            td.style.minWidth = '146px';
                         } else {
-                            td.style.width = cellData.width || 
-                                (cellData.col === 'A' ? '130px' : 
-                                 cellData.col === 'C' || cellData.col === 'E' ? '70px' : 
-                                 cellData.col === 'D' || cellData.col === 'F' ? '40px' : 
-                                 cellData.col >= 'H' && cellData.col <= 'Z' ? '160px' : '150px');
+                            td.style.width = cellData.width || '150px';
                         }
+                        td.style.height = '27px';
                         setCellText(td, cellData.content);
                         cellData.classes.forEach(cls => td.classList.add(cls));
                         if (cellData.comment) {
