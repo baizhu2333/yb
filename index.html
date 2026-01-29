@@ -462,20 +462,6 @@
             border: 1px solid #ef5350 !important; /* 边框同步调细 */
         }
         
-        /* 备注小红点 */
-        .has-comment::after {
-            content: '';
-            position: absolute;
-            bottom: 2px;
-            right: 2px;
-            width: 6px;
-            height: 6px;
-            border-radius: 50%;
-            background-color: #ef5350;
-            z-index: 1;
-            pointer-events: none;
-        }
-        
         /* 表头编辑样式 - 标题输入框保持19px */
         .header-cell {
             position: relative;
@@ -666,15 +652,17 @@
             border-top: 1px solid #ccc;
         }
         
+        /* 备注右上方红点（仅保留这一个） */
         .comment-indicator {
             position: absolute;
             top: 1px;
             right: 1px;
-            width: 10px;
-            height: 10px;
+            width: 6px;
+            height: 6px;
             background-color: #ef5350;
             border-radius: 50%;
             z-index: 1;
+            pointer-events: none;
         }
     </style>
     <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
@@ -707,19 +695,18 @@
         </div>
     </div>
 
-    <!-- 右键菜单 -->
+    <!-- 右键菜单：备注功能与标颜色互换位置 -->
     <div class="context-menu" id="cellContextMenu">
         <div class="context-menu-item menu-view-comment" data-action="view-comment">
             查看备注
             <div id="commentPreview" class="menu-view-comment-text"></div>
         </div>
+        <div class="context-menu-item" data-action="add-comment">添加备注</div>
+        <div class="context-menu-item" data-action="clear-comment">清除备注</div>
         <div class="context-menu-separator"></div>
         <div class="context-menu-item" data-action="mark-red">标红</div>
         <div class="context-menu-item" data-action="mark-yellow">标黄</div>
         <div class="context-menu-item" data-action="mark-pink">标粉</div>
-        <div class="context-menu-separator"></div>
-        <div class="context-menu-item" data-action="add-comment">添加备注</div>
-        <div class="context-menu-item" data-action="clear-comment">清除备注</div>
         <div class="context-menu-separator"></div>
         <div class="context-menu-item" data-action="clear-color">清除颜色</div>
     </div>
@@ -1759,14 +1746,14 @@
             });
         }
         
+        // 添加备注：移除has-comment类，仅保留右上角红点
         function addCellComment(cell) {
             clearCellComment(cell);
             const comment = prompt('请输入备注：', cell.dataset.comment || '');
             if (comment === null || comment.trim() === '') return;
             cell.dataset.comment = comment.trim();
-            cell.classList.add('has-comment');
             
-            // 添加批注指示器
+            // 仅添加右上方红点指示器
             const existingIndicator = cell.querySelector('.comment-indicator');
             if (!existingIndicator) {
                 const indicator = document.createElement('div');
@@ -1775,11 +1762,11 @@
             }
         }
         
+        // 清除备注：移除has-comment类，仅移除红点指示器
         function clearCellComment(cell) {
             delete cell.dataset.comment;
-            cell.classList.remove('has-comment');
             
-            // 移除批注指示器
+            // 移除右上方红点指示器
             const indicator = cell.querySelector('.comment-indicator');
             if (indicator) {
                 cell.removeChild(indicator);
@@ -1793,7 +1780,7 @@
             wrapper.style.color = color === 'red' ? 'white' : '#333';
         }
 
-        // Excel导入（同步颜色/批注）- 确保批注同步到悬浮备注
+        // Excel导入（同步颜色/批注）- 确保批注同步到悬浮备注，移除has-comment类
         function handleExcelImport(e) {
             const file = e.target.files[0];
             if (!file || !['xlsx','xlsm'].includes(file.name.split('.').pop().toLowerCase())) {
@@ -1847,18 +1834,6 @@
                             cellStylesMap[cellAddress] = { bgColor, comment };
                         }
                     }
-                    // 处理数据行
-                    const rowsData = [];
-                    for (let i = 1; i < data.length; i++) {
-                        const rowData = data[i] || [];
-                        rowsData.push({ values: rowData, styles: cellStylesMap });
-                        rowData.forEach((val, idx) => {
-                            if (idx < colMaxLengths.length) {
-                                const text = String(val || '').trim();
-                                colMaxLengths[idx] = Math.max(colMaxLengths[idx], text.length);
-                            }
-                        });
-                    }
                     // 设置列宽（同步修改：A列123px、H-Z列146px）
                     colLetters.forEach((col, idx) => {
                         const th = getHeaderCell(col);
@@ -1900,10 +1875,9 @@
                                 const cellAddress = XLSX.utils.encode_cell({r: rowIndex + 1, c: colIndex});
                                 const cellStyle = rowData.styles[cellAddress] || {};
                                 if (cellStyle.bgColor) setCellColor(cell, cellStyle.bgColor);
-                                // 应用批注 - 确保同步到悬浮备注
+                                // 应用批注 - 仅添加红点指示器，移除has-comment类
                                 if (cellStyle.comment && cellStyle.comment.trim() !== '') {
                                     cell.dataset.comment = cellStyle.comment.trim();
-                                    cell.classList.add('has-comment');
                                     // 添加批注指示器
                                     const indicator = document.createElement('div');
                                     indicator.className = 'comment-indicator';
@@ -2041,7 +2015,7 @@
             }, 500);
         }
         
-        // 从本地存储加载数据 - 同步宽度修改（A列123px、H-Z列146px）
+        // 从本地存储加载数据 - 同步宽度修改，移除has-comment类
         function loadFromLocalStorage() {
             try {
                 const savedData = localStorage.getItem(CONFIG.storageKey);
@@ -2089,7 +2063,7 @@
                     }
                 });
                 
-                // 恢复数据行 - 同步宽度修改
+                // 恢复数据行 - 同步宽度修改，移除has-comment类
                 data.rows.forEach((rowData, rowIndex) => {
                     const newRow = createNewRow(rowIndex + 1);
                     rowData.cells.forEach((cellData, idx) => {
@@ -2116,8 +2090,7 @@
                             cellData.classes.forEach(cls => td.classList.add(cls));
                             if (cellData.comment) {
                                 td.dataset.comment = cellData.comment;
-                                td.classList.add('has-comment');
-                                // 添加批注指示器
+                                // 仅添加红点指示器，移除has-comment类
                                 const indicator = document.createElement('div');
                                 indicator.className = 'comment-indicator';
                                 td.appendChild(indicator);
@@ -2220,7 +2193,7 @@
             saveToLocalStorageDelayed(); // 保存到本地存储
         }
         
-        // 恢复表格状态 - 同步宽度修改
+        // 恢复表格状态 - 同步宽度修改，移除has-comment类
         function restoreTableState(state) {
             // 恢复表头 - 同步宽度修改
             colLetters.forEach((col, idx) => {
@@ -2245,7 +2218,7 @@
                 setCellText(th, state.headers[idx]);
                 th.querySelector('input').value = state.headers[idx];
             });
-            // 恢复数据行 - 同步宽度修改
+            // 恢复数据行 - 同步宽度修改，移除has-comment类
             const tbody = document.getElementById('tableTbody');
             tbody.innerHTML = '';
             state.rows.forEach((rowData, rowIndex) => {
@@ -2278,8 +2251,7 @@
                         cellData.classes.forEach(cls => td.classList.add(cls));
                         if (cellData.comment) {
                             td.dataset.comment = cellData.comment;
-                            td.classList.add('has-comment');
-                            // 添加批注指示器
+                            // 仅添加红点指示器，移除has-comment类
                             const indicator = document.createElement('div');
                             indicator.className = 'comment-indicator';
                             td.appendChild(indicator);
