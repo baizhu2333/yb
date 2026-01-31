@@ -23,7 +23,7 @@
             width: 100%;
             height: 100%;
             padding: 15px;
-            border: 1px solid #bef264;
+            border: 1px solid #999;
             border-radius: 0;
             box-shadow: 0 4px 20px rgba(217, 249, 157, 0.3);
             background-color: #fefee8;
@@ -40,7 +40,7 @@
             padding: 15px 20px;
             background-color: #f7fee7;
             border-radius: 10px;
-            border: 1px solid #d9f99d;
+            border: 1px solid #999;
             flex-wrap: nowrap;
             min-height: 70px;
         }
@@ -49,7 +49,7 @@
             flex: 1;
             min-width: 350px;
             padding: 14px 18px;
-            border: 1px solid #d9f99d;
+            border: 1px solid #999;
             border-radius: 8px;
             font-size: 18px;
             background-color: white;
@@ -112,7 +112,7 @@
             min-height: 0;
             overflow: hidden;
             border-radius: 10px;
-            border: 1px solid #d9f99d;
+            border: 1px solid #999;
             background-color: white;
             position: relative;
         }
@@ -140,7 +140,7 @@
         .table-wrapper::-webkit-scrollbar-thumb {
             background-color: #a3e635;
             border-radius: 6px;
-            border: 2px solid #f7fee7;
+            border: 2px solid #999;
         }
         
         /* 水平滚动条只显示在右下角，长度30% */
@@ -177,7 +177,7 @@
         
         /* 右下角交叉区域样式 */
         .table-wrapper::-webkit-scrollbar-corner {
-            background-color: #f7fee7;
+            background-color: #999;
             border-radius: 0 0 6px 0;
         }
         
@@ -205,7 +205,7 @@
             min-width: 36px !important;
             max-width: 36px !important;
             cursor: pointer;
-            border-right: 1px solid #84cc16 !important;
+            border-right: 1px solid #999 !important;
             position: sticky;
             left: 0;
             z-index: 3;
@@ -223,7 +223,7 @@
             min-width: 36px !important;
             max-width: 36px !important;
             cursor: pointer;
-            border-right: 1px solid #84cc16 !important;
+            border-right: 1px solid #999 !important;
             position: sticky;
             left: 0;
             z-index: 2;
@@ -238,7 +238,7 @@
         }
         
         th {
-            border: 1px solid #bef264 !important;
+            border: 1px solid #999 !important;
             padding: 3px 5px !important;
             text-align: left;
             min-width: 30px !important;
@@ -282,7 +282,7 @@
         }
         
         td {
-            border: 1px solid #bef264 !important;
+            border: 1px solid #999 !important;
             padding: 3px 5px !important;
             text-align: left !important;
             min-width: 30px !important;
@@ -453,21 +453,24 @@
             text-align: left !important;
         }
         
-        /* 单元格颜色标记 - 统一背景色，字体强制黑色 */
+        /* 单元格颜色标记 - 统一改为淡黑色边框 #999 */
         .cell-yellow { 
             background-color: #fff200 !important; 
+            border: 1px solid #999 !important;
         }
         .cell-red { 
             background-color: #ef5350 !important; 
+            border: 1px solid #999 !important;
         }
         .cell-pink { 
             background-color: #f8bbd9 !important; 
+            border: 1px solid #999 !important;
         }
         
-        /* 重复项标红 - 与标红样式完全一致，背景#ef5350，字体黑色 */
+        /* 重复项标红 - 改为淡黑色边框 */
         .duplicate-cell {
             background-color: #ef5350 !important;
-            border: 1px solid #ef5350 !important;
+            border: 1px solid #999 !important;
         }
         
         /* 表头编辑样式 - 标题输入框保持19px */
@@ -484,7 +487,7 @@
             width: 100%;
             height: 100%;
             padding: 3px 5px;
-            border: 2px solid #a3e635;
+            border: 2px solid #999;
             border-radius: 4px;
             outline: none;
             background: white;
@@ -524,7 +527,7 @@
             background-color: #f7fee7 !important;
         }
         
-        /* 单元格选中样式 */
+        /* 单元格选中样式 - 保持蓝色边框以区分选中状态 */
         .cell-selected {
             background-color: #e0f2fe !important;
             border: 2px solid #38bdf8 !important;
@@ -548,7 +551,7 @@
             position: absolute;
             width: 220px;
             background: white;
-            border: 2px solid #d9f99d;
+            border: 2px solid #999;
             border-radius: 8px;
             box-shadow: 0 6px 20px rgba(217, 249, 157, 0.4);
             z-index: 1000;
@@ -565,7 +568,7 @@
         }
         .context-menu-separator {
             height: 2px;
-            background-color: #bef264;
+            background-color: #999;
             margin: 8px 0;
         }
         .menu-view-comment {
@@ -580,17 +583,17 @@
             max-height: 150px;
             overflow-y: auto;
             background-color: #f9f9f9;
-            border: 1px solid #eee;
+            border: 1px solid #999;
             border-radius: 5px;
             margin-top: 8px;
             padding: 10px;
             font-size: 16px;
         }
         
-        /* 搜索高亮 */
+        /* 搜索高亮 - 改为淡黑色边框 */
         .search-highlight {
             background-color: #fef08a !important;
-            border: 1px solid #fbbf24 !important;
+            border: 1px solid #999 !important;
         }
         
         /* 隐藏的行 */
@@ -631,7 +634,7 @@
         .cell-comment-popup {
             position: absolute;
             background-color: #ffffe1;
-            border: 1px solid #ccc;
+            border: 1px solid #999;
             border-radius: 3px;
             padding: 8px 12px;
             font-size: 14px;
@@ -656,8 +659,8 @@
             height: 10px;
             background-color: #ffffe1;
             transform: rotate(45deg);
-            border-left: 1px solid #ccc;
-            border-top: 1px solid #ccc;
+            border-left: 1px solid #999;
+            border-top: 1px solid #999;
         }
         
         /* 备注右上方红点（仅保留这一个） */
@@ -701,7 +704,7 @@
             background-color: white;
         }
     </style>
-    <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js  "></script>
+    <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
 </head>
 <body>
     <div class="container">
@@ -717,7 +720,7 @@
         </div>
 
         <div class="table-section">
-            <div class="table-wrapper">
+            <div class="table-wrapper" id="tableWrapper">
                 <div class="table-container">
                     <table id="dataTable">
                         <thead class="sticky-header">
@@ -1295,8 +1298,8 @@
                 saveToLocalStorageDelayed();
                 checkDuplicateCells();
                 calculateDColumn();
-                // 如果在筛选状态下编辑，需要更新originalRows以确保数据一致性
-                updateOriginalRows();
+                // 【修复2】如果在筛选状态下编辑，需要更新originalRows以确保数据一致性
+                updateOriginalRowData(td.parentElement);
             }
             
             input.classList.remove('editing');
@@ -1310,11 +1313,49 @@
             }
         }
         
-        // 新增：更新originalRows以反映当前DOM状态
-        function updateOriginalRows() {
-            // 只有在非筛选状态下才更新originalRows，否则保持原始数据
+        // 【修复2】新增：更新originalRows中对应行的数据（用于筛选状态下编辑后同步）
+        function updateOriginalRowData(currentRow) {
             if (!isFilterActive) {
+                // 非筛选状态下，直接更新originalRows为当前所有行
                 originalRows = Array.from(document.querySelectorAll('#dataTable tbody tr'));
+                return;
+            }
+            
+            // 筛选状态下，找到originalRows中对应的行并更新
+            const currentRowNum = currentRow.querySelector('.row-header').textContent;
+            const originalRow = originalRows.find(r => {
+                return r.querySelector('.row-header').textContent === currentRowNum;
+            });
+            
+            if (originalRow) {
+                // 更新该行的所有单元格数据
+                const currentCells = currentRow.querySelectorAll('td[data-col]');
+                const originalCells = originalRow.querySelectorAll('td[data-col]');
+                
+                currentCells.forEach((cell, index) => {
+                    if (originalCells[index]) {
+                        const col = cell.dataset.col;
+                        setCellText(originalCells[index], getCellText(cell));
+                        
+                        // 同步样式类（颜色标记）
+                        originalCells[index].className = cell.className;
+                        
+                        // 同步备注
+                        if (cell.dataset.comment) {
+                            originalCells[index].dataset.comment = cell.dataset.comment;
+                            // 确保红点指示器存在
+                            if (!originalCells[index].querySelector('.comment-indicator')) {
+                                const indicator = document.createElement('div');
+                                indicator.className = 'comment-indicator';
+                                originalCells[index].appendChild(indicator);
+                            }
+                        } else {
+                            delete originalCells[index].dataset.comment;
+                            const indicator = originalCells[index].querySelector('.comment-indicator');
+                            if (indicator) indicator.remove();
+                        }
+                    }
+                });
             }
         }
         
@@ -1764,7 +1805,7 @@
             iHeader.addEventListener('click', function(e) {
                 e.preventDefault();
                 e.stopPropagation();
-                const targetUrl = 'https://www.mashangfangxin.com/  ';
+                const targetUrl = 'https://www.mashangfangxin.com/';
                 // 尝试打开新标签
                 const newTab = window.open(targetUrl, '_blank', 'noopener,noreferrer');
                 // 浏览器拦截时的备用方案（原有逻辑不变）
@@ -1981,7 +2022,7 @@
         function selectCellRange(startCell, endCell) {
             clearAllSelections();
             const startRow = startCell.parentElement, endRow = endCell.parentElement;
-            const rows = Array.from(document.querySelectorAll('#dataTable tbody tr'));
+            const rows = Array.from(document.querySelectorAll('#dataTable tbody tr:not(.hidden)'));
             const startRowIdx = rows.indexOf(startRow), endRowIdx = rows.indexOf(endRow);
             const startColIdx = getHeaderIndex(startCell.dataset.col), endColIdx = getHeaderIndex(endCell.dataset.col);
             const minRow = Math.min(startRowIdx, endRowIdx), maxRow = Math.max(startRowIdx, endRowIdx);
@@ -2001,6 +2042,7 @@
             selectedCell.style.outline = '3px solid #a3e635';
         }
         
+        // 【修复4】新增行后自动跳转到最下方
         function addNewRow() {
             const tbody = document.getElementById('tableTbody');
             const rowCount = tbody.querySelectorAll('tr').length;
@@ -2027,6 +2069,12 @@
             checkDuplicateCells();
             !isUndoRedo && saveToHistory();
             saveToLocalStorageDelayed(); // 保存到本地存储
+            
+            // 【修复4】自动滚动到最下方
+            setTimeout(() => {
+                const tableWrapper = document.querySelector('.table-wrapper');
+                tableWrapper.scrollTop = tableWrapper.scrollHeight;
+            }, 0);
         }
         
         // 新增：应用筛选功能（不切换状态）
@@ -2142,6 +2190,14 @@
                 indicator.className = 'comment-indicator';
                 cell.appendChild(indicator);
             }
+            
+            // 【修复2】如果在筛选状态下添加备注，同步更新originalRows
+            if (isFilterActive) {
+                updateOriginalRowData(cell.parentElement);
+            }
+            
+            !isUndoRedo && saveToHistory();
+            saveToLocalStorageDelayed();
         }
         
         // 清除备注：移除has-comment类，仅移除红点指示器
@@ -2162,7 +2218,7 @@
             // 移除所有字体颜色设置代码，确保字体始终为黑色
         }
 
-        // Excel导入（同步颜色/备注）- 确保备注同步到悬浮备注，移除has-comment类
+        // 【修复3】Excel导入（同步颜色/备注）- 跳过第一列数字标，修复备注提取逻辑
         function handleExcelImport(e) {
             const file = e.target.files[0];
             if (!file || !['xlsx','xlsm'].includes(file.name.split('.').pop().toLowerCase())) {
@@ -2176,7 +2232,9 @@
                     const wb = XLSX.read(new Uint8Array(e.target.result), { 
                         type: 'array',
                         cellStyles: true,
-                        cellComments: true
+                        cellComments: true,
+                        cellNF: true,
+                        cellDates: true
                     });
                     const sheet = wb.Sheets[wb.SheetNames[0]];
                     const data = XLSX.utils.sheet_to_json(sheet, { header: 1, raw: false });
@@ -2204,15 +2262,23 @@
                             let bgColor = '';
                             if (cell.s && cell.s.fill && cell.s.fill.fgColor && cell.s.fill.fgColor.rgb) {
                                 const rgb = cell.s.fill.fgColor.rgb || cell.s.fill.fgColor.theme;
-                                if (rgb && (rgb.includes('FFFF00') || rgb.includes('FFF200') || rgb === '6')) bgColor = 'yellow';
+                                if (rgb && (rgb.includes('FFFF00') || rgb.includes('FFF200') || rgb === '6' || rgb === 'FF')) bgColor = 'yellow';
                                 else if (rgb && (rgb.includes('F8BBD0') || rgb.includes('F8BBD9') || rgb === '4')) bgColor = 'pink';
                                 else if (rgb && (rgb.includes('EF5350') || rgb.includes('FF0000') || rgb === '3')) bgColor = 'red';
                             }
-                            // 提取备注 - 确保从XLSX文件中正确提取备注
+                            // 【修复3】修复备注提取逻辑 - XLSX使用数组存储备注
                             let comment = '';
                             if (cell.c) {
-                                // XLSX备注可能以对象形式存在，需要提取文本
-                                comment = typeof cell.c === 'string' ? cell.c : (cell.c.t || '');
+                                if (Array.isArray(cell.c) && cell.c.length > 0) {
+                                    // 新格式：cell.c是数组，每个元素有t属性
+                                    comment = cell.c[0].t || cell.c[0].text || '';
+                                } else if (typeof cell.c === 'string') {
+                                    // 旧格式：直接是字符串
+                                    comment = cell.c;
+                                } else if (cell.c.t) {
+                                    // 对象格式
+                                    comment = cell.c.t;
+                                }
                             }
                             cellStylesMap[cellAddress] = { bgColor, comment };
                         }
@@ -2242,7 +2308,7 @@
                             th.style.height = '21px';
                         }
                     });
-                    // 渲染行并绑定样式/备注
+                    // 渲染行并绑定样式/备注 - 【修复3】跳过Excel第一列（数字标）
                     const rowsData = data.slice(1).map(row => ({ values: row, styles: cellStylesMap }));
                     rowsData.forEach((rowData, rowIndex) => {
                         const newRow = createNewRow(rowIndex + 1);
@@ -2254,10 +2320,12 @@
                                     cell.style.width = th.style.width;
                                     cell.style.minWidth = th.style.minWidth;
                                 }
-                                const val = rowData.values[colIndex];
+                                // 【修复3】跳过Excel第一列（索引0），使用colIndex+1获取数据
+                                const val = rowData.values[colIndex + 1];
                                 if (val !== undefined && val !== null) setCellText(cell, String(val).trim());
                                 // 应用背景色
-                                const cellAddress = XLSX.utils.encode_cell({r: rowIndex + 1, c: colIndex});
+                                // 注意：XLSX的列索引从0开始，且第一列被跳过，所以实际数据列索引是colIndex+1
+                                const cellAddress = XLSX.utils.encode_cell({r: rowIndex + 1, c: colIndex + 1});
                                 const cellStyle = rowData.styles[cellAddress] || {};
                                 if (cellStyle.bgColor) setCellColor(cell, cellStyle.bgColor);
                                 // 应用备注 - 仅添加红点指示器，移除has-comment类
@@ -2278,7 +2346,7 @@
                     calcTargetHeader(CONFIG.calcHeaderCol);
                     saveToHistory();
                     saveToLocalStorageDelayed(); // 保存到本地存储
-                    alert(`成功导入${data.length-1}行数据！列宽、背景色、备注已同步，并已保存到本地存储。`);
+                    alert(`成功导入${data.length-1}行数据！列宽、背景色、备注已同步，并已保存到本地存储。\n（已自动跳过Excel中的第一列数字标）`);
                 } catch (err) {
                     alert('导入失败，请检查文件！');
                     console.error(err);
@@ -2288,7 +2356,7 @@
             reader.readAsArrayBuffer(file);
         }
 
-        // Excel导出 - 核心修改：移除showSaveFilePicker，改为纯浏览器下载，解决crdownload文件问题
+        // 【修复3】Excel导出 - 导出所有数据（包括筛选隐藏的行），确保备注正确写入
         function saveToExcel() {
             try {
                 // 收集表头
@@ -2299,8 +2367,11 @@
                 const rows = [headerRow];
                 const cellStyles = {};
                 const cellComments = {};
-                // 收集数据行、样式、备注
-                document.querySelectorAll('#dataTable tbody tr:not(.hidden)').forEach((row, rowIndex) => {
+                
+                // 【修复3】使用originalRows导出所有数据，而不是仅导出当前可见行
+                const rowsToExport = originalRows.length > 0 ? originalRows : Array.from(document.querySelectorAll('#dataTable tbody tr'));
+                
+                rowsToExport.forEach((row, rowIndex) => {
                     const rowData = [];
                     // 行号
                     const rowNumCell = row.querySelector('.row-header');
@@ -2309,7 +2380,9 @@
                     colLetters.forEach((col, colIndex) => {
                         const cell = row.querySelector(`[data-col="${col}"]`);
                         let text = getCellText(cell) || '';
+                        // XLSX单元格地址（注意：导出时第一列是行号，数据从第二列开始，所以colIndex+1）
                         const cellAddress = XLSX.utils.encode_cell({r: rowIndex + 1, c: colIndex + 1});
+                        
                         // 记录背景色样式
                         if (cell.classList.contains('cell-yellow')) {
                             cellStyles[cellAddress] = {
@@ -2324,24 +2397,37 @@
                                 fill: { fgColor: { rgb: 'EF5350' }, patternType: 'solid' }
                             };
                         }
-                        // 记录备注 - 从悬浮备注同步到XLSX
+                        
+                        // 【修复3】记录备注 - 从悬浮备注同步到XLSX，使用数组格式
                         if (cell.dataset.comment) {
-                            cellComments[cellAddress] = { t: cell.dataset.comment };
+                            cellComments[cellAddress] = [{ t: cell.dataset.comment, a: 'User' }];
                         }
                         rowData.push(text);
                     });
                     rows.push(rowData);
                 });
+                
                 // 生成Excel
                 const wb = XLSX.utils.book_new();
                 const ws = XLSX.utils.aoa_to_sheet(rows);
-                // 绑定样式和备注
+                
+                // 【修复3】绑定样式和备注到工作表
                 if (Object.keys(cellStyles).length > 0) {
-                    ws['!styles'] = cellStyles;
+                    if (!ws['!styles']) ws['!styles'] = {};
+                    Object.assign(ws['!styles'], cellStyles);
                 }
+                
+                // 【修复3】正确写入备注（comments对象）
                 if (Object.keys(cellComments).length > 0) {
-                    ws['!comments'] = cellComments;
+                    ws['!comments'] = [];
+                    Object.keys(cellComments).forEach(ref => {
+                        ws['!comments'].push({
+                            ref: ref,
+                            comments: cellComments[ref]
+                        });
+                    });
                 }
+                
                 XLSX.utils.book_append_sheet(wb, ws, '药品数据');
                 
                 // 文件名规则不变：yb数据+年月日+空格时分（补0）
@@ -2355,7 +2441,7 @@
 
                 // 核心修改：纯浏览器下载，移除showSaveFilePicker，解决crdownload残留问题
                 XLSX.writeFile(wb, fileName);
-                alert(`保存成功！文件已开始下载：\n${fileName}\n可在浏览器下载栏找到文件`);
+                alert(`保存成功！已导出${rowsToExport.length}行数据（包含所有数据，无论是否处于筛选状态）：\n${fileName}\n可在浏览器下载栏找到文件`);
             } catch (err) {
                 alert('保存失败！');
                 console.error(err);
@@ -2546,13 +2632,29 @@
 
         // ==================== 撤销/恢复功能 ====================
         
-        // 保存到历史记录
+        // 【修复2】保存到历史记录 - 确保保存所有行（包括筛选状态下的所有原始行）
         function saveToHistory() {
             if (isUndoRedo) return;
             redoStack = [];
+            
+            // 【修复2】关键修改：使用originalRows（包含所有行）而不是当前DOM（可能只有筛选后的行）
+            // 如果originalRows为空或长度与当前行数不匹配，则更新它
+            const currentDomRows = document.querySelectorAll('#dataTable tbody tr');
+            let rowsToSave = [];
+            
+            if (isFilterActive && originalRows.length > 0) {
+                // 筛选状态下，合并originalRows中未被修改的行和当前DOM中已修改的行
+                // 实际上，我们应该始终保存originalRows，因为它应该是最新的
+                rowsToSave = originalRows;
+            } else {
+                // 非筛选状态下，更新originalRows并保存
+                originalRows = Array.from(currentDomRows);
+                rowsToSave = originalRows;
+            }
+            
             const data = {
                 headers: colLetters.map(col => getCellText(getHeaderCell(col))),
-                rows: Array.from(document.querySelectorAll('#dataTable tbody tr')).map(row => {
+                rows: rowsToSave.map(row => {
                     const rowData = {
                         rowNum: row.querySelector('.row-header')?.textContent || '',
                         cells: Array.from(row.querySelectorAll('td[data-col]')).map(td => ({
@@ -2621,6 +2723,10 @@
             // 恢复数据行 - 保持原有宽度不变
             const tbody = document.getElementById('tableTbody');
             tbody.innerHTML = '';
+            
+            // 【修复2】恢复所有行到originalRows
+            originalRows = [];
+            
             state.rows.forEach((rowData, rowIndex) => {
                 const row = createNewRow(rowIndex + 1);
                 if (rowData.rowNum) {
@@ -2664,17 +2770,16 @@
                     }
                 });
                 tbody.appendChild(row);
+                originalRows.push(row);
             });
             
             // 恢复筛选状态
             isFilterActive = state.filterActive;
             document.getElementById('filterToggle').classList.toggle('active', isFilterActive);
             
-            // 如果恢复的是筛选状态，需要重新应用筛选
+            // 【修复2】如果恢复的是筛选状态，需要重新应用筛选（基于恢复后的originalRows）
             if (isFilterActive) {
                 toggleDColumnFilter();
-            } else {
-                originalRows = Array.from(document.querySelectorAll('#dataTable tbody tr'));
             }
             
             // 重新绑定事件
