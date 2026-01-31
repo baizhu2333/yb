@@ -201,17 +201,17 @@
             color: #3f6212 !important;
             font-weight: bold;
             text-align: center;
-            width: 36px !important; /* 改为36px */
+            width: 36px !important;
             min-width: 36px !important;
             max-width: 36px !important;
-            cursor: pointer; /* 鼠标手型，提示可点击 */
+            cursor: pointer;
             border-right: 1px solid #84cc16 !important;
             position: sticky;
             left: 0;
             z-index: 3;
             padding: 3px 2px !important;
             font-size: 14px !important;
-            height: 25px !important; /* 减少2mm (27px->25px) */
+            height: 21px !important;
         }
         
         td.row-header {
@@ -219,22 +219,22 @@
             color: #4d7c0f !important;
             font-weight: bold;
             text-align: center;
-            width: 36px !important; /* 改为36px */
+            width: 36px !important;
             min-width: 36px !important;
             max-width: 36px !important;
-            cursor: pointer; /* 鼠标手型，提示可点击 */
+            cursor: pointer;
             border-right: 1px solid #84cc16 !important;
             position: sticky;
             left: 0;
             z-index: 2;
             padding: 3px 2px !important;
             font-size: 14px !important;
-            height: 25px !important; /* 减少2mm (27px->25px) */
+            height: 21px !important;
         }
         
         /* 新增：整行选中的模糊背景样式（不改变原有单元格选中样式） */
         tr.row-selected {
-            background-color: rgba(224, 242, 254, 0.3) !important; /* 浅蓝色模糊背景 */
+            background-color: rgba(224, 242, 254, 0.3) !important;
         }
         
         th {
@@ -249,7 +249,7 @@
             top: 0;
             z-index: 2;
             line-height: 1.3;
-            height: 25px !important; /* 减少2mm (27px->25px) */
+            height: 21px !important;
             color: #4d7c0f;
             white-space: nowrap;
             font-size: 19px;
@@ -288,7 +288,7 @@
             min-width: 30px !important;
             max-width: 400px;
             line-height: 1.3;
-            height: 25px !important; /* 减少2mm (27px->25px) */
+            height: 21px !important;
             cursor: text;
             position: relative;
             background-color: white;
@@ -299,7 +299,7 @@
             text-overflow: ellipsis;
             word-wrap: break-word;
             word-break: break-all;
-            color: #333 !important; /* 强制所有单元格字体黑色，优先级最高 */
+            color: #333 !important;
         }
         
         /* A列特殊样式 - 保持123px不变 */
@@ -403,7 +403,7 @@
             padding: 0 !important;
             margin: 0 !important;
             padding-left: 2px !important;
-            color: inherit !important; /* 继承td的黑色字体，取消单独设置 */
+            color: inherit !important;
         }
         
         /* 仅差异化设置内容字体，标题字体统一继承th的19px */
@@ -698,7 +698,7 @@
         /* 【核心修复】编辑状态下显示白色背景，防止看到下层静态文字 */
         .cell-input.editing {
             display: block;
-            background-color: white;  /* 关键：添加白色背景，掩盖下层文字 */
+            background-color: white;
         }
     </style>
     <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js  "></script>
@@ -958,7 +958,7 @@
             const rowNumHeader = document.createElement('th');
             rowNumHeader.className = 'row-header';
             rowNumHeader.textContent = '#';
-            rowNumHeader.style.width = '36px'; /* 改为36px */
+            rowNumHeader.style.width = '36px';
             headerRow.appendChild(rowNumHeader);
             // A-Z列 - 修改E列为"hyj"，F列为"上限"，G列为"备注"（批注改回备注）
             const headerText = {
@@ -988,7 +988,7 @@
                     th.style.minWidth = '30px';
                 }
                 
-                th.style.height = '25px'; /* 减少2mm */
+                th.style.height = '21px';
                 if (col === 'I') th.classList.add('header-link');
                 if (col === CONFIG.calcHeaderCol) th.style.backgroundColor = '#f0f9e8';
                 const text = headerText[col] || '';
@@ -1038,14 +1038,14 @@
             const rowNumCell = document.createElement('td');
             rowNumCell.className = 'row-header';
             rowNumCell.textContent = rowNum;
-            rowNumCell.style.width = '36px'; /* 改为36px */
-            rowNumCell.style.height = '25px'; /* 减少2mm */
+            rowNumCell.style.width = '36px';
+            rowNumCell.style.height = '21px';
             tr.appendChild(rowNumCell);
             // 数据列
             colLetters.forEach(col => {
                 const td = document.createElement('td');
                 td.dataset.col = col;
-                td.style.height = '25px'; /* 减少2mm */
+                td.style.height = '21px';
                 
                 // 设置列宽 - 保持原有宽度不变
                 if (col === 'A') {
@@ -1464,10 +1464,11 @@
             commentPopup.style.display = 'none';
         }
 
-        // 搜索功能 - 修复无法编辑问题，移除事件拦截
+        // 搜索功能 - 删除实时搜索，只保留回车搜索，删除未找到弹窗
         function initSearchInput() {
             const searchInput = document.getElementById('searchInput');
             
+            // 实时输入只处理清空，不处理搜索（用户要求只用回车搜索）
             searchInput.addEventListener('input', function() {
                 const term = this.value.trim();
                 if (term === '' && lastSearchTerm !== '') {
@@ -1478,10 +1479,8 @@
                     });
                     lastSearchTerm = '';
                     !isUndoRedo && saveToHistory();
-                } else if (term !== '') {
-                    // 有内容时实时搜索
-                    performSearch();
                 }
+                // 删除实时搜索功能：不再在term !== ''时调用performSearch
             });
             
             searchInput.addEventListener('keydown', e => {
@@ -1490,9 +1489,6 @@
                     performSearch(); 
                 }
             });
-            // 移除所有可能拦截输入的事件，恢复原生编辑
-            searchInput.removeEventListener('click', (e) => e.stopPropagation());
-            searchInput.removeEventListener('mousedown', (e) => e.preventDefault());
         }
         
         function performSearch() {
@@ -1507,7 +1503,6 @@
             }
             
             clearSearchHighlights();
-            let hasMatch = false;
             
             document.querySelectorAll('#dataTable tbody tr').forEach(row => {
                 const aCell = row.querySelector('[data-col="A"]');
@@ -1519,7 +1514,6 @@
                 
                 if (match) {
                     row.classList.remove('hidden');
-                    hasMatch = true;
                     // 高亮匹配的单元格
                     if (aText.includes(termLower)) {
                         aCell.classList.add('search-highlight');
@@ -1532,9 +1526,7 @@
                 }
             });
             
-            if (!hasMatch) {
-                alert('未找到匹配的行！');
-            }
+            // 删除未找到匹配行的弹窗提醒
             !isUndoRedo && saveToHistory();
         }
         
@@ -1784,20 +1776,28 @@
         }
 
         // 键盘快捷键（新增Ctrl+Home/Ctrl+End）- 核心需求
-        // 【核心修复】添加编辑状态检测，防止Backspace在编辑时全删
+        // 【核心修复】添加编辑状态检测，防止Backspace在编辑时全删，并确保搜索框可正常编辑
         function initKeyboardShortcut() {
             document.addEventListener('keydown', function(e) {
-                // 【核心修复 START】如果正在编辑单元格，让输入框自己处理按键（除了Esc）
-                if (activeInput && activeInput.classList.contains('editing')) {
-                    // 只允许Esc键退出编辑模式，其他键（包括Backspace/Delete）都由输入框原生处理
+                // 【核心修复 START】如果正在编辑单元格或搜索框，让输入框自己处理按键（除了Esc和特定全局快捷键）
+                const activeElement = document.activeElement;
+                const isSearchBox = activeElement === document.getElementById('searchInput');
+                const isCellInput = activeElement && activeElement.classList.contains('cell-input');
+                
+                if (isSearchBox || isCellInput) {
+                    // 在输入框中时，只处理Escape退出编辑，其他键（Backspace、Delete等）都由输入框原生处理
                     if (e.key === 'Escape') {
                         e.preventDefault();
-                        const td = activeInput.parentElement;
-                        const originalValue = getCellText(td);
-                        cancelCellEdit(activeInput, originalValue);
+                        if (isCellInput) {
+                            const td = activeElement.parentElement;
+                            const originalValue = getCellText(td);
+                            cancelCellEdit(activeElement, originalValue);
+                        }
                     }
-                    // 其他键（Backspace、Delete、方向键等）直接返回，不执行e.preventDefault()
-                    return;
+                    // 允许Ctrl+Home/End等全局快捷键通过，其他直接返回
+                    if (!(e.ctrlKey && (e.key === 'Home' || e.key === 'End'))) {
+                        return;
+                    }
                 }
                 // 【核心修复 END】
                 
@@ -1829,7 +1829,7 @@
                     }
                     return;
                 }
-                // Delete/Backspace 清除选中内容（仅在未编辑状态下触发）
+                // Delete/Backspace 清除选中内容（仅在未编辑状态下触发，且焦点不在搜索框）
                 if ((e.key === 'Delete' || e.key === 'Backspace') && selectedCells.size > 0) {
                     e.preventDefault();
                     // 判断是否为整行选中（存在row-selected类的行，且选中的是该行所有可编辑单元格）
@@ -2178,7 +2178,7 @@
                                 th.style.width = calculatedWidth + 'px';
                                 th.style.minWidth = calculatedWidth + 'px';
                             }
-                            th.style.height = '25px'; /* 减少2mm */
+                            th.style.height = '21px';
                         }
                     });
                     // 渲染行并绑定样式/备注
@@ -2392,7 +2392,7 @@
                         } else {
                             th.style.width = data.colWidths && data.colWidths[idx] ? data.colWidths[idx] : '150px';
                         }
-                        th.style.height = '25px'; /* 减少2mm */
+                        th.style.height = '21px';
                         if (data.headers && data.headers[idx] !== undefined) {
                             setCellText(th, data.headers[idx]);
                             th.querySelector('input').value = data.headers[idx];
@@ -2422,7 +2422,7 @@
                             } else {
                                 td.style.width = cellData.width || '150px';
                             }
-                            td.style.height = '25px'; /* 减少2mm */
+                            td.style.height = '21px';
                             setCellText(td, cellData.content);
                             cellData.classes.forEach(cls => td.classList.add(cls));
                             if (cellData.comment) {
@@ -2548,7 +2548,7 @@
                 } else {
                     th.style.width = state.colWidths[idx] || '150px';
                 }
-                th.style.height = '25px'; /* 减少2mm */
+                th.style.height = '21px';
                 setCellText(th, state.headers[idx]);
                 th.querySelector('input').value = state.headers[idx];
             });
@@ -2580,7 +2580,7 @@
                         } else {
                             td.style.width = cellData.width || '150px';
                         }
-                        td.style.height = '25px'; /* 减少2mm */
+                        td.style.height = '21px';
                         setCellText(td, cellData.content);
                         cellData.classes.forEach(cls => td.classList.add(cls));
                         if (cellData.comment) {
