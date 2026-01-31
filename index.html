@@ -195,15 +195,15 @@
             table-layout: fixed;
         }
         
-        /* 行号列样式 - 行号列宽度改为30px */
+        /* 行号列样式 - 行号列宽度改为36px */
         th.row-header {
             background-color: #e5f5d7 !important;
             color: #3f6212 !important;
             font-weight: bold;
             text-align: center;
-            width: 30px !important; /* 改为30px */
-            min-width: 30px !important;
-            max-width: 30px !important;
+            width: 36px !important; /* 改为36px */
+            min-width: 36px !important;
+            max-width: 36px !important;
             cursor: pointer; /* 鼠标手型，提示可点击 */
             border-right: 1px solid #84cc16 !important;
             position: sticky;
@@ -219,9 +219,9 @@
             color: #4d7c0f !important;
             font-weight: bold;
             text-align: center;
-            width: 30px !important; /* 改为30px */
-            min-width: 30px !important;
-            max-width: 30px !important;
+            width: 36px !important; /* 改为36px */
+            min-width: 36px !important;
+            max-width: 36px !important;
             cursor: pointer; /* 鼠标手型，提示可点击 */
             border-right: 1px solid #84cc16 !important;
             position: sticky;
@@ -701,7 +701,7 @@
             background-color: white;  /* 关键：添加白色背景，掩盖下层文字 */
         }
     </style>
-    <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js "></script>
+    <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js  "></script>
 </head>
 <body>
     <div class="container">
@@ -819,11 +819,19 @@
                 saveToLocalStorage();
             });
             
-            // 初始化右键菜单事件 - 修复：确保可以捕获到Ctrl+右键
+            // 初始化右键菜单事件 - 改为双击右键启用功能
+            let lastRightClickTime = 0;
+            const DOUBLE_RIGHT_CLICK_DELAY = 300; // 300ms内视为双击
+            
             document.addEventListener('contextmenu', function(e) {
-                // 检查是否在表格单元格上且按住了Ctrl键
                 const targetCell = e.target.closest('td.editable');
-                if (targetCell && isCtrlPressed) {
+                if (!targetCell) return;
+                
+                const currentTime = new Date().getTime();
+                const timeDiff = currentTime - lastRightClickTime;
+                
+                if (timeDiff < DOUBLE_RIGHT_CLICK_DELAY) {
+                    // 双击右键 - 显示自定义菜单
                     e.preventDefault();
                     if (!selectedCells.has(targetCell)) { 
                         clearAllSelections(); 
@@ -833,7 +841,12 @@
                     contextMenu.style.display = 'block';
                     contextMenu.style.left = `${e.pageX}px`;
                     contextMenu.style.top = `${e.pageY}px`;
+                    lastRightClickTime = 0; // 重置
                     return false;
+                } else {
+                    // 第一次右键点击，记录时间
+                    lastRightClickTime = currentTime;
+                    // 不阻止默认行为，允许显示浏览器默认菜单
                 }
             }, true);
             
@@ -945,7 +958,7 @@
             const rowNumHeader = document.createElement('th');
             rowNumHeader.className = 'row-header';
             rowNumHeader.textContent = '#';
-            rowNumHeader.style.width = '30px'; /* 改为30px */
+            rowNumHeader.style.width = '36px'; /* 改为36px */
             headerRow.appendChild(rowNumHeader);
             // A-Z列 - 修改E列为"hyj"，F列为"上限"，G列为"备注"（批注改回备注）
             const headerText = {
@@ -1025,7 +1038,7 @@
             const rowNumCell = document.createElement('td');
             rowNumCell.className = 'row-header';
             rowNumCell.textContent = rowNum;
-            rowNumCell.style.width = '30px'; /* 改为30px */
+            rowNumCell.style.width = '36px'; /* 改为36px */
             rowNumCell.style.height = '25px'; /* 减少2mm */
             tr.appendChild(rowNumCell);
             // 数据列
@@ -1749,7 +1762,7 @@
             iHeader.addEventListener('click', function(e) {
                 e.preventDefault();
                 e.stopPropagation();
-                const targetUrl = 'https://www.mashangfangxin.com/ ';
+                const targetUrl = 'https://www.mashangfangxin.com/  ';
                 // 尝试打开新标签
                 const newTab = window.open(targetUrl, '_blank', 'noopener,noreferrer');
                 // 浏览器拦截时的备用方案（原有逻辑不变）
