@@ -1295,6 +1295,8 @@
                 saveToLocalStorageDelayed();
                 checkDuplicateCells();
                 calculateDColumn();
+                // 如果在筛选状态下编辑，需要更新originalRows以确保数据一致性
+                updateOriginalRows();
             }
             
             input.classList.remove('editing');
@@ -1305,6 +1307,14 @@
             // 保持单元格选中状态
             if (td && document.activeElement === input) {
                 td.focus();
+            }
+        }
+        
+        // 新增：更新originalRows以反映当前DOM状态
+        function updateOriginalRows() {
+            // 只有在非筛选状态下才更新originalRows，否则保持原始数据
+            if (!isFilterActive) {
+                originalRows = Array.from(document.querySelectorAll('#dataTable tbody tr'));
             }
         }
         
@@ -1996,7 +2006,22 @@
             const rowCount = tbody.querySelectorAll('tr').length;
             const newRow = createNewRow(rowCount + 1);
             tbody.appendChild(newRow);
-            originalRows = Array.from(document.querySelectorAll('#dataTable tbody tr'));
+            
+            // 如果在筛选状态下添加新行，需要确保originalRows包含所有行（包括新添加的）
+            if (isFilterActive) {
+                // 先添加到DOM，然后更新originalRows，重新应用筛选
+                originalRows.push(newRow);
+                // 重新绑定事件
+                const input = newRow.querySelector('.cell-input');
+                if (input) {
+                    bindCellEvents(newRow.querySelector('td.editable'), input);
+                }
+                // 重新应用筛选以显示新行（如果符合条件）
+                applyFilter();
+            } else {
+                originalRows = Array.from(document.querySelectorAll('#dataTable tbody tr'));
+            }
+            
             selectCell(newRow.querySelector('td.editable'));
             calculateDColumn();
             checkDuplicateCells();
@@ -2004,10 +2029,38 @@
             saveToLocalStorageDelayed(); // 保存到本地存储
         }
         
+        // 新增：应用筛选功能（不切换状态）
+        function applyFilter() {
+            if (!isFilterActive) return;
+            
+            const tbody = document.getElementById('tableTbody');
+            tbody.innerHTML = '';
+            
+            const filtered = originalRows.filter(row => {
+                const dCell = row.querySelector('td[data-col="D"]');
+                const dVal = parseFloat(getCellText(dCell)) || 0;
+                return dVal > 0;
+            }).sort((a, b) => {
+                const aCell = a.querySelector('td[data-col="C"]');
+                const bCell = b.querySelector('td[data-col="C"]');
+                const aVal = parseFloat(getCellText(aCell)) || 0;
+                const bVal = parseFloat(getCellText(bCell)) || 0;
+                return bVal - aVal;
+            });
+            
+            filtered.forEach((row, index) => {
+                const rowNumCell = row.querySelector('.row-header');
+                if (rowNumCell) rowNumCell.textContent = index + 1;
+                tbody.appendChild(row);
+            });
+        }
+        
         function toggleDColumnFilter() {
             const tbody = document.getElementById('tableTbody');
             tbody.innerHTML = '';
+            
             if (isFilterActive) {
+                // 筛选模式：只显示D>0的行，并按C列排序
                 const filtered = originalRows.filter(row => {
                     const dCell = row.querySelector('td[data-col="D"]');
                     const dVal = parseFloat(getCellText(dCell)) || 0;
@@ -2019,12 +2072,19 @@
                     const bVal = parseFloat(getCellText(bCell)) || 0;
                     return bVal - aVal;
                 });
+                
                 filtered.forEach((row, index) => {
                     const rowNumCell = row.querySelector('.row-header');
                     if (rowNumCell) rowNumCell.textContent = index + 1;
                     tbody.appendChild(row);
                 });
             } else {
+                // 非筛选模式：显示所有行，按原始顺序
+                // 确保originalRows是最新的
+                if (originalRows.length === 0) {
+                    originalRows = Array.from(document.querySelectorAll('#dataTable tbody tr'));
+                }
+                
                 originalRows.forEach((row, index) => {
                     const rowNumCell = row.querySelector('.row-header');
                     if (rowNumCell) rowNumCell.textContent = index + 1;
@@ -2032,6 +2092,7 @@
                     tbody.appendChild(row);
                 });
             }
+            
             !isUndoRedo && saveToHistory();
             saveToLocalStorageDelayed(); // 保存到本地存储
         }
@@ -2446,7 +2507,12 @@
                 isFilterActive = data.filterActive || false;
                 document.getElementById('filterToggle').classList.toggle('active', isFilterActive);
                 
-                originalRows = Array.from(document.querySelectorAll('#dataTable tbody tr'));
+                // 如果保存时是筛选状态，重新应用筛选
+                if (isFilterActive) {
+                    toggleDColumnFilter();
+                } else {
+                    originalRows = Array.from(document.querySelectorAll('#dataTable tbody tr'));
+                }
                 
                 // 重新绑定事件
                 document.querySelectorAll('#dataTable td.editable').forEach(td => {
@@ -2600,6 +2666,17 @@
                 tbody.appendChild(row);
             });
             
+            // 恢复筛选状态
+            isFilterActive = state.filterActive;
+            document.getElementById('filterToggle').classList.toggle('active', isFilterActive);
+            
+            // 如果恢复的是筛选状态，需要重新应用筛选
+            if (isFilterActive) {
+                toggleDColumnFilter();
+            } else {
+                originalRows = Array.from(document.querySelectorAll('#dataTable tbody tr'));
+            }
+            
             // 重新绑定事件
             document.querySelectorAll('#dataTable td.editable').forEach(td => {
                 const input = td.querySelector('.cell-input');
@@ -2608,9 +2685,6 @@
                 }
             });
             
-            isFilterActive = state.filterActive;
-            document.getElementById('filterToggle').classList.toggle('active', isFilterActive);
-            originalRows = Array.from(document.querySelectorAll('#dataTable tbody tr'));
             calculateDColumn();
             checkDuplicateCells();
             updateUndoRedoButtons();
