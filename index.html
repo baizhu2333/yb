@@ -94,6 +94,12 @@
             background-color: #84cc16;
         }
         
+        /* 冻结首行按钮激活状态 */
+        #freezeHeaderBtn.active {
+            background-color: #84cc16;
+            box-shadow: 0 4px 8px rgba(132, 204, 22, 0.4);
+        }
+        
         .btn-disabled {
             background-color: #e9fbb8 !important;
             cursor: not-allowed !important;
@@ -195,6 +201,21 @@
             table-layout: fixed;
         }
         
+        /* 冻结首行核心样式 */
+        thead.sticky-header th {
+            position: sticky;
+            top: 0;
+            z-index: 10;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        
+        /* 取消冻结状态 */
+        thead.unfrozen th {
+            position: relative !important;
+            top: auto !important;
+            box-shadow: none !important;
+        }
+        
         /* 行号列样式 - 行号列宽度改为36px */
         th.row-header {
             background-color: #e5f5d7 !important;
@@ -208,7 +229,7 @@
             border-right: 1px solid #999 !important;
             position: sticky;
             left: 0;
-            z-index: 3;
+            z-index: 11;
             padding: 3px 2px !important;
             font-size: 14px !important;
             height: 21px !important;
@@ -245,8 +266,6 @@
             max-width: 400px;
             background-color: #f7fee7;
             font-weight: bold;
-            position: sticky;
-            top: 0;
             z-index: 2;
             line-height: 1.3;
             height: 21px !important;
@@ -594,6 +613,11 @@
             border: 1px solid #38bdf8 !important;
         }
         
+        /* 【新增】点击触发的行列高亮 - 浅绿色，会跳过已着色的单元格 */
+        td.row-col-highlight {
+            background-color: #dcfce7 !important;
+        }
+        
         /* 拖选框样式 */
         .selection-box {
             position: absolute;
@@ -743,13 +767,14 @@
             background-color: white;
         }
     </style>
-    <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js "></script>
+    <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js   "></script>
 </head>
 <body>
     <div class="container">
         <div class="toolbar">
             <input type="text" id="searchInput" placeholder="输入条码或药品名称，筛选A列或B列包含的内容...">
             <button id="filterToggle">筛选＞0</button>
+            <button id="freezeHeaderBtn" class="active">冻结首行</button>
             <button id="addRowBtn">新增药品</button>
             <button id="importBtn">导入Excel</button>
             <input type="file" id="fileInput" accept=".xlsx,.xlsm">
@@ -813,6 +838,7 @@
         
         // 全局变量
         let isFilterActive = false;
+        let isHeaderFrozen = true; // 首行冻结状态
         let originalRows = [];
         let selectedCell = null;
         let selectedCells = new Set();
@@ -856,6 +882,7 @@
             originalRows = Array.from(document.querySelectorAll('#dataTable tbody tr'));
             saveToHistory();
             initAllEvents();
+            initFreezeHeader(); // 初始化冻结首行功能
             calcTargetHeader(CONFIG.calcHeaderCol);
             calculateDColumn();
             checkDuplicateCells();
@@ -1187,7 +1214,7 @@
             });
         }
 
-        // 示例数据
+        // 示例数据 - 已删除测试备注
         function initSampleData() {
             const tbody = document.getElementById('tableTbody');
             // 行1
@@ -1203,18 +1230,13 @@
             setCellText(row1.querySelector('[data-col="K"]'), '126.8');
             setCellText(row1.querySelector('[data-col="L"]'), '113.2');
             
-            // 设置颜色和备注示例
+            // 设置颜色示例
             row1.querySelector('[data-col="B"]').classList.add('cell-yellow');
             row1.querySelector('[data-col="C"]').classList.add('cell-yellow');
-            row1.querySelector('[data-col="A"]').dataset.comment = '示例备注';
-            const indicator = document.createElement('div');
-            indicator.className = 'comment-indicator';
-            row1.querySelector('[data-col="A"]').appendChild(indicator);
             
             // 同步元数据
             syncMetaData(row1.querySelector('[data-col="B"]'));
             syncMetaData(row1.querySelector('[data-col="C"]'));
-            syncMetaData(row1.querySelector('[data-col="A"]'));
             
             tbody.appendChild(row1);
             
@@ -1385,11 +1407,60 @@
                 }
             });
             
-            // 点击其他地方关闭输入框
+            // 点击其他地方关闭输入框并清除高亮
             document.addEventListener('click', function(e) {
                 if (activeInput && !activeInput.parentElement.contains(e.target)) {
                     finishCellEdit(activeInput);
                 }
+                // 点击表格外部时清除行列高亮
+                if (!e.target.closest('#dataTable')) {
+                    clearRowColHighlight();
+                }
+            });
+        }
+
+        // 【新增】检查单元格是否有颜色（用于跳过高亮）
+        function hasCellColor(cell) {
+            return cell.classList.contains('cell-yellow') || 
+                   cell.classList.contains('cell-red') || 
+                   cell.classList.contains('cell-pink') ||
+                   cell.classList.contains('duplicate-cell') ||
+                   cell.classList.contains('search-highlight') ||
+                   cell.classList.contains('cell-selected'); // 选中的单元格也不覆盖
+        }
+
+        // 【新增】高亮行列（点击时触发，跳过有颜色的单元格）
+        function highlightRowCol(cell) {
+            if (!cell || !cell.dataset.col) return;
+            
+            clearRowColHighlight(); // 先清除旧的高亮
+            
+            const row = cell.parentElement;
+            const colIndex = cell.cellIndex;
+            
+            // 高亮当前行（跳过行号列和有颜色的单元格）
+            Array.from(row.children).forEach((td, idx) => {
+                if (idx === 0) return; // 跳过行号列
+                if (!hasCellColor(td)) {
+                    td.classList.add('row-col-highlight');
+                }
+            });
+            
+            // 高亮当前列（跳过表头行和有颜色的单元格）
+            const table = document.getElementById('dataTable');
+            Array.from(table.rows).forEach((tr, ridx) => {
+                if (ridx === 0) return; // 跳过表头行
+                const td = tr.children[colIndex];
+                if (td && td.dataset.col && !hasCellColor(td)) {
+                    td.classList.add('row-col-highlight');
+                }
+            });
+        }
+
+        // 【新增】清除行列高亮
+        function clearRowColHighlight() {
+            document.querySelectorAll('.row-col-highlight').forEach(el => {
+                el.classList.remove('row-col-highlight');
             });
         }
 
@@ -1405,7 +1476,7 @@
                 startCellEdit(td, input, true);
             });
             
-            // 单击进入编辑模式（精确光标定位）
+            // 单击进入编辑模式（精确光标定位）并触发高亮
             td.addEventListener('click', function(e) {
                 if (activeInput && activeInput.parentElement === td && activeInput.classList.contains('editing')) {
                     return; 
@@ -1576,8 +1647,10 @@
             const currentCellIdx = cells.indexOf(cell);
             if (currentRowIdx < rows.length - 1) {
                 const nextCell = rows[currentRowIdx + 1].querySelectorAll('td.editable')[currentCellIdx];
-                nextCell && selectCell(nextCell);
-                return;
+                if (nextCell) {
+                    selectCell(nextCell); // selectCell内部会触发高亮
+                    return;
+                }
             }
             selectCell(cell);
         }
@@ -1610,6 +1683,8 @@
                 e.stopPropagation();
                 
                 clearAllSelections();
+                clearRowColHighlight(); // 清除高亮
+                
                 document.querySelectorAll('#dataTable tr.row-selected').forEach(r => {
                     r.classList.remove('row-selected');
                 });
@@ -1626,6 +1701,9 @@
                     selectedCell = editableCells[0];
                     selectedCell.style.outline = '3px solid #a3e635';
                     selectedCell.focus();
+                    
+                    // 整行选中时也触发高亮（但整行选中是高亮整行，这里保持原有逻辑）
+                    highlightRowCol(selectedCell);
                 }
             });
         }
@@ -1966,7 +2044,7 @@
             iHeader.addEventListener('click', function(e) {
                 e.preventDefault();
                 e.stopPropagation();
-                const targetUrl = 'https://www.mashangfangxin.com/ ';
+                const targetUrl = 'https://www.mashangfangxin.com/   ';
                 const newTab = window.open(targetUrl, '_blank', 'noopener,noreferrer');
                 
                 if (!newTab || newTab.closed || typeof newTab === 'undefined') {
@@ -2107,6 +2185,7 @@
             
             row.classList.remove('row-selected');
             clearAllSelections();
+            clearRowColHighlight(); // 清除高亮
             
             // 同步所有元数据（清空）
             for (let col = 'A'; col <= 'T'; col = String.fromCharCode(col.charCodeAt(0) + 1)) {
@@ -2151,6 +2230,9 @@
 
         // 业务功能
         function selectCell(cell) {
+            // 清除之前的高亮
+            clearRowColHighlight();
+            
             document.querySelectorAll('#dataTable tr.row-selected').forEach(r => {
                 r.classList.remove('row-selected');
             });
@@ -2161,6 +2243,9 @@
                 cell.classList.add('cell-selected');
                 selectedCells.add(cell);
                 cell.focus();
+                
+                // 【新增】点击时触发行列高亮（跳过有颜色的单元格）
+                highlightRowCol(cell);
             }
         }
         
@@ -2188,6 +2273,8 @@
         
         function selectCellRange(startCell, endCell) {
             clearAllSelections();
+            clearRowColHighlight(); // 清除之前的高亮
+            
             const startRow = startCell.parentElement, endRow = endCell.parentElement;
             const rows = Array.from(document.querySelectorAll('#dataTable tbody tr:not(.hidden)'));
             const startRowIdx = rows.indexOf(startRow), endRowIdx = rows.indexOf(endRow);
@@ -2207,6 +2294,9 @@
             }
             selectedCell = endCell;
             selectedCell.style.outline = '3px solid #a3e635';
+            
+            // 范围选择后高亮最后一个单元格所在的行列
+            highlightRowCol(endCell);
         }
         
         // 新增行
@@ -2368,9 +2458,14 @@
         function setCellColor(cell, color) {
             cell.classList.remove('cell-red', 'cell-yellow', 'cell-pink');
             if (color !== 'clear') cell.classList.add(`cell-${color}`);
+            
+            // 颜色改变后，如果当前单元格有高亮，需要更新高亮（因为可能不需要跳过了）
+            if (cell.classList.contains('row-col-highlight') && hasCellColor(cell)) {
+                cell.classList.remove('row-col-highlight');
+            }
         }
 
-        // Excel导入（包含元数据恢复）- 修复：跳过第一列（行号列）
+        // Excel导入（包含元数据恢复）- 优化：智能检测第一列是否为序号列（1,2,3...）
         function handleExcelImport(e) {
             const file = e.target.files[0];
             if (!file || !['xlsx','xlsm'].includes(file.name.split('.').pop().toLowerCase())) {
@@ -2392,16 +2487,39 @@
                     const cellRefs = XLSX.utils.decode_range(sheet['!ref'] || 'A1');
                     if (data.length <= 1) { alert('无有效数据！'); return; }
                     
+                    // 智能检测：第一列是否为序号列（1,2,3...）
+                    let skipFirstColumn = false;
+                    if (data.length > 3) {
+                        // 检查前3行数据（第1,2,3行，即索引1,2,3，因为0是表头）
+                        const row1 = data[1];
+                        const row2 = data[2];
+                        const row3 = data[3];
+                        
+                        if (row1 && row2 && row3) {
+                            const val1 = String(row1[0] || '').trim();
+                            const val2 = String(row2[0] || '').trim();
+                            const val3 = String(row3[0] || '').trim();
+                            
+                            // 检测是否为 1,2,3 序列（序号列特征）
+                            if (val1 === '1' && val2 === '2' && val3 === '3') {
+                                skipFirstColumn = true;
+                                console.log('检测到第一列为序号列（1,2,3...），自动跳过');
+                            }
+                        }
+                    }
+                    
                     const tbody = document.getElementById('tableTbody');
                     tbody.innerHTML = '';
                     
                     // 计算列宽（只计算前20列）
                     const colMaxLengths = new Array(20).fill(0);
                     const headerRow = data[0] || [];
+                    // 根据是否跳过第一列来决定从哪一列开始计算宽度
+                    const startColIndex = skipFirstColumn ? 1 : 0;
                     headerRow.forEach((val, idx) => {
-                        if (idx < 20) {
+                        if (idx >= startColIndex && idx < startColIndex + 20) {
                             const text = String(val || '').trim();
-                            colMaxLengths[idx] = Math.max(colMaxLengths[idx], text.length);
+                            colMaxLengths[idx - startColIndex] = Math.max(colMaxLengths[idx - startColIndex], text.length);
                         }
                     });
                     
@@ -2434,7 +2552,7 @@
                         }
                     });
                     
-                    // 渲染行（包含元数据列）- 修复：跳过第一列（行号列），从第二列开始导入
+                    // 渲染行（包含元数据列）- 根据检测结果显示是否跳过第一列
                     const rowsData = data.slice(1);
                     rowsData.forEach((rowData, rowIndex) => {
                         const newRow = createNewRow(rowIndex + 1);
@@ -2446,8 +2564,9 @@
                                     cell.style.width = th.style.width;
                                     cell.style.minWidth = th.style.minWidth;
                                 }
-                                // 修复：使用 colIndex + 1 跳过 Excel 的第一列（行号列）
-                                const val = rowData[colIndex + 1];
+                                // 如果检测到序号列，则使用 colIndex + 1 跳过第一列；否则使用 colIndex
+                                const dataIndex = skipFirstColumn ? colIndex + 1 : colIndex;
+                                const val = rowData[dataIndex];
                                 if (val !== undefined && val !== null) setCellText(cell, String(val).trim());
                             }
                         });
@@ -2455,6 +2574,12 @@
                         
                         // 恢复元数据（从U-AN列恢复到A-T列的备注和颜色）
                         restoreFromMetaData(newRow);
+
+                        // 【修复】重新同步元数据，确保U-AN列格式正确（颜色|备注），清除Excel中的脏数据（如"01"）
+                        for (let col = 'A'; col <= 'T'; col = String.fromCharCode(col.charCodeAt(0) + 1)) {
+                            const cell = newRow.querySelector(`td[data-col="${col}"]`);
+                            if (cell) syncMetaData(cell);
+                        }
                     });
                     
                     originalRows = Array.from(document.querySelectorAll('#dataTable tbody tr'));
@@ -2463,7 +2588,7 @@
                     calcTargetHeader(CONFIG.calcHeaderCol);
                     saveToHistory();
                     saveToLocalStorageDelayed();
-                    alert(`成功导入${data.length-1}行数据！颜色和备注已从元数据列恢复。`);
+                    alert(`成功导入${data.length-1}行数据！${skipFirstColumn ? '（已自动跳过序号列）' : ''}颜色和备注已从元数据列恢复。`);
                 } catch (err) {
                     alert('导入失败，请检查文件！');
                     console.error(err);
@@ -2540,9 +2665,10 @@
                         return rowData;
                     }),
                     filterActive: isFilterActive,
+                    headerFrozen: isHeaderFrozen, // 保存冻结状态
                     colWidths: Array.from(document.querySelectorAll('#dataTable thead th:not(.row-header)')).map(th => th.style.width),
                     lastSaved: new Date().toISOString(),
-                    version: '6.0'
+                    version: '6.1'
                 };
                 
                 localStorage.setItem(CONFIG.storageKey, JSON.stringify(data));
@@ -2586,6 +2712,22 @@
                 
                 const tbody = document.getElementById('tableTbody');
                 tbody.innerHTML = '';
+                
+                // 恢复冻结状态
+                if (data.headerFrozen !== undefined) {
+                    isHeaderFrozen = data.headerFrozen;
+                    const thead = document.querySelector('.sticky-header');
+                    const freezeBtn = document.getElementById('freezeHeaderBtn');
+                    if (isHeaderFrozen) {
+                        thead.classList.remove('unfrozen');
+                        freezeBtn.classList.add('active');
+                        freezeBtn.textContent = '冻结首行';
+                    } else {
+                        thead.classList.add('unfrozen');
+                        freezeBtn.classList.remove('active');
+                        freezeBtn.textContent = '取消冻结';
+                    }
+                }
                 
                 // 恢复表头
                 colLetters.forEach((col, idx) => {
@@ -2729,6 +2871,7 @@
                     return rowData;
                 }),
                 filterActive: isFilterActive,
+                headerFrozen: isHeaderFrozen, // 保存冻结状态到历史记录
                 colWidths: Array.from(document.querySelectorAll('#dataTable thead th:not(.row-header)')).map(th => th.style.width)
             };
             historyStack.push(JSON.parse(JSON.stringify(data)));
@@ -2757,6 +2900,25 @@
         }
         
         function restoreTableState(state) {
+            // 清除高亮
+            clearRowColHighlight();
+            
+            // 恢复冻结状态
+            if (state.headerFrozen !== undefined) {
+                isHeaderFrozen = state.headerFrozen;
+                const thead = document.querySelector('.sticky-header');
+                const freezeBtn = document.getElementById('freezeHeaderBtn');
+                if (isHeaderFrozen) {
+                    thead.classList.remove('unfrozen');
+                    freezeBtn.classList.add('active');
+                    freezeBtn.textContent = '冻结首行';
+                } else {
+                    thead.classList.add('unfrozen');
+                    freezeBtn.classList.remove('active');
+                    freezeBtn.textContent = '取消冻结';
+                }
+            }
+            
             // 恢复表头
             colLetters.forEach((col, idx) => {
                 const th = getHeaderCell(col);
@@ -2863,6 +3025,33 @@
             const redoBtn = document.getElementById('redoBtn');
             undoBtn.classList.toggle('btn-disabled', historyStack.length <= 1);
             redoBtn.classList.toggle('btn-disabled', redoStack.length === 0);
+        }
+
+        // 【新增】冻结首行功能初始化
+        function initFreezeHeader() {
+            const btn = document.getElementById('freezeHeaderBtn');
+            const thead = document.querySelector('.sticky-header');
+            
+            // 默认启用冻结（保持原有行为）
+            isHeaderFrozen = true;
+            btn.classList.add('active');
+            
+            btn.addEventListener('click', function() {
+                isHeaderFrozen = !isHeaderFrozen;
+                
+                if (isHeaderFrozen) {
+                    thead.classList.remove('unfrozen');
+                    btn.classList.add('active');
+                    btn.textContent = '冻结首行';
+                } else {
+                    thead.classList.add('unfrozen');
+                    btn.classList.remove('active');
+                    btn.textContent = '取消冻结';
+                }
+                
+                !isUndoRedo && saveToHistory();
+                saveToLocalStorageDelayed();
+            });
         }
     </script>
 </body>
