@@ -628,24 +628,6 @@
             background-color: #999;
             margin: 8px 0;
         }
-        .menu-view-comment {
-            color: #ef5350;
-            font-weight: bold;
-        }
-        .menu-view-comment-text {
-            color: #333;
-            font-weight: normal;
-            white-space: normal;
-            word-break: break-word;
-            max-height: 150px;
-            overflow-y: auto;
-            background-color: #f9f9f9;
-            border: 1px solid #999;
-            border-radius: 5px;
-            margin-top: 8px;
-            padding: 10px;
-            font-size: 16px;
-        }
         
         /* 搜索高亮 - 改为淡黑色边框 */
         .search-highlight {
@@ -761,7 +743,7 @@
             background-color: white;
         }
     </style>
-    <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js "></script>
 </head>
 <body>
     <div class="container">
@@ -790,12 +772,8 @@
         </div>
     </div>
 
-    <!-- 右键菜单：备注功能与标颜色互换位置 - 所有批注改为备注 -->
+    <!-- 右键菜单：已删除"查看备注"选项 -->
     <div class="context-menu" id="cellContextMenu">
-        <div class="context-menu-item menu-view-comment" data-action="view-comment">
-            查看备注
-            <div id="commentPreview" class="menu-view-comment-text"></div>
-        </div>
         <div class="context-menu-item" data-action="add-comment">添加备注</div>
         <div class="context-menu-item" data-action="clear-comment">清除备注</div>
         <div class="context-menu-separator"></div>
@@ -906,7 +884,6 @@
                         clearAllSelections(); 
                         selectCell(targetCell); 
                     }
-                    updateContextMenu();
                     contextMenu.style.display = 'block';
                     contextMenu.style.left = `${e.pageX}px`;
                     contextMenu.style.top = `${e.pageY}px`;
@@ -1932,33 +1909,13 @@
             });
         }
 
-        // 右键菜单
-        function updateContextMenu() {
-            const commentPreview = document.getElementById('commentPreview');
-            if (selectedCells.size > 0) {
-                let allComments = [];
-                selectedCells.forEach(cell => { if (cell.dataset.comment) allComments.push(cell.dataset.comment); });
-                commentPreview.innerHTML = allComments.length > 0 ? allComments.join('<br>---<br>') : '无备注';
-                commentPreview.style.display = 'block';
-            } else if (selectedCell && selectedCell.tagName === 'TD') {
-                commentPreview.innerHTML = selectedCell.dataset.comment || '无备注';
-                commentPreview.style.display = 'block';
-            } else {
-                commentPreview.innerHTML = '';
-                commentPreview.style.display = 'none';
-            }
-        }
-        
+        // 右键菜单 - 已删除查看备注相关代码
         function initContextMenuEvent() {
             contextMenu.querySelectorAll('.context-menu-item').forEach(item => {
                 item.addEventListener('click', function() {
                     if (!selectedCell && selectedCells.size === 0) return;
                     const action = this.dataset.action;
-                    if (action === 'view-comment') { 
-                        showCommentDialog(); 
-                        contextMenu.style.display = 'none'; 
-                        return; 
-                    }
+                    
                     let cellsToProcess = selectedCells.size > 0 ? Array.from(selectedCells) : (selectedCell ? [selectedCell] : []);
                     cellsToProcess.forEach(cell => {
                         if (!cell || cell.tagName !== 'TD') return;
@@ -2000,21 +1957,6 @@
                 contextMenu.style.display = 'none'; 
             });
         }
-        
-        // 查看备注弹窗
-        function showCommentDialog() {
-            let comments = [];
-            const cellsToCheck = selectedCells.size > 0 ? Array.from(selectedCells) : (selectedCell ? [selectedCell] : []);
-            cellsToCheck.forEach(cell => {
-                if (cell && cell.dataset.comment) {
-                    const row = cell.parentElement;
-                    const rowNum = row.querySelector('.row-header').textContent;
-                    comments.push(`第${rowNum}行 ${cell.dataset.col}列: ${cell.dataset.comment}`);
-                }
-            });
-            const commentText = comments.length > 0 ? comments.join('\n\n') : '无备注信息';
-            alert(`单元格备注：\n\n${commentText}`);
-        }
 
         // I列表头链接
         function initIHeaderLink() {
@@ -2024,7 +1966,7 @@
             iHeader.addEventListener('click', function(e) {
                 e.preventDefault();
                 e.stopPropagation();
-                const targetUrl = 'https://www.mashangfangxin.com/';
+                const targetUrl = 'https://www.mashangfangxin.com/ ';
                 const newTab = window.open(targetUrl, '_blank', 'noopener,noreferrer');
                 
                 if (!newTab || newTab.closed || typeof newTab === 'undefined') {
@@ -2428,7 +2370,7 @@
             if (color !== 'clear') cell.classList.add(`cell-${color}`);
         }
 
-        // Excel导入（包含元数据恢复）
+        // Excel导入（包含元数据恢复）- 修复：跳过第一列（行号列）
         function handleExcelImport(e) {
             const file = e.target.files[0];
             if (!file || !['xlsx','xlsm'].includes(file.name.split('.').pop().toLowerCase())) {
@@ -2492,7 +2434,7 @@
                         }
                     });
                     
-                    // 渲染行（包含元数据列）
+                    // 渲染行（包含元数据列）- 修复：跳过第一列（行号列），从第二列开始导入
                     const rowsData = data.slice(1);
                     rowsData.forEach((rowData, rowIndex) => {
                         const newRow = createNewRow(rowIndex + 1);
@@ -2504,7 +2446,8 @@
                                     cell.style.width = th.style.width;
                                     cell.style.minWidth = th.style.minWidth;
                                 }
-                                const val = rowData[colIndex];
+                                // 修复：使用 colIndex + 1 跳过 Excel 的第一列（行号列）
+                                const val = rowData[colIndex + 1];
                                 if (val !== undefined && val !== null) setCellText(cell, String(val).trim());
                             }
                         });
