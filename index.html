@@ -94,17 +94,35 @@
             background-color: #84cc16;
         }
         
-        /* 冻结首行按钮激活状态 */
-        #freezeHeaderBtn.active {
-            background-color: #84cc16;
-            box-shadow: 0 4px 8px rgba(132, 204, 22, 0.4);
-        }
-        
         .btn-disabled {
             background-color: #e9fbb8 !important;
             cursor: not-allowed !important;
             transform: none !important;
             opacity: 0.6;
+        }
+        
+        /* 保存为xlsx按钮浅红色样式 */
+        #saveBtn {
+            background-color: #ff6b6b !important;
+            color: white !important;
+            border: 1px solid #ff5252 !important;
+        }
+        
+        #saveBtn:hover {
+            background-color: #ff5252 !important;
+            box-shadow: 0 6px 12px rgba(255, 107, 107, 0.4) !important;
+        }
+        
+        /* 【新增】导入表格按钮淡红色样式 */
+        #importBtn {
+            background-color: #ff8787 !important;
+            color: white !important;
+            border: 1px solid #ff6b6b !important;
+        }
+        
+        #importBtn:hover {
+            background-color: #ff6b6b !important;
+            box-shadow: 0 6px 12px rgba(255, 135, 135, 0.4) !important;
         }
         
         #fileInput {
@@ -201,19 +219,12 @@
             table-layout: fixed;
         }
         
-        /* 冻结首行核心样式 */
+        /* 【修改】永久冻结首行核心样式 - 始终启用 */
         thead.sticky-header th {
             position: sticky;
             top: 0;
             z-index: 10;
             box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-        }
-        
-        /* 取消冻结状态 */
-        thead.unfrozen th {
-            position: relative !important;
-            top: auto !important;
-            box-shadow: none !important;
         }
         
         /* 行号列样式 - 行号列宽度改为36px */
@@ -664,34 +675,7 @@
             display: none !important;
         }
         
-        /* 存储状态提示 */
-        .storage-status {
-            position: fixed;
-            bottom: 20px;
-            right: 20px;
-            background-color: #a3e635;
-            color: #333;
-            padding: 10px 20px;
-            border-radius: 8px;
-            font-weight: bold;
-            opacity: 0.8;
-            z-index: 9999;
-            transition: opacity 0.3s;
-            display: none;
-            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
-        }
-        
-        .storage-status.show {
-            display: block;
-            animation: fadeInOut 2s ease-in-out;
-        }
-        
-        @keyframes fadeInOut {
-            0% { opacity: 0; transform: translateY(20px); }
-            20% { opacity: 0.9; transform: translateY(0); }
-            80% { opacity: 0.9; transform: translateY(0); }
-            100% { opacity: 0; transform: translateY(-20px); }
-        }
+        /* 【删除】右下角自动保存弹窗样式已删除 */
         
         /* Excel式备注弹出框 - 所有批注改为备注 */
         .cell-comment-popup {
@@ -773,12 +757,15 @@
     <div class="container">
         <div class="toolbar">
             <input type="text" id="searchInput" placeholder="输入条码或药品名称，筛选A列或B列包含的内容...">
+            <!-- 【新增】清空搜索按钮 -->
+            <button id="clearSearchBtn">清空搜索</button>
             <button id="filterToggle">筛选＞0</button>
-            <button id="freezeHeaderBtn" class="active">冻结首行</button>
-            <button id="addRowBtn">新增药品</button>
-            <button id="importBtn">导入Excel</button>
+            <button id="addRowBtn">到最下方</button>
+            <!-- 【修改】导入Excel改为导入表格，淡红色样式通过CSS控制 -->
+            <button id="importBtn">导入表格</button>
             <input type="file" id="fileInput" accept=".xlsx,.xlsm">
-            <button id="saveBtn">保存为Excel</button>
+            <!-- 【修改】保存为xlsx改为保存表格 -->
+            <button id="saveBtn">保存表格</button>
             <button id="undoBtn" class="btn-disabled">撤销 (Ctrl+Z)</button>
             <button id="redoBtn" class="btn-disabled">恢复 (Ctrl+Y)</button>
         </div>
@@ -812,8 +799,7 @@
     <!-- Excel式备注弹出框 - 所有批注改为备注 -->
     <div class="cell-comment-popup" id="cellCommentPopup"></div>
 
-    <!-- 存储状态提示 -->
-    <div class="storage-status" id="storageStatus">数据已自动保存</div>
+    <!-- 【删除】右下角自动保存弹窗已删除 -->
 
     <script>
         // 全局配置
@@ -838,7 +824,6 @@
         
         // 全局变量
         let isFilterActive = false;
-        let isHeaderFrozen = true; // 首行冻结状态
         let originalRows = [];
         let selectedCell = null;
         let selectedCells = new Set();
@@ -864,6 +849,7 @@
         let commentMouseEnterTimer = null;
         let commentMouseLeaveTimer = null;
         let activeInput = null; // 当前活动的输入框
+        let isAtBottom = false; // 【新增】标记是否已经在最下方
 
         // 页面初始化
         document.addEventListener('DOMContentLoaded', function() {
@@ -882,7 +868,6 @@
             originalRows = Array.from(document.querySelectorAll('#dataTable tbody tr'));
             saveToHistory();
             initAllEvents();
-            initFreezeHeader(); // 初始化冻结首行功能
             calcTargetHeader(CONFIG.calcHeaderCol);
             calculateDColumn();
             checkDuplicateCells();
@@ -1841,18 +1826,107 @@
 
         // 按钮事件
         function initButtonEvents() {
+            // 【新增】清空搜索按钮事件
+            document.getElementById('clearSearchBtn').addEventListener('click', function() {
+                const searchInput = document.getElementById('searchInput');
+                searchInput.value = '';
+                clearSearchHighlights();
+                document.querySelectorAll('#dataTable tbody tr').forEach(row => {
+                    row.classList.remove('hidden');
+                });
+                lastSearchTerm = '';
+                !isUndoRedo && saveToHistory();
+                saveToLocalStorageDelayed();
+            });
+            
             document.getElementById('filterToggle').addEventListener('click', function() {
                 isFilterActive = !isFilterActive;
                 toggleDColumnFilter();
                 this.classList.toggle('active', isFilterActive);
                 saveToLocalStorageDelayed();
             });
-            document.getElementById('addRowBtn').addEventListener('click', addNewRow);
+            // 【修改】新增药品按钮改为到最下方功能
+            document.getElementById('addRowBtn').addEventListener('click', handleAddRowBtnClick);
             document.getElementById('fileInput').addEventListener('change', handleExcelImport);
+            // 【修改】导入按钮点击事件 - 改为直接触发文件选择
             document.getElementById('importBtn').addEventListener('click', () => document.getElementById('fileInput').click());
             document.getElementById('saveBtn').addEventListener('click', saveToExcel);
             document.getElementById('undoBtn').addEventListener('click', undo);
             document.getElementById('redoBtn').addEventListener('click', redo);
+        }
+
+        // 【新增】处理"到最下方"按钮点击
+        function handleAddRowBtnClick() {
+            const tbody = document.getElementById('tableTbody');
+            const rows = tbody.querySelectorAll('tr:not(.hidden)');
+            const btn = document.getElementById('addRowBtn');
+            
+            // 检查是否已经在最下方（最后一个可见行的最后一个可编辑单元格被选中）
+            let isCurrentlyAtBottom = false;
+            if (selectedCell) {
+                const currentRow = selectedCell.parentElement;
+                const lastRow = rows[rows.length - 1];
+                if (currentRow === lastRow) {
+                    const editableCells = currentRow.querySelectorAll('td.editable');
+                    if (selectedCell === editableCells[editableCells.length - 1]) {
+                        isCurrentlyAtBottom = true;
+                    }
+                }
+            }
+            
+            if (!isAtBottom && !isCurrentlyAtBottom) {
+                // 第一次点击：跳转到最下方最后一个单元格
+                if (rows.length > 0) {
+                    const lastRow = rows[rows.length - 1];
+                    const editableCells = lastRow.querySelectorAll('td.editable');
+                    if (editableCells.length > 0) {
+                        const lastCell = editableCells[editableCells.length - 1];
+                        
+                        // 滚动到最下方
+                        const tableWrapper = document.querySelector('.table-wrapper');
+                        tableWrapper.scrollTop = tableWrapper.scrollHeight;
+                        
+                        // 选中最后一个单元格
+                        selectCell(lastCell);
+                        
+                        // 标记为已在最下方
+                        isAtBottom = true;
+                        
+                        // 更改按钮文字提示可以新增
+                        btn.textContent = '新增药品';
+                        btn.style.backgroundColor = '#ff6b6b'; // 浅红色提示
+                        
+                        // 3秒后恢复按钮样式
+                        setTimeout(() => {
+                            if (isAtBottom) {
+                                btn.style.backgroundColor = ''; // 恢复原色
+                            }
+                        }, 3000);
+                    }
+                }
+            } else {
+                // 第二次点击：新增一行
+                addNewRow();
+                
+                // 重置状态
+                isAtBottom = false;
+                btn.textContent = '到最下方';
+                btn.style.backgroundColor = '';
+                
+                // 自动滚动到最下方并选中新行的第一个单元格
+                setTimeout(() => {
+                    const newRows = tbody.querySelectorAll('tr:not(.hidden)');
+                    if (newRows.length > 0) {
+                        const lastRow = newRows[newRows.length - 1];
+                        const firstEditable = lastRow.querySelector('td.editable');
+                        if (firstEditable) {
+                            const tableWrapper = document.querySelector('.table-wrapper');
+                            tableWrapper.scrollTop = tableWrapper.scrollHeight;
+                            selectCell(firstEditable);
+                        }
+                    }
+                }, 0);
+            }
         }
 
         // 修复J/K列表头编辑事件
@@ -2089,32 +2163,20 @@
                 if (e.ctrlKey && e.key === 'z') { e.preventDefault(); undo(); return; }
                 // Ctrl+Y 恢复
                 if (e.ctrlKey && e.key === 'y') { e.preventDefault(); redo(); return; }
-                // Ctrl+Home
-                if (e.ctrlKey && e.key === 'Home') {
+                // 【修改】Ctrl+Delete 删除整行（原来是Delete/Backspace清除选中单元格）
+                if (e.ctrlKey && e.key === 'Delete') {
                     e.preventDefault();
-                    const firstRow = document.querySelector('#dataTable tbody tr');
-                    if (firstRow) {
-                        const firstCell = firstRow.querySelector('td.editable');
-                        firstCell && selectCell(firstCell);
+                    const selectedRows = document.querySelectorAll('#dataTable tr.row-selected');
+                    if (selectedRows.length === 1) {
+                        deleteSelectedRow(selectedRows[0]);
+                    } else if (selectedCell) {
+                        // 如果没有整行选中但选中了单元格，删除该单元格所在行
+                        deleteSelectedRow(selectedCell.parentElement);
                     }
                     return;
                 }
-                // Ctrl+End
-                if (e.ctrlKey && e.key === 'End') {
-                    e.preventDefault();
-                    const rows = document.querySelectorAll('#dataTable tbody tr');
-                    if (rows.length > 0) {
-                        const lastRow = rows[rows.length - 1];
-                        const editableCells = lastRow.querySelectorAll('td.editable');
-                        if (editableCells.length > 0) {
-                            const lastCell = editableCells[editableCells.length - 1];
-                            selectCell(lastCell);
-                        }
-                    }
-                    return;
-                }
-                // Delete/Backspace
-                if ((e.key === 'Delete' || e.key === 'Backspace') && selectedCells.size > 0) {
+                // Delete/Backspace 清除选中单元格内容（非Ctrl时）
+                if ((e.key === 'Delete' || e.key === 'Backspace') && !e.ctrlKey && selectedCells.size > 0) {
                     e.preventDefault();
                     const selectedRows = document.querySelectorAll('#dataTable tr.row-selected');
                     if (selectedRows.length === 1) {
@@ -2168,7 +2230,60 @@
             });
         }
 
-        // 整行清除
+        // 【新增】删除选中的整行（下方单元格上移）
+        function deleteSelectedRow(row) {
+            if (!row || row.tagName !== 'TR') return;
+            
+            const tbody = document.getElementById('tableTbody');
+            const rowNum = row.querySelector('.row-header').textContent;
+            
+            // 从DOM中删除
+            row.remove();
+            
+            // 更新originalRows
+            originalRows = originalRows.filter(r => r !== row);
+            if (isFilterActive) {
+                originalRows = originalRows.filter(r => r !== row);
+            }
+            
+            // 重新编号所有行
+            const remainingRows = tbody.querySelectorAll('tr');
+            remainingRows.forEach((r, index) => {
+                const numCell = r.querySelector('.row-header');
+                if (numCell) {
+                    numCell.textContent = index + 1;
+                }
+            });
+            
+            // 更新originalRows中的行号
+            originalRows.forEach((r, index) => {
+                const numCell = r.querySelector('.row-header');
+                if (numCell) {
+                    numCell.textContent = index + 1;
+                }
+            });
+            
+            // 清除选中状态
+            clearAllSelections();
+            clearRowColHighlight();
+            selectedCell = null;
+            selectedCells.clear();
+            
+            // 重置"到最下方"按钮状态
+            isAtBottom = false;
+            const btn = document.getElementById('addRowBtn');
+            btn.textContent = '到最下方';
+            btn.style.backgroundColor = '';
+            
+            // 重新计算D列和检查重复
+            calculateDColumn();
+            checkDuplicateCells();
+            
+            !isUndoRedo && saveToHistory();
+            saveToLocalStorageDelayed();
+        }
+
+        // 整行清除（保留行，清空内容）
         function clearSelectedRow(row) {
             if (!row || row.tagName !== 'TR') return;
             
@@ -2498,7 +2613,7 @@
                         if (row1 && row2 && row3) {
                             const val1 = String(row1[0] || '').trim();
                             const val2 = String(row2[0] || '').trim();
-                            const val3 = String(row3[0] || '').trim();
+                            val3 = String(row3[0] || '').trim();
                             
                             // 检测是否为 1,2,3 序列（序号列特征）
                             if (val1 === '1' && val2 === '2' && val3 === '3') {
@@ -2665,10 +2780,9 @@
                         return rowData;
                     }),
                     filterActive: isFilterActive,
-                    headerFrozen: isHeaderFrozen, // 保存冻结状态
                     colWidths: Array.from(document.querySelectorAll('#dataTable thead th:not(.row-header)')).map(th => th.style.width),
                     lastSaved: new Date().toISOString(),
-                    version: '6.1'
+                    version: '6.0'
                 };
                 
                 localStorage.setItem(CONFIG.storageKey, JSON.stringify(data));
@@ -2687,11 +2801,11 @@
                 clearTimeout(autoSaveTimer);
             }
             
+            // 【修改】自动保存延迟改为15秒
             autoSaveTimer = setTimeout(() => {
-                if (saveToLocalStorage()) {
-                    showStorageStatus('数据已自动保存');
-                }
-            }, 5000);
+                saveToLocalStorage();
+                // 【删除】不再显示右下角弹窗提示
+            }, 15000);
         }
         
         function loadFromLocalStorage() {
@@ -2712,22 +2826,6 @@
                 
                 const tbody = document.getElementById('tableTbody');
                 tbody.innerHTML = '';
-                
-                // 恢复冻结状态
-                if (data.headerFrozen !== undefined) {
-                    isHeaderFrozen = data.headerFrozen;
-                    const thead = document.querySelector('.sticky-header');
-                    const freezeBtn = document.getElementById('freezeHeaderBtn');
-                    if (isHeaderFrozen) {
-                        thead.classList.remove('unfrozen');
-                        freezeBtn.classList.add('active');
-                        freezeBtn.textContent = '冻结首行';
-                    } else {
-                        thead.classList.add('unfrozen');
-                        freezeBtn.classList.remove('active');
-                        freezeBtn.textContent = '取消冻结';
-                    }
-                }
                 
                 // 恢复表头
                 colLetters.forEach((col, idx) => {
@@ -2821,9 +2919,7 @@
                     }
                 });
                 
-                setTimeout(() => {
-                    showStorageStatus(`已加载${data.rows.length}行数据（${data.lastSaved ? new Date(data.lastSaved).toLocaleDateString() : '上次保存时间未知'}）`);
-                }, 500);
+                // 【删除】不再显示加载数据的弹窗提示
                 
                 return true;
             } catch (err) {
@@ -2832,13 +2928,7 @@
             }
         }
         
-        function showStorageStatus(message) {
-            const statusEl = document.getElementById('storageStatus');
-            statusEl.textContent = message;
-            statusEl.classList.remove('show');
-            void statusEl.offsetWidth;
-            statusEl.classList.add('show');
-        }
+        // 【删除】showStorageStatus函数已删除，不再使用
 
         // 撤销/恢复功能
         function saveToHistory() {
@@ -2871,7 +2961,6 @@
                     return rowData;
                 }),
                 filterActive: isFilterActive,
-                headerFrozen: isHeaderFrozen, // 保存冻结状态到历史记录
                 colWidths: Array.from(document.querySelectorAll('#dataTable thead th:not(.row-header)')).map(th => th.style.width)
             };
             historyStack.push(JSON.parse(JSON.stringify(data)));
@@ -2902,22 +2991,6 @@
         function restoreTableState(state) {
             // 清除高亮
             clearRowColHighlight();
-            
-            // 恢复冻结状态
-            if (state.headerFrozen !== undefined) {
-                isHeaderFrozen = state.headerFrozen;
-                const thead = document.querySelector('.sticky-header');
-                const freezeBtn = document.getElementById('freezeHeaderBtn');
-                if (isHeaderFrozen) {
-                    thead.classList.remove('unfrozen');
-                    freezeBtn.classList.add('active');
-                    freezeBtn.textContent = '冻结首行';
-                } else {
-                    thead.classList.add('unfrozen');
-                    freezeBtn.classList.remove('active');
-                    freezeBtn.textContent = '取消冻结';
-                }
-            }
             
             // 恢复表头
             colLetters.forEach((col, idx) => {
@@ -3025,33 +3098,6 @@
             const redoBtn = document.getElementById('redoBtn');
             undoBtn.classList.toggle('btn-disabled', historyStack.length <= 1);
             redoBtn.classList.toggle('btn-disabled', redoStack.length === 0);
-        }
-
-        // 【新增】冻结首行功能初始化
-        function initFreezeHeader() {
-            const btn = document.getElementById('freezeHeaderBtn');
-            const thead = document.querySelector('.sticky-header');
-            
-            // 默认启用冻结（保持原有行为）
-            isHeaderFrozen = true;
-            btn.classList.add('active');
-            
-            btn.addEventListener('click', function() {
-                isHeaderFrozen = !isHeaderFrozen;
-                
-                if (isHeaderFrozen) {
-                    thead.classList.remove('unfrozen');
-                    btn.classList.add('active');
-                    btn.textContent = '冻结首行';
-                } else {
-                    thead.classList.add('unfrozen');
-                    btn.classList.remove('active');
-                    btn.textContent = '取消冻结';
-                }
-                
-                !isUndoRedo && saveToHistory();
-                saveToLocalStorageDelayed();
-            });
         }
     </script>
 </body>
