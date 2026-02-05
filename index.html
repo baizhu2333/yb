@@ -751,7 +751,7 @@
             background-color: white;
         }
     </style>
-    <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js   "></script>
+    <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
 </head>
 <body>
     <div class="container">
@@ -824,7 +824,8 @@
         
         // 全局变量
         let isFilterActive = false;
-        let originalRows = [];
+        // 【关键修复】改用数据存储模式而非DOM引用存储，避免筛选状态下引用混乱
+        let originalData = []; // 存储纯数据对象而非DOM引用
         let selectedCell = null;
         let selectedCells = new Set();
         let contextMenu = null;
@@ -865,7 +866,8 @@
             }
             
             initColResize();
-            originalRows = Array.from(document.querySelectorAll('#dataTable tbody tr'));
+            // 【修复】初始化时同步数据到originalData
+            syncOriginalDataFromDOM();
             saveToHistory();
             initAllEvents();
             calcTargetHeader(CONFIG.calcHeaderCol);
@@ -980,12 +982,118 @@
             return null;
         }
         
+        // 【核心修复】同步DOM数据到originalData（数据对象存储）
+        function syncOriginalDataFromDOM() {
+            originalData = [];
+            const rows = document.querySelectorAll('#dataTable tbody tr');
+            rows.forEach((row, index) => {
+                const rowData = {
+                    rowNum: index + 1,
+                    cells: {}
+                };
+                colLetters.forEach(col => {
+                    const cell = row.querySelector(`td[data-col="${col}"]`);
+                    if (cell) {
+                        rowData.cells[col] = {
+                            content: getCellText(cell),
+                            classes: Array.from(cell.classList).filter(c => 
+                                ['cell-yellow', 'cell-red', 'cell-pink', 'duplicate-cell', 'search-highlight'].includes(c)
+                            ),
+                            comment: cell.dataset.comment || '',
+                            width: cell.style.width
+                        };
+                    }
+                });
+                originalData.push(rowData);
+            });
+        }
+        
+        // 【核心修复】从originalData恢复行数据到DOM元素
+        function syncRowDataFromOriginal(rowElement, rowIndex) {
+            if (rowIndex < 0 || rowIndex >= originalData.length) return;
+            
+            const data = originalData[rowIndex];
+            colLetters.forEach(col => {
+                const cell = rowElement.querySelector(`td[data-col="${col}"]`);
+                const cellData = data.cells[col];
+                if (cell && cellData) {
+                    setCellText(cell, cellData.content);
+                    
+                    // 恢复类名（颜色标记）
+                    cell.classList.remove('cell-yellow', 'cell-red', 'cell-pink', 'duplicate-cell', 'search-highlight');
+                    cellData.classes.forEach(cls => cell.classList.add(cls));
+                    
+                    // 恢复备注
+                    if (cellData.comment) {
+                        cell.dataset.comment = cellData.comment;
+                        if (!cell.querySelector('.comment-indicator')) {
+                            const indicator = document.createElement('div');
+                            indicator.className = 'comment-indicator';
+                            cell.appendChild(indicator);
+                        }
+                    } else {
+                        delete cell.dataset.comment;
+                        const indicator = cell.querySelector('.comment-indicator');
+                        if (indicator) indicator.remove();
+                    }
+                }
+            });
+            
+            // 更新行号
+            const rowNumCell = rowElement.querySelector('.row-header');
+            if (rowNumCell) {
+                rowNumCell.textContent = data.rowNum;
+            }
+        }
+        
+        // 【核心修复】更新指定行的originalData（通过原始行号查找）
+        function updateOriginalDataByRowNum(rowNum, rowElement) {
+            const dataIndex = originalData.findIndex(d => d.rowNum === parseInt(rowNum));
+            if (dataIndex === -1) {
+                // 如果找不到，可能是新增行，添加到末尾
+                const newRowData = {
+                    rowNum: parseInt(rowNum),
+                    cells: {}
+                };
+                colLetters.forEach(col => {
+                    const cell = rowElement.querySelector(`td[data-col="${col}"]`);
+                    if (cell) {
+                        newRowData.cells[col] = {
+                            content: getCellText(cell),
+                            classes: Array.from(cell.classList).filter(c => 
+                                ['cell-yellow', 'cell-red', 'cell-pink', 'duplicate-cell', 'search-highlight'].includes(c)
+                            ),
+                            comment: cell.dataset.comment || '',
+                            width: cell.style.width
+                        };
+                    }
+                });
+                originalData.push(newRowData);
+            } else {
+                // 更新现有数据
+                colLetters.forEach(col => {
+                    const cell = rowElement.querySelector(`td[data-col="${col}"]`);
+                    if (cell) {
+                        originalData[dataIndex].cells[col] = {
+                            content: getCellText(cell),
+                            classes: Array.from(cell.classList).filter(c => 
+                                ['cell-yellow', 'cell-red', 'cell-pink', 'duplicate-cell', 'search-highlight'].includes(c)
+                            ),
+                            comment: cell.dataset.comment || '',
+                            width: cell.style.width
+                        };
+                    }
+                });
+            }
+        }
+        
         // 同步元数据（将前20列的颜色和备注同步到后20列）
         function syncMetaData(dataCell) {
             const col = dataCell.dataset.col;
             if (!isDataCol(col)) return;
             
             const row = dataCell.parentElement;
+            const rowNum = row.querySelector('.row-header').textContent;
             const metaCol = getMetaCol(col);
             const metaCell = row.querySelector(`td[data-col="${metaCol}"]`);
             if (!metaCell) return;
@@ -1005,6 +1113,9 @@
             
             // 视觉上区分元数据列
             metaCell.title = `元数据：${color ? '颜色=' + color : '无颜色'}${comment ? '，备注=' + comment : ''}`;
+            
+            // 【关键修复】同时更新originalData中的元数据
+            updateOriginalDataByRowNum(rowNum, row);
         }
         
         // 从元数据恢复（导入时使用）
@@ -1235,6 +1346,9 @@
             setCellText(row2.querySelector('[data-col="G"]'), '');
             setCellText(row2.querySelector('[data-col="H"]'), '0');
             tbody.appendChild(row2);
+            
+            // 【修复】初始化完成后同步数据
+            syncOriginalDataFromDOM();
         }
 
         // 创建新行 - 40列
@@ -1538,7 +1652,7 @@
             selectCell(td);
         }
         
-        // 完成单元格编辑
+        // 【核心修复】完成单元格编辑时同步到originalData
         function finishCellEdit(input) {
             if (!input || !input.classList.contains('editing')) return;
             
@@ -1546,17 +1660,24 @@
             const newValue = input.value;
             const oldValue = getCellText(td);
             const col = td.dataset.col;
+            const row = td.parentElement;
+            const rowNum = row.querySelector('.row-header').textContent;
             
             if (newValue !== oldValue) {
                 setCellText(td, newValue);
                 
-                // 如果是数据列（前20列），同步元数据（备注和颜色不影响元数据列的文本，但数据改变不需要改元数据）
+                // 【关键修复】立即同步到originalData，无论是否处于筛选状态
+                updateOriginalDataByRowNum(parseInt(rowNum), row);
+                
+                // 如果是数据列（前20列），同步元数据
+                if (isDataCol(col)) {
+                    syncMetaData(td);
+                }
                 
                 !isUndoRedo && saveToHistory();
                 saveToLocalStorageDelayed();
                 checkDuplicateCells();
                 calculateDColumn();
-                updateOriginalRowData(td.parentElement);
             }
             
             input.classList.remove('editing');
@@ -1566,45 +1687,6 @@
             
             if (td && document.activeElement === input) {
                 td.focus();
-            }
-        }
-        
-        // 更新originalRows中对应行的数据
-        function updateOriginalRowData(currentRow) {
-            if (!isFilterActive) {
-                originalRows = Array.from(document.querySelectorAll('#dataTable tbody tr'));
-                return;
-            }
-            
-            const currentRowNum = currentRow.querySelector('.row-header').textContent;
-            const originalRow = originalRows.find(r => {
-                return r.querySelector('.row-header').textContent === currentRowNum;
-            });
-            
-            if (originalRow) {
-                const currentCells = currentRow.querySelectorAll('td[data-col]');
-                const originalCells = originalRow.querySelectorAll('td[data-col]');
-                
-                currentCells.forEach((cell, index) => {
-                    if (originalCells[index]) {
-                        const col = cell.dataset.col;
-                        setCellText(originalCells[index], getCellText(cell));
-                        originalCells[index].className = cell.className;
-                        
-                        if (cell.dataset.comment) {
-                            originalCells[index].dataset.comment = cell.dataset.comment;
-                            if (!originalCells[index].querySelector('.comment-indicator')) {
-                                const indicator = document.createElement('div');
-                                indicator.className = 'comment-indicator';
-                                originalCells[index].appendChild(indicator);
-                            }
-                        } else {
-                            delete originalCells[index].dataset.comment;
-                            const indicator = originalCells[index].querySelector('.comment-indicator');
-                            if (indicator) indicator.remove();
-                        }
-                    }
-                });
             }
         }
         
@@ -1633,7 +1715,7 @@
             if (currentRowIdx < rows.length - 1) {
                 const nextCell = rows[currentRowIdx + 1].querySelectorAll('td.editable')[currentCellIdx];
                 if (nextCell) {
-                    selectCell(nextCell); // selectCell内部会触发高亮
+                    selectCell(nextCell);
                     return;
                 }
             }
@@ -1668,7 +1750,7 @@
                 e.stopPropagation();
                 
                 clearAllSelections();
-                clearRowColHighlight(); // 清除高亮
+                clearRowColHighlight();
                 
                 document.querySelectorAll('#dataTable tr.row-selected').forEach(r => {
                     r.classList.remove('row-selected');
@@ -1686,8 +1768,6 @@
                     selectedCell = editableCells[0];
                     selectedCell.style.outline = '3px solid #a3e635';
                     selectedCell.focus();
-                    
-                    // 整行选中时也触发高亮（但整行选中是高亮整行，这里保持原有逻辑）
                     highlightRowCol(selectedCell);
                 }
             });
@@ -1765,9 +1845,12 @@
                 const term = this.value.trim();
                 if (term === '' && lastSearchTerm !== '') {
                     clearSearchHighlights();
-                    document.querySelectorAll('#dataTable tbody tr').forEach(row => {
-                        row.classList.remove('hidden');
-                    });
+                    // 【修复】搜索清空时重新渲染所有行
+                    if (isFilterActive) {
+                        applyFilter();
+                    } else {
+                        renderAllRowsFromOriginalData();
+                    }
                     lastSearchTerm = '';
                     !isUndoRedo && saveToHistory();
                 }
@@ -1781,37 +1864,108 @@
             });
         }
         
+        // 【新增】从originalData重新渲染所有行（保持数据一致性）
+        function renderAllRowsFromOriginalData() {
+            const tbody = document.getElementById('tableTbody');
+            tbody.innerHTML = '';
+            
+            originalData.forEach((rowData, index) => {
+                const row = createNewRow(rowData.rowNum);
+                
+                // 恢复数据到单元格
+                colLetters.forEach(col => {
+                    const cell = row.querySelector(`td[data-col="${col}"]`);
+                    const cellData = rowData.cells[col];
+                    if (cell && cellData) {
+                        setCellText(cell, cellData.content);
+                        
+                        // 恢复类名
+                        cellData.classes.forEach(cls => {
+                            if (cls) cell.classList.add(cls);
+                        });
+                        
+                        // 恢复备注
+                        if (cellData.comment) {
+                            cell.dataset.comment = cellData.comment;
+                            const indicator = document.createElement('div');
+                            indicator.className = 'comment-indicator';
+                            cell.appendChild(indicator);
+                        }
+                        
+                        // 恢复宽度
+                        if (cellData.width) {
+                            cell.style.width = cellData.width;
+                            cell.style.minWidth = cellData.width;
+                        }
+                    }
+                });
+                
+                tbody.appendChild(row);
+            });
+            
+            calculateDColumn();
+            checkDuplicateCells();
+        }
+        
         function performSearch() {
             const term = document.getElementById('searchInput').value.trim();
             lastSearchTerm = term;
             
             if (!term) {
                 clearSearchHighlights();
-                document.querySelectorAll('#dataTable tbody tr').forEach(row => row.classList.remove('hidden'));
+                if (isFilterActive) {
+                    applyFilter();
+                } else {
+                    renderAllRowsFromOriginalData();
+                }
                 saveToHistory();
                 return;
             }
             
             clearSearchHighlights();
             
-            document.querySelectorAll('#dataTable tbody tr').forEach(row => {
-                const aCell = row.querySelector('[data-col="A"]');
-                const bCell = row.querySelector('[data-col="B"]');
-                const aText = getCellText(aCell).toLowerCase();
-                const bText = getCellText(bCell).toLowerCase();
+            // 【修复】搜索基于originalData而非DOM，确保数据一致性
+            const tbody = document.getElementById('tableTbody');
+            tbody.innerHTML = '';
+            
+            originalData.forEach((rowData, index) => {
+                const aContent = (rowData.cells['A']?.content || '').toLowerCase();
+                const bContent = (rowData.cells['B']?.content || '').toLowerCase();
                 const termLower = term.toLowerCase();
-                const match = aText.includes(termLower) || bText.includes(termLower);
+                
+                const match = aContent.includes(termLower) || bContent.includes(termLower);
                 
                 if (match) {
-                    row.classList.remove('hidden');
-                    if (aText.includes(termLower)) {
-                        aCell.classList.add('search-highlight');
+                    const row = createNewRow(rowData.rowNum);
+                    
+                    colLetters.forEach(col => {
+                        const cell = row.querySelector(`td[data-col="${col}"]`);
+                        const cellData = rowData.cells[col];
+                        if (cell && cellData) {
+                            setCellText(cell, cellData.content);
+                            cellData.classes.forEach(cls => {
+                                if (cls) cell.classList.add(cls);
+                            });
+                            if (cellData.comment) {
+                                cell.dataset.comment = cellData.comment;
+                                const indicator = document.createElement('div');
+                                indicator.className = 'comment-indicator';
+                                cell.appendChild(indicator);
+                            }
+                        }
+                    });
+                    
+                    // 高亮匹配单元格
+                    if (aContent.includes(termLower)) {
+                        const aCell = row.querySelector('[data-col="A"]');
+                        if (aCell) aCell.classList.add('search-highlight');
                     }
-                    if (bText.includes(termLower)) {
-                        bCell.classList.add('search-highlight');
+                    if (bContent.includes(termLower)) {
+                        const bCell = row.querySelector('[data-col="B"]');
+                        if (bCell) bCell.classList.add('search-highlight');
                     }
-                } else {
-                    row.classList.add('hidden');
+                    
+                    tbody.appendChild(row);
                 }
             });
             
@@ -1831,10 +1985,14 @@
                 const searchInput = document.getElementById('searchInput');
                 searchInput.value = '';
                 clearSearchHighlights();
-                document.querySelectorAll('#dataTable tbody tr').forEach(row => {
-                    row.classList.remove('hidden');
-                });
                 lastSearchTerm = '';
+                
+                if (isFilterActive) {
+                    applyFilter();
+                } else {
+                    renderAllRowsFromOriginalData();
+                }
+                
                 !isUndoRedo && saveToHistory();
                 saveToLocalStorageDelayed();
             });
@@ -2069,12 +2227,21 @@
                     const action = this.dataset.action;
                     
                     let cellsToProcess = selectedCells.size > 0 ? Array.from(selectedCells) : (selectedCell ? [selectedCell] : []);
+                    
+                    // 【修复】批量处理前先收集所有受影响的行号
+                    const affectedRowNums = new Set();
+                    cellsToProcess.forEach(cell => {
+                        const row = cell.parentElement;
+                        const rowNum = row.querySelector('.row-header').textContent;
+                        affectedRowNums.add(parseInt(rowNum));
+                    });
+                    
                     cellsToProcess.forEach(cell => {
                         if (!cell || cell.tagName !== 'TD') return;
                         switch(action) {
                             case 'mark-red': 
                                 setCellColor(cell, 'red'); 
-                                syncMetaData(cell); // 同步元数据
+                                syncMetaData(cell);
                                 break;
                             case 'mark-yellow': 
                                 setCellColor(cell, 'yellow'); 
@@ -2098,6 +2265,7 @@
                                 break;
                         }
                     });
+                    
                     if (['mark-red','mark-yellow','mark-pink','clear-color','add-comment','clear-comment'].includes(action)) {
                         !isUndoRedo && saveToHistory();
                         saveToLocalStorageDelayed();
@@ -2118,7 +2286,7 @@
             iHeader.addEventListener('click', function(e) {
                 e.preventDefault();
                 e.stopPropagation();
-                const targetUrl = 'https://www.mashangfangxin.com/   ';
+                const targetUrl = 'https://www.mashangfangxin.com/';
                 const newTab = window.open(targetUrl, '_blank', 'noopener,noreferrer');
                 
                 if (!newTab || newTab.closed || typeof newTab === 'undefined') {
@@ -2235,18 +2403,18 @@
             if (!row || row.tagName !== 'TR') return;
             
             const tbody = document.getElementById('tableTbody');
-            const rowNum = row.querySelector('.row-header').textContent;
+            const rowNum = parseInt(row.querySelector('.row-header').textContent);
+            
+            // 【关键修复】从originalData中删除对应行
+            const dataIndex = originalData.findIndex(d => d.rowNum === rowNum);
+            if (dataIndex !== -1) {
+                originalData.splice(dataIndex, 1);
+            }
             
             // 从DOM中删除
             row.remove();
             
-            // 更新originalRows
-            originalRows = originalRows.filter(r => r !== row);
-            if (isFilterActive) {
-                originalRows = originalRows.filter(r => r !== row);
-            }
-            
-            // 重新编号所有行
+            // 重新编号所有行（保持连续性）
             const remainingRows = tbody.querySelectorAll('tr');
             remainingRows.forEach((r, index) => {
                 const numCell = r.querySelector('.row-header');
@@ -2255,12 +2423,9 @@
                 }
             });
             
-            // 更新originalRows中的行号
-            originalRows.forEach((r, index) => {
-                const numCell = r.querySelector('.row-header');
-                if (numCell) {
-                    numCell.textContent = index + 1;
-                }
+            // 更新originalData中的行号
+            originalData.forEach((d, index) => {
+                d.rowNum = index + 1;
             });
             
             // 清除选中状态
@@ -2287,20 +2452,32 @@
         function clearSelectedRow(row) {
             if (!row || row.tagName !== 'TR') return;
             
+            const rowNum = parseInt(row.querySelector('.row-header').textContent);
+            const dataIndex = originalData.findIndex(d => d.rowNum === rowNum);
+            
             const allCells = row.querySelectorAll('td[data-col]');
             allCells.forEach(cell => {
-                if (CONFIG.readOnlyCol.includes(cell.dataset.col)) {
+                const col = cell.dataset.col;
+                
+                if (CONFIG.readOnlyCol.includes(col)) {
                     setCellText(cell, '0');
                 } else {
                     setCellText(cell, '');
                 }
                 cell.classList.remove('cell-red', 'cell-yellow', 'cell-pink', 'duplicate-cell', 'search-highlight');
                 clearCellComment(cell);
+                
+                // 【修复】同步清空到originalData
+                if (dataIndex !== -1 && originalData[dataIndex].cells[col]) {
+                    originalData[dataIndex].cells[col].content = CONFIG.readOnlyCol.includes(col) ? '0' : '';
+                    originalData[dataIndex].cells[col].classes = [];
+                    originalData[dataIndex].cells[col].comment = '';
+                }
             });
             
             row.classList.remove('row-selected');
             clearAllSelections();
-            clearRowColHighlight(); // 清除高亮
+            clearRowColHighlight();
             
             // 同步所有元数据（清空）
             for (let col = 'A'; col <= 'T'; col = String.fromCharCode(col.charCodeAt(0) + 1)) {
@@ -2322,11 +2499,20 @@
             });
             if (editableCells.length === 0) return;
             
-            const rowsNeedSync = new Set();
+            const affectedRowNums = new Set();
             
             editableCells.forEach(cell => {
+                const row = cell.parentElement;
+                const rowNum = parseInt(row.querySelector('.row-header').textContent);
+                affectedRowNums.add(rowNum);
+                
                 setCellText(cell, '');
-                rowsNeedSync.add(cell.parentElement);
+                
+                // 【修复】同步到originalData
+                const dataIndex = originalData.findIndex(d => d.rowNum === rowNum);
+                if (dataIndex !== -1 && originalData[dataIndex].cells[cell.dataset.col]) {
+                    originalData[dataIndex].cells[cell.dataset.col].content = '';
+                }
             });
             
             !isUndoRedo && saveToHistory();
@@ -2335,17 +2521,19 @@
             calculateDColumn();
             
             // 同步受影响的行的元数据
-            rowsNeedSync.forEach(row => {
-                for (let col = 'A'; col <= 'T'; col = String.fromCharCode(col.charCodeAt(0) + 1)) {
-                    const cell = row.querySelector(`td[data-col="${col}"]`);
-                    if (cell) syncMetaData(cell);
+            affectedRowNums.forEach(rowNum => {
+                const rowIndex = originalData.findIndex(d => d.rowNum === rowNum);
+                if (rowIndex !== -1) {
+                    for (let col = 'A'; col <= 'T'; col = String.fromCharCode(col.charCodeAt(0) + 1)) {
+                        const cell = document.querySelector(`#dataTable tbody tr:nth-child(${rowIndex + 1}) td[data-col="${col}"]`);
+                        if (cell) syncMetaData(cell);
+                    }
                 }
             });
         }
 
         // 业务功能
         function selectCell(cell) {
-            // 清除之前的高亮
             clearRowColHighlight();
             
             document.querySelectorAll('#dataTable tr.row-selected').forEach(r => {
@@ -2358,8 +2546,6 @@
                 cell.classList.add('cell-selected');
                 selectedCells.add(cell);
                 cell.focus();
-                
-                // 【新增】点击时触发行列高亮（跳过有颜色的单元格）
                 highlightRowCol(cell);
             }
         }
@@ -2388,7 +2574,7 @@
         
         function selectCellRange(startCell, endCell) {
             clearAllSelections();
-            clearRowColHighlight(); // 清除之前的高亮
+            clearRowColHighlight();
             
             const startRow = startCell.parentElement, endRow = endCell.parentElement;
             const rows = Array.from(document.querySelectorAll('#dataTable tbody tr:not(.hidden)'));
@@ -2409,27 +2595,33 @@
             }
             selectedCell = endCell;
             selectedCell.style.outline = '3px solid #a3e635';
-            
-            // 范围选择后高亮最后一个单元格所在的行列
             highlightRowCol(endCell);
         }
         
-        // 新增行
+        // 【核心修复】新增行时同步更新originalData
         function addNewRow() {
             const tbody = document.getElementById('tableTbody');
-            const rowCount = tbody.querySelectorAll('tr').length;
-            const newRow = createNewRow(rowCount + 1);
+            const newRowNum = originalData.length + 1;
+            const newRow = createNewRow(newRowNum);
             tbody.appendChild(newRow);
             
+            // 【关键修复】添加到originalData
+            const newRowData = {
+                rowNum: newRowNum,
+                cells: {}
+            };
+            colLetters.forEach(col => {
+                newRowData.cells[col] = {
+                    content: CONFIG.readOnlyCol.includes(col) ? '0' : '',
+                    classes: [],
+                    comment: '',
+                    width: ''
+                };
+            });
+            originalData.push(newRowData);
+            
             if (isFilterActive) {
-                originalRows.push(newRow);
-                const input = newRow.querySelector('.cell-input');
-                if (input) {
-                    bindCellEvents(newRow.querySelector('td.editable'), input);
-                }
                 applyFilter();
-            } else {
-                originalRows = Array.from(document.querySelectorAll('#dataTable tbody tr'));
             }
             
             selectCell(newRow.querySelector('td.editable'));
@@ -2438,72 +2630,64 @@
             !isUndoRedo && saveToHistory();
             saveToLocalStorageDelayed();
             
-            // 自动滚动到最下方
             setTimeout(() => {
                 const tableWrapper = document.querySelector('.table-wrapper');
                 tableWrapper.scrollTop = tableWrapper.scrollHeight;
             }, 0);
         }
         
-        // 应用筛选
+        // 【核心修复】应用筛选时基于originalData重新渲染
         function applyFilter() {
-            if (!isFilterActive) return;
-            
             const tbody = document.getElementById('tableTbody');
             tbody.innerHTML = '';
             
-            const filtered = originalRows.filter(row => {
-                const dCell = row.querySelector('td[data-col="D"]');
-                const dVal = parseFloat(getCellText(dCell)) || 0;
+            // 基于originalData筛选，而不是DOM元素
+            const filtered = originalData.filter(rowData => {
+                const dContent = rowData.cells['D']?.content || '0';
+                const dVal = parseFloat(dContent) || 0;
                 return dVal > 0;
             }).sort((a, b) => {
-                const aCell = a.querySelector('td[data-col="C"]');
-                const bCell = b.querySelector('td[data-col="C"]');
-                const aVal = parseFloat(getCellText(aCell)) || 0;
-                const bVal = parseFloat(getCellText(bCell)) || 0;
+                const aVal = parseFloat(a.cells['C']?.content) || 0;
+                const bVal = parseFloat(b.cells['C']?.content) || 0;
                 return bVal - aVal;
             });
             
-            filtered.forEach((row, index) => {
-                const rowNumCell = row.querySelector('.row-header');
-                if (rowNumCell) rowNumCell.textContent = index + 1;
+            filtered.forEach((rowData, index) => {
+                const row = createNewRow(index + 1);
+                
+                // 从originalData恢复数据
+                colLetters.forEach(col => {
+                    const cell = row.querySelector(`td[data-col="${col}"]`);
+                    const cellData = rowData.cells[col];
+                    if (cell && cellData) {
+                        setCellText(cell, cellData.content);
+                        cellData.classes.forEach(cls => {
+                            if (cls) cell.classList.add(cls);
+                        });
+                        if (cellData.comment) {
+                            cell.dataset.comment = cellData.comment;
+                            const indicator = document.createElement('div');
+                            indicator.className = 'comment-indicator';
+                            cell.appendChild(indicator);
+                        }
+                        if (cellData.width) {
+                            cell.style.width = cellData.width;
+                            cell.style.minWidth = cellData.width;
+                        }
+                    }
+                });
+                
                 tbody.appendChild(row);
             });
         }
         
+        // 【核心修复】切换筛选时正确处理数据同步
         function toggleDColumnFilter() {
-            const tbody = document.getElementById('tableTbody');
-            tbody.innerHTML = '';
-            
             if (isFilterActive) {
-                const filtered = originalRows.filter(row => {
-                    const dCell = row.querySelector('td[data-col="D"]');
-                    const dVal = parseFloat(getCellText(dCell)) || 0;
-                    return dVal > 0;
-                }).sort((a, b) => {
-                    const aCell = a.querySelector('td[data-col="C"]');
-                    const bCell = b.querySelector('td[data-col="C"]');
-                    const aVal = parseFloat(getCellText(aCell)) || 0;
-                    const bVal = parseFloat(getCellText(bCell)) || 0;
-                    return bVal - aVal;
-                });
-                
-                filtered.forEach((row, index) => {
-                    const rowNumCell = row.querySelector('.row-header');
-                    if (rowNumCell) rowNumCell.textContent = index + 1;
-                    tbody.appendChild(row);
-                });
+                applyFilter();
             } else {
-                if (originalRows.length === 0) {
-                    originalRows = Array.from(document.querySelectorAll('#dataTable tbody tr'));
-                }
-                
-                originalRows.forEach((row, index) => {
-                    const rowNumCell = row.querySelector('.row-header');
-                    if (rowNumCell) rowNumCell.textContent = index + 1;
-                    row.classList.remove('hidden');
-                    tbody.appendChild(row);
-                });
+                // 取消筛选时，基于originalData重新渲染所有行
+                renderAllRowsFromOriginalData();
             }
             
             !isUndoRedo && saveToHistory();
@@ -2520,24 +2704,62 @@
                     if (getCellText(cell) !== '') count++;
                 });
                 setCellText(dCell, count.toString());
+                
+                // 【修复】同步D列计算结果到originalData
+                const rowNum = parseInt(row.querySelector('.row-header').textContent);
+                const dataIndex = originalData.findIndex(d => d.rowNum === rowNum);
+                if (dataIndex !== -1) {
+                    originalData[dataIndex].cells['D'].content = count.toString();
+                }
             });
         }
         
         function checkDuplicateCells() {
             const excludeCols = ['C','D','E','F','G'];
             const valueMap = new Map();
-            document.querySelectorAll('#dataTable tbody td[data-col]').forEach(cell => {
-                const col = cell.dataset.col;
-                const text = getCellText(cell).trim();
-                if (excludeCols.includes(col) || !text) return;
-                const numValue = parseFloat(text);
-                if (!isNaN(numValue) && numValue >= 0 && numValue <= 10) return;
-                if (!valueMap.has(text)) valueMap.set(text, []);
-                valueMap.get(text).push(cell);
+            
+            // 【修复】基于originalData检查重复，确保一致性
+            originalData.forEach((rowData, rowIndex) => {
+                Object.keys(rowData.cells).forEach(col => {
+                    if (excludeCols.includes(col)) return;
+                    const cellData = rowData.cells[col];
+                    const text = (cellData?.content || '').trim();
+                    if (!text) return;
+                    const numValue = parseFloat(text);
+                    if (!isNaN(numValue) && numValue >= 0 && numValue <= 10) return;
+                    if (!valueMap.has(text)) valueMap.set(text, []);
+                    valueMap.get(text).push({rowIndex, col});
+                });
             });
+            
+            // 清除所有重复标记
             document.querySelectorAll('.duplicate-cell').forEach(cell => cell.classList.remove('duplicate-cell'));
-            valueMap.forEach((cells, val) => {
-                if (cells.length > 1) cells.forEach(cell => cell.classList.add('duplicate-cell'));
+            originalData.forEach(rowData => {
+                Object.keys(rowData.cells).forEach(col => {
+                    if (rowData.cells[col].classes) {
+                        rowData.cells[col].classes = rowData.cells[col].classes.filter(c => c !== 'duplicate-cell');
+                    }
+                });
+            });
+            
+            // 标记重复项
+            valueMap.forEach((positions, val) => {
+                if (positions.length > 1) {
+                    positions.forEach(({rowIndex, col}) => {
+                        // 更新DOM
+                        const row = document.querySelectorAll('#dataTable tbody tr')[rowIndex];
+                        if (row) {
+                            const cell = row.querySelector(`td[data-col="${col}"]`);
+                            if (cell) cell.classList.add('duplicate-cell');
+                        }
+                        // 更新originalData
+                        if (originalData[rowIndex] && originalData[rowIndex].cells[col]) {
+                            if (!originalData[rowIndex].cells[col].classes.includes('duplicate-cell')) {
+                                originalData[rowIndex].cells[col].classes.push('duplicate-cell');
+                            }
+                        }
+                    });
+                }
             });
         }
         
@@ -2555,9 +2777,9 @@
                 cell.appendChild(indicator);
             }
             
-            if (isFilterActive) {
-                updateOriginalRowData(cell.parentElement);
-            }
+            // 【修复】同步到originalData
+            const rowNum = parseInt(cell.parentElement.querySelector('.row-header').textContent);
+            updateOriginalDataByRowNum(rowNum, cell.parentElement);
         }
         
         // 清除备注
@@ -2567,6 +2789,10 @@
             if (indicator) {
                 cell.removeChild(indicator);
             }
+            
+            // 【修复】同步到originalData
+            const rowNum = parseInt(cell.parentElement.querySelector('.row-header').textContent);
+            updateOriginalDataByRowNum(rowNum, cell.parentElement);
         }
         
         // 设置单元格颜色
@@ -2574,13 +2800,21 @@
             cell.classList.remove('cell-red', 'cell-yellow', 'cell-pink');
             if (color !== 'clear') cell.classList.add(`cell-${color}`);
             
-            // 颜色改变后，如果当前单元格有高亮，需要更新高亮（因为可能不需要跳过了）
             if (cell.classList.contains('row-col-highlight') && hasCellColor(cell)) {
                 cell.classList.remove('row-col-highlight');
             }
+            
+            // 【修复】同步到originalData
+            const rowNum = parseInt(cell.parentElement.querySelector('.row-header').textContent);
+            const dataIndex = originalData.findIndex(d => d.rowNum === rowNum);
+            if (dataIndex !== -1 && originalData[dataIndex].cells[cell.dataset.col]) {
+                originalData[dataIndex].cells[cell.dataset.col].classes = Array.from(cell.classList).filter(c => 
+                    ['cell-yellow', 'cell-red', 'cell-pink', 'duplicate-cell', 'search-highlight'].includes(c)
+                );
+            }
         }
 
-        // Excel导入（包含元数据恢复）- 优化：智能检测第一列是否为序号列（1,2,3...）
+        // Excel导入（包含元数据恢复）
         function handleExcelImport(e) {
             const file = e.target.files[0];
             if (!file || !['xlsx','xlsm'].includes(file.name.split('.').pop().toLowerCase())) {
@@ -2599,13 +2833,12 @@
                     });
                     const sheet = wb.Sheets[wb.SheetNames[0]];
                     const data = XLSX.utils.sheet_to_json(sheet, { header: 1, raw: false });
-                    const cellRefs = XLSX.utils.decode_range(sheet['!ref'] || 'A1');
+                    
                     if (data.length <= 1) { alert('无有效数据！'); return; }
                     
                     // 智能检测：第一列是否为序号列（1,2,3...）
                     let skipFirstColumn = false;
                     if (data.length > 3) {
-                        // 检查前3行数据（第1,2,3行，即索引1,2,3，因为0是表头）
                         const row1 = data[1];
                         const row2 = data[2];
                         const row3 = data[3];
@@ -2613,9 +2846,8 @@
                         if (row1 && row2 && row3) {
                             const val1 = String(row1[0] || '').trim();
                             const val2 = String(row2[0] || '').trim();
-                            val3 = String(row3[0] || '').trim();
+                            const val3 = String(row3[0] || '').trim();
                             
-                            // 检测是否为 1,2,3 序列（序号列特征）
                             if (val1 === '1' && val2 === '2' && val3 === '3') {
                                 skipFirstColumn = true;
                                 console.log('检测到第一列为序号列（1,2,3...），自动跳过');
@@ -2625,11 +2857,11 @@
                     
                     const tbody = document.getElementById('tableTbody');
                     tbody.innerHTML = '';
+                    originalData = []; // 【修复】清空原有数据
                     
-                    // 计算列宽（只计算前20列）
+                    // 计算列宽
                     const colMaxLengths = new Array(20).fill(0);
                     const headerRow = data[0] || [];
-                    // 根据是否跳过第一列来决定从哪一列开始计算宽度
                     const startColIndex = skipFirstColumn ? 1 : 0;
                     headerRow.forEach((val, idx) => {
                         if (idx >= startColIndex && idx < startColIndex + 20) {
@@ -2651,10 +2883,10 @@
                             } else if (col === 'D' || col === 'F') {
                                 th.style.width = '40px';
                                 th.style.minWidth = '40px';
-                            } else if (idx >= 7 && idx <= 19) { // H-T
+                            } else if (idx >= 7 && idx <= 19) {
                                 th.style.width = '146px';
                                 th.style.minWidth = '146px';
-                            } else if (idx >= 20) { // U-AN
+                            } else if (idx >= 20) {
                                 th.style.width = '60px';
                                 th.style.minWidth = '60px';
                             } else {
@@ -2667,37 +2899,55 @@
                         }
                     });
                     
-                    // 渲染行（包含元数据列）- 根据检测结果显示是否跳过第一列
+                    // 渲染行
                     const rowsData = data.slice(1);
                     rowsData.forEach((rowData, rowIndex) => {
                         const newRow = createNewRow(rowIndex + 1);
+                        const rowDataObj = {
+                            rowNum: rowIndex + 1,
+                            cells: {}
+                        };
+                        
                         colLetters.forEach((col, colIndex) => {
-                            const cell = newRow.querySelector(`[data-col="${col}"]`);
+                            const cell = newRow.querySelector(`td[data-col="${col}"]`);
+                            const dataIndex = skipFirstColumn ? colIndex + 1 : colIndex;
+                            const val = rowData[dataIndex];
+                            
+                            rowDataObj.cells[col] = {
+                                content: val !== undefined && val !== null ? String(val).trim() : '',
+                                classes: [],
+                                comment: '',
+                                width: ''
+                            };
+                            
                             if (cell) {
                                 const th = getHeaderCell(col);
                                 if (th) {
                                     cell.style.width = th.style.width;
                                     cell.style.minWidth = th.style.minWidth;
                                 }
-                                // 如果检测到序号列，则使用 colIndex + 1 跳过第一列；否则使用 colIndex
-                                const dataIndex = skipFirstColumn ? colIndex + 1 : colIndex;
-                                const val = rowData[dataIndex];
                                 if (val !== undefined && val !== null) setCellText(cell, String(val).trim());
                             }
                         });
-                        tbody.appendChild(newRow);
                         
-                        // 恢复元数据（从U-AN列恢复到A-T列的备注和颜色）
+                        tbody.appendChild(newRow);
                         restoreFromMetaData(newRow);
-
-                        // 【修复】重新同步元数据，确保U-AN列格式正确（颜色|备注），清除Excel中的脏数据（如"01"）
+                        
+                        // 同步元数据后更新rowDataObj
                         for (let col = 'A'; col <= 'T'; col = String.fromCharCode(col.charCodeAt(0) + 1)) {
                             const cell = newRow.querySelector(`td[data-col="${col}"]`);
-                            if (cell) syncMetaData(cell);
+                            if (cell) {
+                                rowDataObj.cells[col].content = getCellText(cell);
+                                rowDataObj.cells[col].classes = Array.from(cell.classList).filter(c => 
+                                    ['cell-yellow', 'cell-red', 'cell-pink', 'duplicate-cell'].includes(c)
+                                );
+                                rowDataObj.cells[col].comment = cell.dataset.comment || '';
+                            }
                         }
+                        
+                        originalData.push(rowDataObj);
                     });
                     
-                    originalRows = Array.from(document.querySelectorAll('#dataTable tbody tr'));
                     calculateDColumn();
                     checkDuplicateCells();
                     calcTargetHeader(CONFIG.calcHeaderCol);
@@ -2713,31 +2963,23 @@
             reader.readAsArrayBuffer(file);
         }
 
-        // Excel导出（包含元数据列）
+        // Excel导出（基于originalData确保数据完整性）
         function saveToExcel() {
             try {
-                // 收集表头（40列）
+                // 【修复】始终基于originalData导出，确保数据完整性
                 const headerRow = ['#'];
                 colLetters.forEach(col => {
                     headerRow.push(getCellText(getHeaderCell(col)) || col);
                 });
                 const rows = [headerRow];
                 
-                // 收集数据（使用originalRows确保包含所有数据）
-                const rowsToExport = originalRows.length > 0 ? originalRows : Array.from(document.querySelectorAll('#dataTable tbody tr'));
-                
-                rowsToExport.forEach((row, rowIndex) => {
-                    const rowData = [];
-                    // 行号
-                    const rowNumCell = row.querySelector('.row-header');
-                    rowData.push(rowNumCell ? rowNumCell.textContent : '');
-                    // 数据列（40列）
-                    colLetters.forEach((col, colIndex) => {
-                        const cell = row.querySelector(`[data-col="${col}"]`);
-                        let text = getCellText(cell) || '';
-                        rowData.push(text);
+                originalData.forEach((rowData) => {
+                    const rowDataArr = [rowData.rowNum];
+                    colLetters.forEach(col => {
+                        const cellData = rowData.cells[col];
+                        rowDataArr.push(cellData?.content || '');
                     });
-                    rows.push(rowData);
+                    rows.push(rowDataArr);
                 });
                 
                 // 生成Excel
@@ -2745,7 +2987,6 @@
                 const ws = XLSX.utils.aoa_to_sheet(rows);
                 XLSX.utils.book_append_sheet(wb, ws, '药品数据');
                 
-                // 文件名
                 const date = new Date();
                 const year = date.getFullYear();
                 const month = (date.getMonth() + 1).toString().padStart(2, '0');
@@ -2755,34 +2996,28 @@
                 const fileName = `yb数据${year}${month}${day} ${hour}${minute}.xlsx`;
 
                 XLSX.writeFile(wb, fileName);
-                alert(`保存成功！已导出${rowsToExport.length}行数据（包含A-AN共40列，其中U-AN为元数据列）：\n${fileName}`);
+                alert(`保存成功！已导出${originalData.length}行数据（包含A-AN共40列，其中U-AN为元数据列）：\n${fileName}`);
             } catch (err) {
                 alert('保存失败！');
                 console.error(err);
             }
         }
 
-        // 本地存储功能
+        // 【核心修复】本地存储功能 - 存储originalData而非DOM引用
         function saveToLocalStorage() {
             try {
+                // 确保保存前同步最新数据
+                if (!isFilterActive && document.querySelectorAll('#dataTable tbody tr').length > 0) {
+                    syncOriginalDataFromDOM();
+                }
+                
                 const data = {
                     headers: colLetters.map(col => getCellText(getHeaderCell(col))),
-                    rows: Array.from(document.querySelectorAll('#dataTable tbody tr')).map(row => {
-                        const rowData = {
-                            cells: Array.from(row.querySelectorAll('td[data-col]')).map(td => ({
-                                content: getCellText(td),
-                                classes: Array.from(td.classList),
-                                col: td.dataset.col,
-                                comment: td.dataset.comment || '',
-                                width: td.style.width
-                            }))
-                        };
-                        return rowData;
-                    }),
+                    originalData: originalData, // 【关键】存储数据对象而非DOM
                     filterActive: isFilterActive,
                     colWidths: Array.from(document.querySelectorAll('#dataTable thead th:not(.row-header)')).map(th => th.style.width),
                     lastSaved: new Date().toISOString(),
-                    version: '6.0'
+                    version: '6.1' // 版本号更新
                 };
                 
                 localStorage.setItem(CONFIG.storageKey, JSON.stringify(data));
@@ -2801,13 +3036,12 @@
                 clearTimeout(autoSaveTimer);
             }
             
-            // 【修改】自动保存延迟改为15秒
             autoSaveTimer = setTimeout(() => {
                 saveToLocalStorage();
-                // 【删除】不再显示右下角弹窗提示
             }, 15000);
         }
         
+        // 【核心修复】从本地存储加载 - 恢复originalData
         function loadFromLocalStorage() {
             try {
                 const savedData = localStorage.getItem(CONFIG.storageKey);
@@ -2817,12 +3051,15 @@
                 }
                 
                 const data = JSON.parse(savedData);
-                if (!data.rows || data.rows.length === 0) {
+                if (!data.originalData || data.originalData.length === 0) {
                     console.log('本地存储数据为空');
                     return false;
                 }
                 
                 console.log('从本地存储加载数据，上次保存时间:', data.lastSaved ? new Date(data.lastSaved).toLocaleString() : '未知');
+                
+                // 【关键】恢复originalData
+                originalData = data.originalData;
                 
                 const tbody = document.getElementById('tableTbody');
                 tbody.innerHTML = '';
@@ -2840,10 +3077,10 @@
                         } else if (col === 'D' || col === 'F') {
                             th.style.width = '40px';
                             th.style.minWidth = '40px';
-                        } else if (idx >= 7 && idx <= 19) { // H-T
+                        } else if (idx >= 7 && idx <= 19) {
                             th.style.width = '146px';
                             th.style.minWidth = '146px';
-                        } else if (idx >= 20) { // U-AN
+                        } else if (idx >= 20) {
                             th.style.width = '60px';
                             th.style.minWidth = '60px';
                         } else {
@@ -2857,69 +3094,16 @@
                     }
                 });
                 
-                // 恢复数据行
-                data.rows.forEach((rowData, rowIndex) => {
-                    const newRow = createNewRow(rowIndex + 1);
-                    rowData.cells.forEach((cellData, idx) => {
-                        const td = newRow.querySelector(`td[data-col="${cellData.col}"]`);
-                        if (td) {
-                            const colIndex = getHeaderIndex(cellData.col);
-                            if (cellData.col === 'A') {
-                                td.style.width = '123px';
-                                td.style.minWidth = '123px';
-                            } else if (cellData.col === 'C' || cellData.col === 'E') {
-                                td.style.width = '70px';
-                                td.style.minWidth = '70px';
-                            } else if (cellData.col === 'D' || cellData.col === 'F') {
-                                td.style.width = '40px';
-                                td.style.minWidth = '40px';
-                            } else if (colIndex >= 7 && colIndex <= 19) {
-                                td.style.width = '146px';
-                                td.style.minWidth = '146px';
-                            } else if (colIndex >= 20) {
-                                td.style.width = '60px';
-                                td.style.minWidth = '60px';
-                            } else {
-                                td.style.width = cellData.width || '150px';
-                            }
-                            td.style.height = '21px';
-                            setCellText(td, cellData.content);
-                            cellData.classes.forEach(cls => td.classList.add(cls));
-                            if (cellData.comment) {
-                                td.dataset.comment = cellData.comment;
-                                const indicator = document.createElement('div');
-                                indicator.className = 'comment-indicator';
-                                td.appendChild(indicator);
-                            }
-                            if (CONFIG.readOnlyCol.includes(cellData.col)) {
-                                td.classList.remove('editable');
-                            } else if (colIndex < 20) {
-                                td.classList.add('editable');
-                            }
-                        }
-                    });
-                    tbody.appendChild(newRow);
-                });
+                // 【关键】基于originalData渲染行，而不是存储的HTML
+                renderAllRowsFromOriginalData();
                 
                 // 恢复筛选状态
                 isFilterActive = data.filterActive || false;
                 document.getElementById('filterToggle').classList.toggle('active', isFilterActive);
                 
                 if (isFilterActive) {
-                    toggleDColumnFilter();
-                } else {
-                    originalRows = Array.from(document.querySelectorAll('#dataTable tbody tr'));
+                    applyFilter();
                 }
-                
-                // 重新绑定事件
-                document.querySelectorAll('#dataTable td.editable').forEach(td => {
-                    const input = td.querySelector('.cell-input');
-                    if (input) {
-                        bindCellEvents(td, input);
-                    }
-                });
-                
-                // 【删除】不再显示加载数据的弹窗提示
                 
                 return true;
             } catch (err) {
@@ -2927,43 +3111,26 @@
                 return false;
             }
         }
-        
-        // 【删除】showStorageStatus函数已删除，不再使用
 
-        // 撤销/恢复功能
+        // 【核心修复】撤销/恢复功能 - 基于数据对象
         function saveToHistory() {
             if (isUndoRedo) return;
             redoStack = [];
             
-            const currentDomRows = document.querySelectorAll('#dataTable tbody tr');
-            let rowsToSave = [];
-            
-            if (isFilterActive && originalRows.length > 0) {
-                rowsToSave = originalRows;
-            } else {
-                originalRows = Array.from(currentDomRows);
-                rowsToSave = originalRows;
+            // 【关键】保存前同步数据
+            if (!isFilterActive) {
+                syncOriginalDataFromDOM();
             }
             
-            const data = {
+            // 深拷贝originalData
+            const dataSnapshot = JSON.parse(JSON.stringify({
                 headers: colLetters.map(col => getCellText(getHeaderCell(col))),
-                rows: rowsToSave.map(row => {
-                    const rowData = {
-                        rowNum: row.querySelector('.row-header')?.textContent || '',
-                        cells: Array.from(row.querySelectorAll('td[data-col]')).map(td => ({
-                            content: getCellText(td),
-                            classes: Array.from(td.classList),
-                            col: td.dataset.col,
-                            comment: td.dataset.comment || '',
-                            width: td.style.width
-                        }))
-                    };
-                    return rowData;
-                }),
+                originalData: originalData,
                 filterActive: isFilterActive,
                 colWidths: Array.from(document.querySelectorAll('#dataTable thead th:not(.row-header)')).map(th => th.style.width)
-            };
-            historyStack.push(JSON.parse(JSON.stringify(data)));
+            }));
+            
+            historyStack.push(dataSnapshot);
             if (historyStack.length > 50) historyStack.shift();
             updateUndoRedoButtons();
         }
@@ -2988,8 +3155,8 @@
             saveToLocalStorageDelayed();
         }
         
+        // 【核心修复】恢复表格状态 - 基于数据对象
         function restoreTableState(state) {
-            // 清除高亮
             clearRowColHighlight();
             
             // 恢复表头
@@ -3018,75 +3185,22 @@
                 th.querySelector('input').value = state.headers[idx];
             });
             
+            // 【关键】恢复originalData
+            originalData = JSON.parse(JSON.stringify(state.originalData));
+            
             // 恢复数据行
             const tbody = document.getElementById('tableTbody');
             tbody.innerHTML = '';
             
-            originalRows = [];
-            
-            state.rows.forEach((rowData, rowIndex) => {
-                const row = createNewRow(rowIndex + 1);
-                if (rowData.rowNum) {
-                    const rowNumCell = row.querySelector('.row-header');
-                    if (rowNumCell) rowNumCell.textContent = rowData.rowNum;
-                }
-                rowData.cells.forEach((cellData, idx) => {
-                    const td = row.querySelector(`td[data-col="${cellData.col}"]`);
-                    if (td) {
-                        const colIndex = getHeaderIndex(cellData.col);
-                        if (cellData.col === 'A') {
-                            td.style.width = '123px';
-                            td.style.minWidth = '123px';
-                        } else if (cellData.col === 'C' || cellData.col === 'E') {
-                            td.style.width = '70px';
-                            td.style.minWidth = '70px';
-                        } else if (cellData.col === 'D' || cellData.col === 'F') {
-                            td.style.width = '40px';
-                            td.style.minWidth = '40px';
-                        } else if (colIndex >= 7 && colIndex <= 19) {
-                            td.style.width = '146px';
-                            td.style.minWidth = '146px';
-                        } else if (colIndex >= 20) {
-                            td.style.width = '60px';
-                            td.style.minWidth = '60px';
-                        } else {
-                            td.style.width = cellData.width || '150px';
-                        }
-                        td.style.height = '21px';
-                        setCellText(td, cellData.content);
-                        cellData.classes.forEach(cls => td.classList.add(cls));
-                        if (cellData.comment) {
-                            td.dataset.comment = cellData.comment;
-                            const indicator = document.createElement('div');
-                            indicator.className = 'comment-indicator';
-                            td.appendChild(indicator);
-                        }
-                        if (CONFIG.readOnlyCol.includes(cellData.col)) {
-                            td.classList.remove('editable');
-                        } else if (colIndex < 20) {
-                            td.classList.add('editable');
-                        }
-                    }
-                });
-                tbody.appendChild(row);
-                originalRows.push(row);
-            });
+            if (state.filterActive) {
+                applyFilter();
+            } else {
+                renderAllRowsFromOriginalData();
+            }
             
             // 恢复筛选状态
             isFilterActive = state.filterActive;
             document.getElementById('filterToggle').classList.toggle('active', isFilterActive);
-            
-            if (isFilterActive) {
-                toggleDColumnFilter();
-            }
-            
-            // 重新绑定事件
-            document.querySelectorAll('#dataTable td.editable').forEach(td => {
-                const input = td.querySelector('.cell-input');
-                if (input) {
-                    bindCellEvents(td, input);
-                }
-            });
             
             calculateDColumn();
             checkDuplicateCells();
