@@ -674,7 +674,7 @@
             transition: width 0.3s;
         }
         
-        /* 【新增】自动消失消息弹窗 - 居中 */
+        /* 自动消失消息弹窗 - 居中 */
         .toast-message {
             position: fixed;
             top: 50%;
@@ -714,7 +714,6 @@
         </div>
     </div>
 
-    <!-- 【新增】自动消失消息弹窗 -->
     <div class="toast-message" id="toastMessage"></div>
 
     <div class="container">
@@ -773,7 +772,8 @@
             batchSize: 50,
             renderDelay: 10,
             maxHistory: 20,
-            debounceDelay: 300
+            debounceDelay: 300,
+            importChunkSize: 100  // 新增：导入时每块处理行数
         };
         
         for(let i='H'.charCodeAt(0); i<='T'.charCodeAt(0); i++) {
@@ -823,28 +823,24 @@
             };
         }
 
-        // 【新增】显示自动消失消息弹窗（居中，2秒自动消失或点击消失）
+        // 显示自动消失消息弹窗
         let toastTimer = null;
         function showToast(message, duration = 2000) {
             const toast = document.getElementById('toastMessage');
             toast.textContent = message;
             toast.classList.add('show');
             
-            // 清除之前的定时器
             if (toastTimer) clearTimeout(toastTimer);
             
-            // 设置自动消失
             toastTimer = setTimeout(() => {
                 hideToast();
             }, duration);
             
-            // 点击任意位置消失
             const hideOnClick = (e) => {
                 hideToast();
                 document.removeEventListener('click', hideOnClick);
             };
             
-            // 延迟绑定点击事件，避免立即触发
             setTimeout(() => {
                 document.addEventListener('click', hideOnClick);
             }, 100);
@@ -2474,7 +2470,7 @@
             }
         }
 
-        // Excel导入（优化版 - 使用showToast代替alert）
+        // 【优化版】Excel导入 - 使用分块解析避免无响应
         async function handleExcelImport(e) {
             if (isProcessing) return;
             isProcessing = true;
@@ -2489,124 +2485,167 @@
             
             showLoading('正在读取文件...');
             
+            // 使用 setTimeout 让 UI 有机会显示加载状态
+            await new Promise(resolve => setTimeout(resolve, 100));
+            
             try {
-                const reader = new FileReader();
-                reader.onload = async function(e) {
-                    try {
-                        showLoading('正在解析数据...');
-                        const wb = XLSX.read(new Uint8Array(e.target.result), { 
-                            type: 'array',
-                            cellStyles: false,
-                            cellNF: false,
-                            cellDates: false
+                const arrayBuffer = await readFileAsync(file);
+                
+                showLoading('正在解析数据...');
+                await new Promise(resolve => setTimeout(resolve, 50));
+                
+                // 使用 requestIdleCallback 或 setTimeout 分块解析
+                const wb = await parseExcelAsync(arrayBuffer);
+                
+                const sheet = wb.Sheets[wb.SheetNames[0]];
+                
+                // 获取实际数据范围，避免读取空行
+                const range = XLSX.utils.decode_range(sheet['!ref'] || 'A1');
+                const totalRows = range.e.r - range.s.r;
+                
+                showLoading(`正在处理 ${totalRows} 行数据...`);
+                
+                // 分批读取数据，避免一次性占用大量内存
+                const data = [];
+                const chunkSize = CONFIG.importChunkSize;
+                
+                for (let i = range.s.r; i <= range.e.r; i += chunkSize) {
+                    const endRow = Math.min(i + chunkSize - 1, range.e.r);
+                    const chunkRange = {
+                        s: { r: i, c: range.s.c },
+                        e: { r: endRow, c: range.e.c }
+                    };
+                    sheet['!ref'] = XLSX.utils.encode_range(chunkRange);
+                    
+                    const chunkData = XLSX.utils.sheet_to_json(sheet, { header: 1, raw: false });
+                    data.push(...chunkData);
+                    
+                    updateProgress(Math.min(100, (endRow - range.s.r + 1) / (totalRows + 1) * 50));
+                    
+                    // 让出时间片，避免阻塞UI
+                    await new Promise(resolve => setTimeout(resolve, 0));
+                }
+                
+                if (data.length <= 1) { 
+                    showToast('无有效数据！');
+                    hideLoading();
+                    isProcessing = false;
+                    return; 
+                }
+                
+                let skipFirstColumn = false;
+                if (data.length > 3) {
+                    const row1 = data[1], row2 = data[2], row3 = data[3];
+                    if (row1 && row2 && row3) {
+                        if (String(row1[0]).trim() === '1' && 
+                            String(row2[0]).trim() === '2' && 
+                            String(row3[0]).trim() === '3') {
+                            skipFirstColumn = true;
+                        }
+                    }
+                }
+                
+                const tbody = document.getElementById('tableTbody');
+                tbody.innerHTML = '';
+                originalData = [];
+                
+                const rowsData = data.slice(1);
+                const importTotalRows = rowsData.length;
+                
+                // 分批处理渲染
+                for (let i = 0; i < importTotalRows; i += CONFIG.batchSize) {
+                    const batch = rowsData.slice(i, i + CONFIG.batchSize);
+                    
+                    batch.forEach((rowData, batchIndex) => {
+                        const rowIndex = i + batchIndex;
+                        const newRow = createNewRow(rowIndex + 1);
+                        const rowDataObj = {
+                            rowNum: rowIndex + 1,
+                            cells: {}
+                        };
+                        
+                        colLetters.forEach((col, colIndex) => {
+                            const cell = newRow.querySelector(`td[data-col="${col}"]`);
+                            const dataIndex = skipFirstColumn ? colIndex + 1 : colIndex;
+                            const val = rowData[dataIndex];
+                            
+                            rowDataObj.cells[col] = {
+                                content: val !== undefined && val !== null ? String(val).trim() : '',
+                                classes: [],
+                                comment: '',
+                                width: ''
+                            };
+                            
+                            if (cell && val !== undefined && val !== null) {
+                                setCellText(cell, String(val).trim());
+                            }
                         });
                         
-                        const sheet = wb.Sheets[wb.SheetNames[0]];
-                        const data = XLSX.utils.sheet_to_json(sheet, { header: 1, raw: false });
+                        tbody.appendChild(newRow);
+                        restoreFromMetaData(newRow);
                         
-                        if (data.length <= 1) { 
-                            showToast('无有效数据！');
-                            hideLoading();
-                            isProcessing = false;
-                            return; 
-                        }
-                        
-                        showLoading(`正在处理 ${data.length - 1} 行数据...`);
-                        
-                        let skipFirstColumn = false;
-                        if (data.length > 3) {
-                            const row1 = data[1], row2 = data[2], row3 = data[3];
-                            if (row1 && row2 && row3) {
-                                if (String(row1[0]).trim() === '1' && 
-                                    String(row2[0]).trim() === '2' && 
-                                    String(row3[0]).trim() === '3') {
-                                    skipFirstColumn = true;
-                                }
+                        for (let col = 'A'; col <= 'T'; col = String.fromCharCode(col.charCodeAt(0) + 1)) {
+                            const cell = newRow.querySelector(`td[data-col="${col}"]`);
+                            if (cell) {
+                                rowDataObj.cells[col].content = getCellText(cell);
+                                rowDataObj.cells[col].classes = Array.from(cell.classList).filter(c => 
+                                    ['cell-yellow', 'cell-red', 'cell-pink', 'duplicate-cell'].includes(c)
+                                );
+                                rowDataObj.cells[col].comment = cell.dataset.comment || '';
                             }
                         }
                         
-                        const tbody = document.getElementById('tableTbody');
-                        tbody.innerHTML = '';
-                        originalData = [];
-                        
-                        const rowsData = data.slice(1);
-                        const totalRows = rowsData.length;
-                        
-                        for (let i = 0; i < totalRows; i += CONFIG.batchSize) {
-                            const batch = rowsData.slice(i, i + CONFIG.batchSize);
-                            
-                            batch.forEach((rowData, batchIndex) => {
-                                const rowIndex = i + batchIndex;
-                                const newRow = createNewRow(rowIndex + 1);
-                                const rowDataObj = {
-                                    rowNum: rowIndex + 1,
-                                    cells: {}
-                                };
-                                
-                                colLetters.forEach((col, colIndex) => {
-                                    const cell = newRow.querySelector(`td[data-col="${col}"]`);
-                                    const dataIndex = skipFirstColumn ? colIndex + 1 : colIndex;
-                                    const val = rowData[dataIndex];
-                                    
-                                    rowDataObj.cells[col] = {
-                                        content: val !== undefined && val !== null ? String(val).trim() : '',
-                                        classes: [],
-                                        comment: '',
-                                        width: ''
-                                    };
-                                    
-                                    if (cell && val !== undefined && val !== null) {
-                                        setCellText(cell, String(val).trim());
-                                    }
-                                });
-                                
-                                tbody.appendChild(newRow);
-                                restoreFromMetaData(newRow);
-                                
-                                for (let col = 'A'; col <= 'T'; col = String.fromCharCode(col.charCodeAt(0) + 1)) {
-                                    const cell = newRow.querySelector(`td[data-col="${col}"]`);
-                                    if (cell) {
-                                        rowDataObj.cells[col].content = getCellText(cell);
-                                        rowDataObj.cells[col].classes = Array.from(cell.classList).filter(c => 
-                                            ['cell-yellow', 'cell-red', 'cell-pink', 'duplicate-cell'].includes(c)
-                                        );
-                                        rowDataObj.cells[col].comment = cell.dataset.comment || '';
-                                    }
-                                }
-                                
-                                originalData.push(rowDataObj);
-                            });
-                            
-                            updateProgress(Math.min(100, (i + CONFIG.batchSize) / totalRows * 100));
-                            
-                            await new Promise(resolve => setTimeout(resolve, 0));
-                        }
-                        
-                        calculateDColumn();
-                        checkDuplicateCells();
-                        calcTargetHeader(CONFIG.calcHeaderCol);
-                        saveToHistory();
-                        hideLoading();
-                        showToast(`成功导入${totalRows}行数据！${skipFirstColumn ? '（已跳过序号列）' : ''}`);
-                    } catch (err) {
-                        console.error(err);
-                        hideLoading();
-                        showToast('导入失败，请检查文件格式！');
-                    }
-                    e.target.value = '';
-                    isProcessing = false;
-                };
-                reader.readAsArrayBuffer(file);
+                        originalData.push(rowDataObj);
+                    });
+                    
+                    updateProgress(50 + Math.min(50, (i + CONFIG.batchSize) / importTotalRows * 50));
+                    
+                    // 每批处理后让出时间片
+                    await new Promise(resolve => setTimeout(resolve, 0));
+                }
+                
+                calculateDColumn();
+                checkDuplicateCells();
+                calcTargetHeader(CONFIG.calcHeaderCol);
+                saveToHistory();
+                hideLoading();
+                showToast(`成功导入${importTotalRows}行数据！${skipFirstColumn ? '（已跳过序号列）' : ''}`);
             } catch (err) {
                 console.error(err);
                 hideLoading();
-                showToast('文件读取失败！');
-                isProcessing = false;
-                e.target.value = '';
+                showToast('导入失败，请检查文件格式！');
             }
+            e.target.value = '';
+            isProcessing = false;
         }
 
-        // Excel导出（优化版 - 使用showToast代替alert）
+        // 异步读取文件
+        function readFileAsync(file) {
+            return new Promise((resolve, reject) => {
+                const reader = new FileReader();
+                reader.onload = (e) => resolve(e.target.result);
+                reader.onerror = (e) => reject(e);
+                reader.readAsArrayBuffer(file);
+            });
+        }
+
+        // 异步解析Excel
+        function parseExcelAsync(arrayBuffer) {
+            return new Promise((resolve) => {
+                // 使用 setTimeout 让解析在下一个事件循环执行，避免阻塞UI
+                setTimeout(() => {
+                    const wb = XLSX.read(new Uint8Array(arrayBuffer), { 
+                        type: 'array',
+                        cellStyles: false,
+                        cellNF: false,
+                        cellDates: false
+                    });
+                    resolve(wb);
+                }, 0);
+            });
+        }
+
+        // 【优化版】Excel导出 - 去掉第一列（行号列）
         async function saveToExcel() {
             if (isProcessing) return;
             isProcessing = true;
@@ -2614,7 +2653,8 @@
             showLoading('正在生成Excel...');
             
             try {
-                const headerRow = ['#'];
+                // 表头去掉第一列（#）
+                const headerRow = [];
                 colLetters.forEach(col => {
                     headerRow.push(getCellText(getHeaderCell(col)) || col);
                 });
@@ -2625,7 +2665,8 @@
                 for (let i = 0; i < totalRows; i += 100) {
                     const batch = originalData.slice(i, i + 100);
                     batch.forEach((rowData) => {
-                        const rowDataArr = [rowData.rowNum];
+                        // 数据行也去掉第一列（rowNum）
+                        const rowDataArr = [];
                         colLetters.forEach(col => {
                             const cellData = rowData.cells[col];
                             rowDataArr.push(cellData?.content || '');
