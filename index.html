@@ -702,6 +702,37 @@
             from { opacity: 0; transform: translate(-50%, -50%) scale(0.9); }
             to { opacity: 1; transform: translate(-50%, -50%) scale(1); }
         }
+        
+        /* 后台加载指示器 */
+        .background-loading-indicator {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            background: rgba(163, 230, 53, 0.95);
+            color: #333;
+            padding: 10px 20px;
+            border-radius: 20px;
+            font-size: 14px;
+            font-weight: 600;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+            z-index: 9999;
+            display: none;
+            align-items: center;
+            gap: 10px;
+        }
+        
+        .background-loading-indicator.show {
+            display: flex;
+        }
+        
+        .background-loading-indicator .spinner {
+            width: 16px;
+            height: 16px;
+            border: 2px solid #fff;
+            border-top: 2px solid #333;
+            border-radius: 50%;
+            animation: spin 0.8s linear infinite;
+        }
     </style>
     <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
 </head>
@@ -715,6 +746,11 @@
     </div>
 
     <div class="toast-message" id="toastMessage"></div>
+    
+    <div class="background-loading-indicator" id="bgLoadingIndicator">
+        <div class="spinner"></div>
+        <span id="bgLoadingText">后台加载中...</span>
+    </div>
 
     <div class="container">
         <div class="toolbar">
@@ -773,7 +809,9 @@
             renderDelay: 10,
             maxHistory: 20,
             debounceDelay: 300,
-            importChunkSize: 100  // 新增：导入时每块处理行数
+            importChunkSize: 100,
+            initialLoadRows: 400,  // 新增：首次加载行数
+            backgroundLoadBatch: 100  // 新增：后台每批加载行数
         };
         
         for(let i='H'.charCodeAt(0); i<='T'.charCodeAt(0); i++) {
@@ -809,6 +847,8 @@
         let activeInput = null;
         let isAtBottom = false;
         let isProcessing = false;
+        let isBackgroundLoading = false;  // 新增：后台加载状态
+        let backgroundLoadPaused = false; // 新增：后台加载暂停状态
 
         // 防抖函数
         function debounce(func, wait) {
@@ -867,6 +907,21 @@
 
         function updateProgress(percent) {
             document.getElementById('progressFill').style.width = percent + '%';
+        }
+
+        // 显示/隐藏后台加载指示器
+        function showBgLoading(text = '后台加载中...') {
+            const indicator = document.getElementById('bgLoadingIndicator');
+            document.getElementById('bgLoadingText').textContent = text;
+            indicator.classList.add('show');
+        }
+
+        function hideBgLoading() {
+            document.getElementById('bgLoadingIndicator').classList.remove('show');
+        }
+
+        function updateBgLoading(text) {
+            document.getElementById('bgLoadingText').textContent = text;
         }
 
         // 页面初始化
@@ -1425,6 +1480,8 @@
             
             td.addEventListener('dblclick', function(e) {
                 e.stopPropagation();
+                // 暂停后台加载
+                backgroundLoadPaused = true;
                 startCellEdit(td, input, true);
             });
             
@@ -1465,6 +1522,7 @@
             td.addEventListener('keydown', function(e) {
                 if (e.key === 'F2' && document.activeElement === td) {
                     e.preventDefault();
+                    backgroundLoadPaused = true;
                     startCellEdit(td, input, true);
                 }
             });
@@ -1523,6 +1581,9 @@
             input.classList.remove('editing');
             if (activeInput === input) activeInput = null;
             if (td && document.activeElement === input) td.focus();
+            
+            // 恢复后台加载
+            backgroundLoadPaused = false;
         }
 
         function cancelCellEdit(input, originalValue) {
@@ -1530,6 +1591,8 @@
             input.value = originalValue;
             input.classList.remove('editing');
             if (activeInput === input) activeInput = null;
+            // 恢复后台加载
+            backgroundLoadPaused = false;
         }
 
         function handleEnterKeyMove(cell) {
@@ -1674,6 +1737,7 @@
             });
         }
 
+        // 【优化版】渲染所有行 - 先加载400行，剩余后台加载
         async function renderAllRowsFromOriginalData() {
             const tbody = document.getElementById('tableTbody');
             tbody.innerHTML = '';
@@ -1681,7 +1745,8 @@
             const totalRows = originalData.length;
             if (totalRows === 0) return;
             
-            if (totalRows <= 100) {
+            // 如果总行数少于等于400，直接全部渲染
+            if (totalRows <= CONFIG.initialLoadRows) {
                 originalData.forEach((rowData) => {
                     const row = createRowFromData(rowData);
                     tbody.appendChild(row);
@@ -1690,22 +1755,94 @@
                 return;
             }
             
-            showLoading(`正在加载 ${totalRows} 行数据...`);
+            // 先加载前400行
+            showLoading(`正在加载前 ${CONFIG.initialLoadRows} 行数据...`);
             
-            for (let i = 0; i < totalRows; i += CONFIG.batchSize) {
-                const batch = originalData.slice(i, i + CONFIG.batchSize);
-                batch.forEach((rowData) => {
-                    const row = createRowFromData(rowData);
-                    tbody.appendChild(row);
-                });
-                
-                updateProgress(Math.min(100, (i + CONFIG.batchSize) / totalRows * 100));
-                
-                await new Promise(resolve => setTimeout(resolve, CONFIG.renderDelay));
-            }
+            const initialBatch = originalData.slice(0, CONFIG.initialLoadRows);
+            initialBatch.forEach((rowData) => {
+                const row = createRowFromData(rowData);
+                tbody.appendChild(row);
+            });
             
+            updateProgress(100);
             hideLoading();
             calculateDColumn();
+            
+            // 后台加载剩余行
+            const remainingRows = originalData.slice(CONFIG.initialLoadRows);
+            if (remainingRows.length > 0) {
+                await loadRemainingRowsInBackground(remainingRows, CONFIG.initialLoadRows + 1);
+            }
+        }
+
+        // 后台加载剩余行
+        async function loadRemainingRowsInBackground(remainingData, startRowNum) {
+            if (isBackgroundLoading) return;
+            isBackgroundLoading = true;
+            backgroundLoadPaused = false;
+            
+            showBgLoading(`后台加载中... 0/${remainingData.length}`);
+            
+            const tbody = document.getElementById('tableTbody');
+            const totalRemaining = remainingData.length;
+            
+            for (let i = 0; i < totalRemaining; i += CONFIG.backgroundLoadBatch) {
+                // 如果用户正在编辑，暂停加载
+                if (backgroundLoadPaused) {
+                    await waitForResume();
+                }
+                
+                const batch = remainingData.slice(i, i + CONFIG.backgroundLoadBatch);
+                
+                // 使用 requestIdleCallback 或 setTimeout 让出时间片
+                await new Promise(resolve => {
+                    if (window.requestIdleCallback) {
+                        requestIdleCallback(() => {
+                            batch.forEach((rowData, batchIndex) => {
+                                const actualIndex = startRowNum + i + batchIndex - 1;
+                                rowData.rowNum = actualIndex;
+                                const row = createRowFromData(rowData);
+                                tbody.appendChild(row);
+                            });
+                            resolve();
+                        }, { timeout: 100 });
+                    } else {
+                        setTimeout(() => {
+                            batch.forEach((rowData, batchIndex) => {
+                                const actualIndex = startRowNum + i + batchIndex - 1;
+                                rowData.rowNum = actualIndex;
+                                const row = createRowFromData(rowData);
+                                tbody.appendChild(row);
+                            });
+                            resolve();
+                        }, 0);
+                    }
+                });
+                
+                updateBgLoading(`后台加载中... ${Math.min(i + CONFIG.backgroundLoadBatch, totalRemaining)}/${totalRemaining}`);
+                
+                // 每批处理后检查是否需要继续
+                if (backgroundLoadPaused) {
+                    await waitForResume();
+                }
+            }
+            
+            hideBgLoading();
+            isBackgroundLoading = false;
+            calculateDColumn();
+            checkDuplicateCells();
+        }
+
+        // 等待恢复后台加载
+        function waitForResume() {
+            return new Promise(resolve => {
+                const checkInterval = setInterval(() => {
+                    if (!backgroundLoadPaused) {
+                        clearInterval(checkInterval);
+                        resolve();
+                    }
+                }, 100);
+            });
         }
 
         function createRowFromData(rowData) {
@@ -2039,7 +2176,7 @@
             iHeader.addEventListener('click', function(e) {
                 e.preventDefault();
                 e.stopPropagation();
-                const targetUrl = 'https://www.mashangfangxin.com/';
+                const targetUrl = 'https://www.mashangfangxin.com/ ';
                 window.open(targetUrl, '_blank', 'noopener,noreferrer');
             });
             
@@ -2084,6 +2221,8 @@
                 }
                 if (e.key === 'F2' && selectedCell && selectedCell.classList.contains('editable')) {
                     e.preventDefault();
+                    // 暂停后台加载
+                    backgroundLoadPaused = true;
                     const input = selectedCell.querySelector('.cell-input');
                     if (input) startCellEdit(selectedCell, input, true);
                     return;
@@ -2470,7 +2609,7 @@
             }
         }
 
-        // 【优化版】Excel导入 - 使用分块解析避免无响应
+        // 【优化版】Excel导入 - 移除数字序列检测逻辑
         async function handleExcelImport(e) {
             if (isProcessing) return;
             isProcessing = true;
@@ -2485,7 +2624,6 @@
             
             showLoading('正在读取文件...');
             
-            // 使用 setTimeout 让 UI 有机会显示加载状态
             await new Promise(resolve => setTimeout(resolve, 100));
             
             try {
@@ -2494,18 +2632,13 @@
                 showLoading('正在解析数据...');
                 await new Promise(resolve => setTimeout(resolve, 50));
                 
-                // 使用 requestIdleCallback 或 setTimeout 分块解析
                 const wb = await parseExcelAsync(arrayBuffer);
-                
                 const sheet = wb.Sheets[wb.SheetNames[0]];
-                
-                // 获取实际数据范围，避免读取空行
                 const range = XLSX.utils.decode_range(sheet['!ref'] || 'A1');
                 const totalRows = range.e.r - range.s.r;
                 
                 showLoading(`正在处理 ${totalRows} 行数据...`);
                 
-                // 分批读取数据，避免一次性占用大量内存
                 const data = [];
                 const chunkSize = CONFIG.importChunkSize;
                 
@@ -2521,8 +2654,6 @@
                     data.push(...chunkData);
                     
                     updateProgress(Math.min(100, (endRow - range.s.r + 1) / (totalRows + 1) * 50));
-                    
-                    // 让出时间片，避免阻塞UI
                     await new Promise(resolve => setTimeout(resolve, 0));
                 }
                 
@@ -2533,17 +2664,8 @@
                     return; 
                 }
                 
-                let skipFirstColumn = false;
-                if (data.length > 3) {
-                    const row1 = data[1], row2 = data[2], row3 = data[3];
-                    if (row1 && row2 && row3) {
-                        if (String(row1[0]).trim() === '1' && 
-                            String(row2[0]).trim() === '2' && 
-                            String(row3[0]).trim() === '3') {
-                            skipFirstColumn = true;
-                        }
-                    }
-                }
+                // 移除数字序列检测，直接按列对齐
+                // A列数据对应A列，B列数据对应B列...
                 
                 const tbody = document.getElementById('tableTbody');
                 tbody.innerHTML = '';
@@ -2552,7 +2674,6 @@
                 const rowsData = data.slice(1);
                 const importTotalRows = rowsData.length;
                 
-                // 分批处理渲染
                 for (let i = 0; i < importTotalRows; i += CONFIG.batchSize) {
                     const batch = rowsData.slice(i, i + CONFIG.batchSize);
                     
@@ -2564,10 +2685,10 @@
                             cells: {}
                         };
                         
+                        // 直接按列索引对应，不进行数字序列检测
                         colLetters.forEach((col, colIndex) => {
                             const cell = newRow.querySelector(`td[data-col="${col}"]`);
-                            const dataIndex = skipFirstColumn ? colIndex + 1 : colIndex;
-                            const val = rowData[dataIndex];
+                            const val = rowData[colIndex];
                             
                             rowDataObj.cells[col] = {
                                 content: val !== undefined && val !== null ? String(val).trim() : '',
@@ -2599,8 +2720,6 @@
                     });
                     
                     updateProgress(50 + Math.min(50, (i + CONFIG.batchSize) / importTotalRows * 50));
-                    
-                    // 每批处理后让出时间片
                     await new Promise(resolve => setTimeout(resolve, 0));
                 }
                 
@@ -2609,7 +2728,7 @@
                 calcTargetHeader(CONFIG.calcHeaderCol);
                 saveToHistory();
                 hideLoading();
-                showToast(`成功导入${importTotalRows}行数据！${skipFirstColumn ? '（已跳过序号列）' : ''}`);
+                showToast(`成功导入${importTotalRows}行数据！`);
             } catch (err) {
                 console.error(err);
                 hideLoading();
@@ -2632,7 +2751,6 @@
         // 异步解析Excel
         function parseExcelAsync(arrayBuffer) {
             return new Promise((resolve) => {
-                // 使用 setTimeout 让解析在下一个事件循环执行，避免阻塞UI
                 setTimeout(() => {
                     const wb = XLSX.read(new Uint8Array(arrayBuffer), { 
                         type: 'array',
@@ -2645,7 +2763,7 @@
             });
         }
 
-        // 【优化版】Excel导出 - 去掉第一列（行号列）
+        // 【优化版】Excel导出
         async function saveToExcel() {
             if (isProcessing) return;
             isProcessing = true;
@@ -2653,7 +2771,6 @@
             showLoading('正在生成Excel...');
             
             try {
-                // 表头去掉第一列（#）
                 const headerRow = [];
                 colLetters.forEach(col => {
                     headerRow.push(getCellText(getHeaderCell(col)) || col);
@@ -2665,7 +2782,6 @@
                 for (let i = 0; i < totalRows; i += 100) {
                     const batch = originalData.slice(i, i + 100);
                     batch.forEach((rowData) => {
-                        // 数据行也去掉第一列（rowNum）
                         const rowDataArr = [];
                         colLetters.forEach(col => {
                             const cellData = rowData.cells[col];
