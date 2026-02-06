@@ -809,6 +809,7 @@
         let activeInput = null;
         let isAtBottom = false;
         let isProcessing = false;
+        let lastClickTime = 0;  // 用于双击检测
 
         // 防抖函数
         function debounce(func, wait) {
@@ -1299,7 +1300,7 @@
                 } else {
                     td.classList.add('editable');
                     if (CONFIG.traceCodeCol.includes(col)) td.classList.add('trace-code');
-                    bindCellEvents(td, input);
+                    // 不再在这里绑定事件，改为事件委托
                 }
                 
                 td.style.overflow = 'hidden';
@@ -1355,6 +1356,7 @@
             });
         }
 
+        // 【事件委托版】初始化所有事件
         function initAllEvents() {
             initSearchInput();
             initButtonEvents();
@@ -1365,6 +1367,7 @@
             initDragSelection();
             initCommentPopup();
             initRowNumberClick();
+            initCellEventsDelegation();  // 新增：单元格事件委托
             
             document.addEventListener('keydown', function(e) {
                 if (e.key === 'Control') isCtrlPressed = true;
@@ -1381,6 +1384,88 @@
                     clearRowColHighlight();
                 }
             });
+        }
+
+        // 【新增】单元格事件委托 - 核心优化
+        function initCellEventsDelegation() {
+            const tbody = document.getElementById('tableTbody');
+            
+            // 单击和双击检测
+            tbody.addEventListener('click', function(e) {
+                const td = e.target.closest('td.editable');
+                if (!td) return;
+                
+                const currentTime = new Date().getTime();
+                const timeDiff = currentTime - lastClickTime;
+                
+                if (timeDiff < 300) {
+                    // 双击
+                    e.stopPropagation();
+                    handleCellDblClick(td);
+                } else {
+                    // 单击（延迟执行以区分双击）
+                    setTimeout(() => {
+                        if (currentTime === lastClickTime) {
+                            handleCellClick(td, e);
+                        }
+                    }, 300);
+                }
+                lastClickTime = currentTime;
+            });
+            
+            // 输入框键盘事件委托
+            tbody.addEventListener('keydown', function(e) {
+                if (!e.target.classList.contains('cell-input')) return;
+                
+                const input = e.target;
+                const td = input.parentElement;
+                
+                if (e.key === 'Enter') {
+                    e.preventDefault();
+                    finishCellEdit(input);
+                    handleEnterKeyMove(td);
+                } else if (e.key === 'Escape') {
+                    e.preventDefault();
+                    cancelCellEdit(input, getCellText(td));
+                } else if (e.key === 'Tab') {
+                    e.preventDefault();
+                    finishCellEdit(input);
+                    handleTabKeyMove(td, e.shiftKey);
+                }
+            });
+            
+            // 输入框失焦事件委托
+            tbody.addEventListener('focusout', function(e) {
+                if (e.target.classList.contains('cell-input')) {
+                    finishCellEdit(e.target);
+                }
+            });
+        }
+
+        // 【新增】处理单元格单击
+        function handleCellClick(td, e) {
+            if (activeInput && activeInput.parentElement === td && activeInput.classList.contains('editing')) return;
+            
+            const input = td.querySelector('.cell-input');
+            if (!input) return;
+            
+            if (e.ctrlKey) {
+                toggleCellSelection(td);
+            } else if (e.shiftKey && selectedCell) {
+                selectCellRange(selectedCell, td);
+            } else { 
+                clearAllSelections(); 
+                selectCell(td); 
+                startCellEdit(td, input, false, e.clientX); 
+            }
+        }
+
+        // 【新增】处理单元格双击
+        function handleCellDblClick(td) {
+            const input = td.querySelector('.cell-input');
+            if (input) {
+                startCellEdit(td, input, true);
+            }
         }
 
         function hasCellColor(cell) {
@@ -1420,55 +1505,7 @@
             });
         }
 
-        function bindCellEvents(td, input) {
-            if (!td.classList.contains('editable')) return;
-            
-            td.addEventListener('dblclick', function(e) {
-                e.stopPropagation();
-                startCellEdit(td, input, true);
-            });
-            
-            td.addEventListener('click', function(e) {
-                if (activeInput && activeInput.parentElement === td && activeInput.classList.contains('editing')) return;
-                
-                if (e.ctrlKey) {
-                    toggleCellSelection(td);
-                } else if (e.shiftKey && selectedCell) {
-                    selectCellRange(selectedCell, td);
-                } else { 
-                    clearAllSelections(); 
-                    selectCell(td); 
-                    startCellEdit(td, input, false, e.clientX); 
-                }
-                e.stopPropagation();
-            });
-            
-            input.addEventListener('keydown', function(e) {
-                if (e.key === 'Enter') {
-                    e.preventDefault();
-                    finishCellEdit(input);
-                    handleEnterKeyMove(td);
-                } else if (e.key === 'Escape') {
-                    e.preventDefault();
-                    cancelCellEdit(input, getCellText(td));
-                } else if (e.key === 'Tab') {
-                    e.preventDefault();
-                    finishCellEdit(input);
-                    handleTabKeyMove(td, e.shiftKey);
-                }
-            });
-            
-            input.addEventListener('blur', function() {
-                finishCellEdit(input);
-            });
-            
-            td.addEventListener('keydown', function(e) {
-                if (e.key === 'F2' && document.activeElement === td) {
-                    e.preventDefault();
-                    startCellEdit(td, input, true);
-                }
-            });
-        }
+        // 【已删除】bindCellEvents 函数 - 不再需要
 
         function startCellEdit(td, input, selectAll = true, clickX = null) {
             if (activeInput && activeInput !== input) {
@@ -1905,31 +1942,33 @@
             document.addEventListener('keydown', e => isCtrlPressed = e.ctrlKey);
             document.addEventListener('keyup', e => isCtrlPressed = e.ctrlKey);
             
-            document.querySelectorAll('#dataTable td.editable').forEach(td => {
-                td.addEventListener('mousedown', function(e) {
-                    if (isCtrlPressed && e.button === 0) {
-                        e.preventDefault();
-                        e.stopPropagation();
-                        if (!e.shiftKey) clearAllSelections();
-                        isDragging = true;
-                        dragStartCell = this;
-                        dragStartX = e.clientX;
-                        dragStartY = e.clientY;
-                        const rect = this.getBoundingClientRect();
-                        const tableRect = document.querySelector('.table-wrapper').getBoundingClientRect();
-                        selectionBox.style.left = (rect.left - tableRect.left) + 'px';
-                        selectionBox.style.top = (rect.top - tableRect.top) + 'px';
-                        selectionBox.style.width = rect.width + 'px';
-                        selectionBox.style.height = rect.height + 'px';
-                        selectionBox.style.display = 'block';
-                        if (!selectedCells.has(this)) {
-                            selectedCells.add(this);
-                            this.classList.add('cell-drag-selected');
-                        }
-                        document.body.style.cursor = 'crosshair';
-                        return false;
+            // 使用事件委托处理拖拽选择
+            const tbody = document.getElementById('tableTbody');
+            tbody.addEventListener('mousedown', function(e) {
+                const td = e.target.closest('td.editable');
+                if (!td) return;
+                
+                if (isCtrlPressed && e.button === 0) {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    if (!e.shiftKey) clearAllSelections();
+                    isDragging = true;
+                    dragStartCell = td;
+                    dragStartX = e.clientX;
+                    dragStartY = e.clientY;
+                    const rect = td.getBoundingClientRect();
+                    const tableRect = document.querySelector('.table-wrapper').getBoundingClientRect();
+                    selectionBox.style.left = (rect.left - tableRect.left) + 'px';
+                    selectionBox.style.top = (rect.top - tableRect.top) + 'px';
+                    selectionBox.style.width = rect.width + 'px';
+                    selectionBox.style.height = rect.height + 'px';
+                    selectionBox.style.display = 'block';
+                    if (!selectedCells.has(td)) {
+                        selectedCells.add(td);
+                        td.classList.add('cell-drag-selected');
                     }
-                });
+                    document.body.style.cursor = 'crosshair';
+                }
             });
             
             document.addEventListener('mousemove', function(e) {
@@ -2028,7 +2067,7 @@
             iHeader.addEventListener('click', function(e) {
                 e.preventDefault();
                 e.stopPropagation();
-                const targetUrl = 'https://www.mashangfangxin.com/ ';
+                const targetUrl = 'https://www.mashangfangxin.com/  ';
                 window.open(targetUrl, '_blank', 'noopener,noreferrer');
             });
             
