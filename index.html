@@ -702,37 +702,6 @@
             from { opacity: 0; transform: translate(-50%, -50%) scale(0.9); }
             to { opacity: 1; transform: translate(-50%, -50%) scale(1); }
         }
-        
-        /* 后台加载指示器 */
-        .background-loading-indicator {
-            position: fixed;
-            bottom: 20px;
-            right: 20px;
-            background: rgba(163, 230, 53, 0.95);
-            color: #333;
-            padding: 10px 20px;
-            border-radius: 20px;
-            font-size: 14px;
-            font-weight: 600;
-            box-shadow: 0 4px 12px rgba(0,0,0,0.2);
-            z-index: 9999;
-            display: none;
-            align-items: center;
-            gap: 10px;
-        }
-        
-        .background-loading-indicator.show {
-            display: flex;
-        }
-        
-        .background-loading-indicator .spinner {
-            width: 16px;
-            height: 16px;
-            border: 2px solid #fff;
-            border-top: 2px solid #333;
-            border-radius: 50%;
-            animation: spin 0.8s linear infinite;
-        }
     </style>
     <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
 </head>
@@ -746,11 +715,6 @@
     </div>
 
     <div class="toast-message" id="toastMessage"></div>
-    
-    <div class="background-loading-indicator" id="bgLoadingIndicator">
-        <div class="spinner"></div>
-        <span id="bgLoadingText">后台加载中...</span>
-    </div>
 
     <div class="container">
         <div class="toolbar">
@@ -809,9 +773,7 @@
             renderDelay: 10,
             maxHistory: 20,
             debounceDelay: 300,
-            importChunkSize: 100,
-            initialLoadRows: 400,  // 新增：首次加载行数
-            backgroundLoadBatch: 100  // 新增：后台每批加载行数
+            importChunkSize: 100
         };
         
         for(let i='H'.charCodeAt(0); i<='T'.charCodeAt(0); i++) {
@@ -847,8 +809,6 @@
         let activeInput = null;
         let isAtBottom = false;
         let isProcessing = false;
-        let isBackgroundLoading = false;  // 新增：后台加载状态
-        let backgroundLoadPaused = false; // 新增：后台加载暂停状态
 
         // 防抖函数
         function debounce(func, wait) {
@@ -907,21 +867,6 @@
 
         function updateProgress(percent) {
             document.getElementById('progressFill').style.width = percent + '%';
-        }
-
-        // 显示/隐藏后台加载指示器
-        function showBgLoading(text = '后台加载中...') {
-            const indicator = document.getElementById('bgLoadingIndicator');
-            document.getElementById('bgLoadingText').textContent = text;
-            indicator.classList.add('show');
-        }
-
-        function hideBgLoading() {
-            document.getElementById('bgLoadingIndicator').classList.remove('show');
-        }
-
-        function updateBgLoading(text) {
-            document.getElementById('bgLoadingText').textContent = text;
         }
 
         // 页面初始化
@@ -1480,8 +1425,6 @@
             
             td.addEventListener('dblclick', function(e) {
                 e.stopPropagation();
-                // 暂停后台加载
-                backgroundLoadPaused = true;
                 startCellEdit(td, input, true);
             });
             
@@ -1522,7 +1465,6 @@
             td.addEventListener('keydown', function(e) {
                 if (e.key === 'F2' && document.activeElement === td) {
                     e.preventDefault();
-                    backgroundLoadPaused = true;
                     startCellEdit(td, input, true);
                 }
             });
@@ -1581,9 +1523,6 @@
             input.classList.remove('editing');
             if (activeInput === input) activeInput = null;
             if (td && document.activeElement === input) td.focus();
-            
-            // 恢复后台加载
-            backgroundLoadPaused = false;
         }
 
         function cancelCellEdit(input, originalValue) {
@@ -1591,8 +1530,6 @@
             input.value = originalValue;
             input.classList.remove('editing');
             if (activeInput === input) activeInput = null;
-            // 恢复后台加载
-            backgroundLoadPaused = false;
         }
 
         function handleEnterKeyMove(cell) {
@@ -1737,112 +1674,24 @@
             });
         }
 
-        // 【优化版】渲染所有行 - 先加载400行，剩余后台加载
-        async function renderAllRowsFromOriginalData() {
+        // 【恢复原版】快速渲染所有行 - 1000行以内一次性渲染
+        function renderAllRowsFromOriginalData() {
             const tbody = document.getElementById('tableTbody');
             tbody.innerHTML = '';
             
             const totalRows = originalData.length;
             if (totalRows === 0) return;
             
-            // 如果总行数少于等于400，直接全部渲染
-            if (totalRows <= CONFIG.initialLoadRows) {
-                originalData.forEach((rowData) => {
-                    const row = createRowFromData(rowData);
-                    tbody.appendChild(row);
-                });
-                calculateDColumn();
-                return;
-            }
+            // 1000行以内直接一次性渲染（使用DocumentFragment优化）
+            const fragment = document.createDocumentFragment();
             
-            // 先加载前400行
-            showLoading(`正在加载前 ${CONFIG.initialLoadRows} 行数据...`);
-            
-            const initialBatch = originalData.slice(0, CONFIG.initialLoadRows);
-            initialBatch.forEach((rowData) => {
+            originalData.forEach((rowData) => {
                 const row = createRowFromData(rowData);
-                tbody.appendChild(row);
+                fragment.appendChild(row);
             });
             
-            updateProgress(100);
-            hideLoading();
+            tbody.appendChild(fragment);
             calculateDColumn();
-            
-            // 后台加载剩余行
-            const remainingRows = originalData.slice(CONFIG.initialLoadRows);
-            if (remainingRows.length > 0) {
-                await loadRemainingRowsInBackground(remainingRows, CONFIG.initialLoadRows + 1);
-            }
-        }
-
-        // 后台加载剩余行
-        async function loadRemainingRowsInBackground(remainingData, startRowNum) {
-            if (isBackgroundLoading) return;
-            isBackgroundLoading = true;
-            backgroundLoadPaused = false;
-            
-            showBgLoading(`后台加载中... 0/${remainingData.length}`);
-            
-            const tbody = document.getElementById('tableTbody');
-            const totalRemaining = remainingData.length;
-            
-            for (let i = 0; i < totalRemaining; i += CONFIG.backgroundLoadBatch) {
-                // 如果用户正在编辑，暂停加载
-                if (backgroundLoadPaused) {
-                    await waitForResume();
-                }
-                
-                const batch = remainingData.slice(i, i + CONFIG.backgroundLoadBatch);
-                
-                // 使用 requestIdleCallback 或 setTimeout 让出时间片
-                await new Promise(resolve => {
-                    if (window.requestIdleCallback) {
-                        requestIdleCallback(() => {
-                            batch.forEach((rowData, batchIndex) => {
-                                const actualIndex = startRowNum + i + batchIndex - 1;
-                                rowData.rowNum = actualIndex;
-                                const row = createRowFromData(rowData);
-                                tbody.appendChild(row);
-                            });
-                            resolve();
-                        }, { timeout: 100 });
-                    } else {
-                        setTimeout(() => {
-                            batch.forEach((rowData, batchIndex) => {
-                                const actualIndex = startRowNum + i + batchIndex - 1;
-                                rowData.rowNum = actualIndex;
-                                const row = createRowFromData(rowData);
-                                tbody.appendChild(row);
-                            });
-                            resolve();
-                        }, 0);
-                    }
-                });
-                
-                updateBgLoading(`后台加载中... ${Math.min(i + CONFIG.backgroundLoadBatch, totalRemaining)}/${totalRemaining}`);
-                
-                // 每批处理后检查是否需要继续
-                if (backgroundLoadPaused) {
-                    await waitForResume();
-                }
-            }
-            
-            hideBgLoading();
-            isBackgroundLoading = false;
-            calculateDColumn();
-            checkDuplicateCells();
-        }
-
-        // 等待恢复后台加载
-        function waitForResume() {
-            return new Promise(resolve => {
-                const checkInterval = setInterval(() => {
-                    if (!backgroundLoadPaused) {
-                        clearInterval(checkInterval);
-                        resolve();
-                    }
-                }, 100);
-            });
         }
 
         function createRowFromData(rowData) {
@@ -1893,6 +1742,7 @@
             tbody.innerHTML = '';
             
             const termLower = term.toLowerCase();
+            const fragment = document.createDocumentFragment();
             
             originalData.forEach((rowData) => {
                 const aContent = (rowData.cells['A']?.content || '').toLowerCase();
@@ -1912,9 +1762,11 @@
                         if (bCell) bCell.classList.add('search-highlight');
                     }
                     
-                    tbody.appendChild(row);
+                    fragment.appendChild(row);
                 }
             });
+            
+            tbody.appendChild(fragment);
             
             !isUndoRedo && saveToHistory();
         }
@@ -2221,8 +2073,6 @@
                 }
                 if (e.key === 'F2' && selectedCell && selectedCell.classList.contains('editable')) {
                     e.preventDefault();
-                    // 暂停后台加载
-                    backgroundLoadPaused = true;
                     const input = selectedCell.querySelector('.cell-input');
                     if (input) startCellEdit(selectedCell, input, true);
                     return;
@@ -2486,12 +2336,16 @@
                 return bVal - aVal;
             });
             
+            const fragment = document.createDocumentFragment();
+            
             filtered.forEach((rowData, index) => {
                 const row = createRowFromData(rowData);
                 const rowNumCell = row.querySelector('.row-header');
                 if (rowNumCell) rowNumCell.textContent = index + 1;
-                tbody.appendChild(row);
+                fragment.appendChild(row);
             });
+            
+            tbody.appendChild(fragment);
         }
 
         function toggleDColumnFilter() {
@@ -2663,9 +2517,6 @@
                     isProcessing = false;
                     return; 
                 }
-                
-                // 移除数字序列检测，直接按列对齐
-                // A列数据对应A列，B列数据对应B列...
                 
                 const tbody = document.getElementById('tableTbody');
                 tbody.innerHTML = '';
