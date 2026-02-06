@@ -824,7 +824,7 @@
             };
         }
 
-        // 显示自动消失消息弹窗
+        // 显示自动消失消息弹窗 - 修改为2秒自动消失，不响应点击
         let toastTimer = null;
         function showToast(message, duration = 2000) {
             const toast = document.getElementById('toastMessage');
@@ -833,18 +833,10 @@
             
             if (toastTimer) clearTimeout(toastTimer);
             
+            // 2秒后自动消失，不响应点击
             toastTimer = setTimeout(() => {
                 hideToast();
             }, duration);
-            
-            const hideOnClick = (e) => {
-                hideToast();
-                document.removeEventListener('click', hideOnClick);
-            };
-            
-            setTimeout(() => {
-                document.addEventListener('click', hideOnClick);
-            }, 100);
         }
 
         function hideToast() {
@@ -1820,11 +1812,15 @@
                 clearSearchHighlights();
                 lastSearchTerm = '';
                 
+                // 【修复】清空搜索后总是回到首页（显示所有原始数据）
+                // 关闭筛选状态，回到原始数据视图
                 if (isFilterActive) {
-                    applyFilter();
-                } else {
-                    renderAllRowsFromOriginalData();
+                    isFilterActive = false;
+                    document.getElementById('filterToggle').classList.remove('active');
                 }
+                
+                // 渲染所有原始数据（首页）
+                renderAllRowsFromOriginalData();
                 
                 !isUndoRedo && saveToHistory();
             });
@@ -2067,7 +2063,7 @@
             iHeader.addEventListener('click', function(e) {
                 e.preventDefault();
                 e.stopPropagation();
-                const targetUrl = 'https://www.mashangfangxin.com/  ';
+                const targetUrl = 'https://www.mashangfangxin.com/   ';
                 window.open(targetUrl, '_blank', 'noopener,noreferrer');
             });
             
