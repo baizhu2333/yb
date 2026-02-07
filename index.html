@@ -916,7 +916,7 @@
                 if (e.key === 'Enter') {
                     e.preventDefault();
                     performSearch();
-                    jumpToSearchResult();
+                    ();
                 }
             });
             
@@ -1120,41 +1120,40 @@
         }
 
         function jumpToSearchResult() {
-    if (!state.searchTerm || state.filteredRows.size === 0) return;
-    
-    const firstMatchRow = Math.min(...Array.from(state.filteredRows));
-    
-    // 检查 H 列是否有内容
-    const hCellId = `H${firstMatchRow}`;
-    const hValue = state.data[hCellId];
-    
-    // H 列空着，就跳到 H 列
-    if (!hValue || hValue.trim() === '') {
-        const hCell = document.getElementById(`cell-${hCellId}`);
-        if (hCell && !hCell.closest('tr').classList.contains('hidden-row')) {
-            selectCell(hCellId);
-            hCell.scrollIntoView({ behavior: 'smooth', block: 'center' });
-        }
-        return;
-    }
-    
-    // H 列有内容，从 I 列开始找第一个空的单元格
-    for (let i = 1; i < CONFIG.countColForD.length; i++) {
-        const col = CONFIG.countColForD[i]; // 从 I 列开始（索引1）
-        const cellId = `${col}${firstMatchRow}`;
-        const value = state.data[cellId];
-        
-        // 找到空的就跳转
-        if (!value || value.trim() === '') {
-            const cell = document.getElementById(`cell-${cellId}`);
-            if (cell && !cell.closest('tr').classList.contains('hidden-row')) {
-                selectCell(cellId);
-                cell.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            if (!state.searchTerm || state.filteredRows.size === 0) return;
+            
+            const firstMatchRow = Math.min(...Array.from(state.filteredRows));
+            
+            // 检查 H 列是否有内容
+            const hCellId = `H${firstMatchRow}`;
+            const hValue = state.data[hCellId];
+            
+            // H 列空着，就跳到 H 列
+            if (!hValue || hValue.trim() === '') {
+                const hCell = document.getElementById(`cell-${hCellId}`);
+                if (hCell && !hCell.closest('tr').classList.contains('hidden-row')) {
+                    selectCell(hCellId);
+                    hCell.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                }
                 return;
             }
+            
+            // H 列有内容，从 I 列开始找第一个空的单元格
+            for (let i = 1; i < CONFIG.countColForD.length; i++) {
+                const col = CONFIG.countColForD[i];
+                const cellId = `${col}${firstMatchRow}`;
+                const value = state.data[cellId];
+                
+                if (!value || value.trim() === '') {
+                    const cell = document.getElementById(`cell-${cellId}`);
+                    if (cell && !hCell.closest('tr').classList.contains('hidden-row')) {
+                        selectCell(cellId);
+                        cell.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                    }
+                    return;
+                }
+            }
         }
-    }
-    
         // ==================== 单元格操作 ====================
         function handleCellClick(e, cellId) {
             e.stopPropagation();
@@ -2062,3 +2061,4 @@
     </script>
 </body>
 </html>
+
