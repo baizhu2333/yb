@@ -19,14 +19,14 @@
             display: flex;
             flex-direction: column;
             overflow: hidden;
-            font-size: 15.44px; /* 14.3 * 1.08 */
+            font-size: 15.44px;
         }
 
         /* 顶部工具栏 */
         .ribbon {
             background: #fff;
             border-bottom: 1px solid #d4d4d4;
-            padding: 9.5px 14.26px; /* 8.8*1.08, 13.2*1.08 */
+            padding: 9.5px 14.26px;
             display: flex;
             gap: 14.26px;
             align-items: center;
@@ -97,7 +97,7 @@
         }
 
         #searchInput {
-            width: 356px; /* 330*1.08 */
+            width: 356px;
             padding: 7.13px 14.26px;
             border: 1px solid #d4d4d4;
             border-radius: 4.75px;
@@ -144,7 +144,7 @@
             text-align: center;
             position: sticky;
             z-index: 10;
-            font-size: 15.56px; /* 14.4 * 1.08 */
+            font-size: 15.56px;
         }
 
         .sheet-table th.corner {
@@ -152,14 +152,14 @@
             z-index: 20;
             top: 0;
             left: 0;
-            width: 43.2px; /* 40*1.08 */
+            width: 43.2px;
             min-width: 43.2px;
         }
 
         .sheet-table th.col-header {
             top: 0;
-            min-width: 95.04px; /* 88*1.08 */
-            height: 28.51px; /* 26.4*1.08 */
+            min-width: 95.04px;
+            height: 28.51px;
             line-height: 28.51px;
             font-size: 15.56px;
             border-bottom: 2px solid #c0c0c0;
@@ -201,7 +201,7 @@
             height: 100%;
             padding: 2.38px 4.75px;
             font-size: 15.44px;
-            line-height: 23.76px; /* 22*1.08 */
+            line-height: 23.76px;
             white-space: nowrap;
             overflow: hidden;
             text-overflow: ellipsis;
@@ -229,14 +229,14 @@
         /* 特殊列样式 - C、E宽度60px，D、F宽度44px */
         td[data-col="D"], th[data-col="D"],
         td[data-col="F"], th[data-col="F"] {
-            width: 47.52px !important; /* 44*1.08 */
+            width: 47.52px !important;
             min-width: 47.52px !important;
             max-width: 47.52px !important;
         }
 
         td[data-col="C"], th[data-col="C"],
         td[data-col="E"], th[data-col="E"] {
-            width: 64.8px !important; /* 60*1.08 */
+            width: 64.8px !important;
             min-width: 64.8px !important;
             max-width: 64.8px !important;
         }
@@ -256,16 +256,16 @@
 
         td.meta-col {
             background: #f9f9f9 !important;
-            font-size: 11.88px !important; /* 11*1.08 */
+            font-size: 11.88px !important;
             color: #666 !important;
-            width: 71.28px !important; /* 66*1.08 */
+            width: 71.28px !important;
             min-width: 71.28px !important;
         }
 
         th.meta-col {
             background: #e0e0e0 !important;
             color: #666 !important;
-            font-size: 12.96px !important; /* 12*1.08 */
+            font-size: 12.96px !important;
             width: 71.28px !important;
             min-width: 71.28px !important;
         }
@@ -330,7 +330,7 @@
             position: absolute;
             top: 1.08px;
             right: 1.08px;
-            width: 10.8px; /* 10*1.08 */
+            width: 10.8px;
             height: 10.8px;
             background-color: #ef5350;
             border-radius: 50%;
@@ -343,7 +343,7 @@
             position: absolute;
             top: 2.38px;
             right: 2.38px;
-            width: 14.26px; /* 13.2*1.08 */
+            width: 14.26px;
             height: 14.26px;
             border-radius: 3.56px;
             background-color: #a3e635;
@@ -361,7 +361,7 @@
         /* 右键菜单 */
         .context-menu {
             position: absolute;
-            width: 261.36px; /* 242*1.08 */
+            width: 261.36px;
             background: white;
             border: 1px solid #d4d4d4;
             box-shadow: 0 4.75px 14.26px rgba(0,0,0,0.15);
@@ -388,7 +388,7 @@
         .context-menu-item.pink-item::before {
             content: '';
             display: inline-block;
-            width: 17.28px; /* 16*1.08 */
+            width: 17.28px;
             height: 17.28px;
             background-color: #f8bbd9;
             border-radius: 3.89px;
@@ -492,7 +492,7 @@
         }
 
         .loading-spinner {
-            width: 59.4px; /* 55*1.08 */
+            width: 59.4px;
             height: 59.4px;
             border: 5.94px solid #f3f3f3;
             border-top: 5.94px solid #217346;
@@ -779,12 +779,12 @@
         }
 
         function getColWidth(col, idx) {
-            if (col === 'A') return 145.8; /* 135*1.08 */
-            if (col === 'C' || col === 'E') return 64.8; /* 60*1.08 */
-            if (col === 'D' || col === 'F') return 47.52; /* 44*1.08 */
-            if (idx >= 7 && idx <= 19) return 173.88; /* 161*1.08 */
-            if (idx >= 20) return 71.28; /* 66*1.08 */
-            return 118.8; /* 110*1.08 */
+            if (col === 'A') return 145.8;
+            if (col === 'C' || col === 'E') return 64.8;
+            if (col === 'D' || col === 'F') return 47.52;
+            if (idx >= 7 && idx <= 19) return 173.88;
+            if (idx >= 20) return 71.28;
+            return 118.8;
         }
 
         function renderEmptyRows() {
@@ -1757,10 +1757,63 @@
             document.getElementById('redoBtn').disabled = state.redoStack.length === 0;
         }
 
-        // ==================== Excel导入导出 ====================
+        // ==================== Excel导入导出（已修复潜在Bug） ====================
         async function handleExcelImport(e) {
             const file = e.target.files[0];
             if (!file) return;
+            
+            // ========== 新增：上传前完整重置状态 ==========
+            
+            // 1. 结束当前编辑（如果有）
+            if (state.editingCell) {
+                endEdit();
+            }
+            
+            // 2. 清空所有数据状态
+            state.data = {};
+            state.headerData = {};
+            state.selectedCell = null;
+            state.selectedCells.clear();
+            state.editingCell = null;
+            state.activeInput = null;
+            state.isFilterActive = false;
+            state.searchTerm = '';
+            state.filteredRows.clear();
+            state.highlightedRow = null;
+            state.historyStack = [];
+            state.redoStack = [];
+            state.isUndoRedo = false;
+            
+            // 3. 重置UI控件状态
+            document.getElementById('searchInput').value = '';
+            const filterBtn = document.getElementById('filterToggle');
+            filterBtn.classList.remove('btn-active');
+            filterBtn.textContent = '筛选＞0';
+            updateUndoRedoButtons();
+            
+            // 4. 强制清除DOM样式
+            document.querySelectorAll('.cell-content.selected').forEach(el => {
+                el.classList.remove('selected');
+            });
+            document.querySelectorAll('tr.row-selected').forEach(tr => {
+                tr.classList.remove('row-selected');
+            });
+            document.querySelectorAll('.search-highlight').forEach(el => {
+                el.classList.remove('search-highlight');
+            });
+            document.querySelectorAll('tr.hidden-row').forEach(tr => {
+                tr.classList.remove('hidden-row');
+            });
+            document.querySelectorAll('.row-highlight').forEach(el => {
+                el.classList.remove('row-highlight');
+            });
+            
+            // 5. 关闭可能打开的菜单和弹窗
+            document.getElementById('contextMenu').style.display = 'none';
+            document.getElementById('commentPopup').classList.remove('show');
+            document.getElementById('modalOverlay').classList.remove('show');
+            
+            // ========== 原有导入逻辑 ==========
             
             showLoading('正在导入...');
             
@@ -1799,9 +1852,12 @@
                 
                 calculateLHeader();
                 calculateDColumn();
+                // 注意：不再调用 restoreStyles()，因为数据已完全重置
                 checkDuplicates();
-                restoreStyles();
                 saveToHistory();
+                
+                // 立即保存到本地存储，防止刷新后恢复旧数据
+                saveToLocalStorage();
                 
                 hideLoading();
                 showToast(`成功导入 ${rows.length} 行数据`);
