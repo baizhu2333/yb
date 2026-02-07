@@ -58,6 +58,7 @@
             gap: 7.13px;
             transition: all 0.2s;
             color: #333;
+            height: 38px;
         }
 
         .btn:hover {
@@ -98,10 +99,12 @@
 
         #searchInput {
             width: 356px;
-            padding: 7.13px 14.26px;
+            padding: 0 14.26px;
             border: 1px solid #d4d4d4;
             border-radius: 4.75px;
             font-size: 15.44px;
+            height: 38px;
+            line-height: 38px;
         }
 
         #searchInput:focus {
@@ -562,6 +565,11 @@
             display: block;
         }
 
+        /* 隐藏行样式 */
+        tr.hidden-row {
+            display: none !important;
+        }
+
         /* 滚动条 */
         ::-webkit-scrollbar {
             width: 14.26px;
@@ -903,6 +911,7 @@
         // ==================== 事件处理 ====================
         function initEvents() {
             const searchInput = document.getElementById('searchInput');
+            // 仅回车触发搜索
             searchInput.addEventListener('keydown', (e) => {
                 if (e.key === 'Enter') {
                     e.preventDefault();
@@ -994,33 +1003,158 @@
             }
         }
 
-        // ==================== 搜索跳转 ====================
-        function jumpToSearchResult() {
-            if (!state.searchTerm || state.filteredRows.size === 0) return;
+        // ==================== 搜索筛选 ====================
+        function performSearch() {
+            const term = document.getElementById('searchInput').value.trim().toLowerCase();
+            state.searchTerm = term;
             
-            const firstMatchRow = Math.min(...Array.from(state.filteredRows));
+            if (!term) {
+                clearSearch();
+                return;
+            }
             
-            for (let col of CONFIG.countColForD) {
-                const cellId = `${col}${firstMatchRow}`;
-                const value = state.data[cellId];
-                if (value && value.trim() !== '') {
-                    const cell = document.getElementById(`cell-${cellId}`);
-                    if (cell && !cell.closest('tr').classList.contains('hidden-row')) {
-                        selectCell(cellId);
-                        cell.scrollIntoView({ behavior: 'smooth', block: 'center' });
-                        return;
+            // 清除之前的高亮
+            document.querySelectorAll('.search-highlight').forEach(el => {
+                el.classList.remove('search-highlight');
+            });
+            
+            state.filteredRows.clear();
+            
+            // 先显示所有行，然后根据条件隐藏
+            document.querySelectorAll('#tableBody tr').forEach(tr => {
+                tr.classList.remove('hidden-row');
+            });
+            
+            for (let r = 1; r <= state.rows; r++) {
+                const aVal = (state.data[`A${r}`] || '').toLowerCase();
+                const bVal = (state.data[`B${r}`] || '').toLowerCase();
+                
+                const row = document.querySelector(`tr[data-row-num="${r}"]`);
+                
+                if (aVal.includes(term) || bVal.includes(term)) {
+                    state.filteredRows.add(r);
+                    if (aVal.includes(term)) {
+                        const cellA = document.getElementById(`cell-A${r}`);
+                        if (cellA) cellA.classList.add('search-highlight');
                     }
+                    if (bVal.includes(term)) {
+                        const cellB = document.getElementById(`cell-B${r}`);
+                        if (cellB) cellB.classList.add('search-highlight');
+                    }
+                } else {
+                    row.classList.add('hidden-row');
                 }
             }
             
-            const hCellId = `H${firstMatchRow}`;
-            const hCell = document.getElementById(`cell-${hCellId}`);
-            if (hCell && !hCell.closest('tr').classList.contains('hidden-row')) {
-                selectCell(hCellId);
-                hCell.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            showToast(`找到 ${state.filteredRows.size} 个匹配项`);
+        }
+
+        function clearSearch() {
+            document.getElementById('searchInput').value = '';
+            state.searchTerm = '';
+            state.filteredRows.clear();
+            
+            document.querySelectorAll('.search-highlight').forEach(el => {
+                el.classList.remove('search-highlight');
+            });
+            
+            // 如果筛选激活，应用筛选；否则显示所有行
+            if (state.isFilterActive) {
+                applyFilter();
+            } else {
+                document.querySelectorAll('#tableBody tr').forEach(tr => {
+                    tr.classList.remove('hidden-row');
+                });
             }
         }
 
+        function toggleFilter() {
+            state.isFilterActive = !state.isFilterActive;
+            const btn = document.getElementById('filterToggle');
+            btn.classList.toggle('btn-active', state.isFilterActive);
+            
+            // 更新按钮文本
+            if (state.isFilterActive) {
+                btn.textContent = '显示全部';
+                applyFilter();
+            } else {
+                btn.textContent = '筛选＞0';
+                clearFilter();
+            }
+            
+            saveToHistory();
+        }
+
+        function applyFilter() {
+            // 先清除所有隐藏状态
+            document.querySelectorAll('#tableBody tr').forEach(tr => {
+                tr.classList.remove('hidden-row');
+            });
+            
+            let visibleCount = 0;
+            
+            for (let r = 1; r <= state.rows; r++) {
+                const dVal = parseInt(state.data[`D${r}`] || '0');
+                const row = document.querySelector(`tr[data-row-num="${r}"]`);
+                
+                // 如果D列<=0，隐藏该行
+                if (dVal <= 0) {
+                    row.classList.add('hidden-row');
+                } else {
+                    visibleCount++;
+                }
+            }
+            
+            showToast(`筛选显示 ${visibleCount} 行`);
+        }
+
+        function clearFilter() {
+            document.querySelectorAll('#tableBody tr').forEach(tr => {
+                tr.classList.remove('hidden-row');
+            });
+            
+            // 如果还有搜索词，重新应用搜索
+            if (state.searchTerm) {
+                performSearch();
+            }
+        }
+
+        function jumpToSearchResult() {
+    if (!state.searchTerm || state.filteredRows.size === 0) return;
+    
+    const firstMatchRow = Math.min(...Array.from(state.filteredRows));
+    
+    // 检查 H 列是否有内容
+    const hCellId = `H${firstMatchRow}`;
+    const hValue = state.data[hCellId];
+    
+    // H 列空着，就跳到 H 列
+    if (!hValue || hValue.trim() === '') {
+        const hCell = document.getElementById(`cell-${hCellId}`);
+        if (hCell && !hCell.closest('tr').classList.contains('hidden-row')) {
+            selectCell(hCellId);
+            hCell.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        }
+        return;
+    }
+    
+    // H 列有内容，从 I 列开始找第一个空的单元格
+    for (let i = 1; i < CONFIG.countColForD.length; i++) {
+        const col = CONFIG.countColForD[i]; // 从 I 列开始（索引1）
+        const cellId = `${col}${firstMatchRow}`;
+        const value = state.data[cellId];
+        
+        // 找到空的就跳转
+        if (!value || value.trim() === '') {
+            const cell = document.getElementById(`cell-${cellId}`);
+            if (cell && !cell.closest('tr').classList.contains('hidden-row')) {
+                selectCell(cellId);
+                cell.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                return;
+            }
+        }
+    }
+    
         // ==================== 单元格操作 ====================
         function handleCellClick(e, cellId) {
             e.stopPropagation();
@@ -1431,105 +1565,6 @@
             menu.style.top = menuY + 'px';
         }
 
-        // ==================== 搜索筛选 ====================
-        function performSearch() {
-            const term = document.getElementById('searchInput').value.trim().toLowerCase();
-            state.searchTerm = term;
-            
-            if (!term) {
-                clearSearch();
-                return;
-            }
-            
-            document.querySelectorAll('.search-highlight').forEach(el => {
-                el.classList.remove('search-highlight');
-            });
-            document.querySelectorAll('#tableBody tr').forEach(tr => {
-                tr.classList.remove('hidden-row');
-            });
-            
-            state.filteredRows.clear();
-            
-            for (let r = 1; r <= state.rows; r++) {
-                const aVal = (state.data[`A${r}`] || '').toLowerCase();
-                const bVal = (state.data[`B${r}`] || '').toLowerCase();
-                
-                const row = document.querySelector(`tr[data-row-num="${r}"]`);
-                
-                if (aVal.includes(term) || bVal.includes(term)) {
-                    state.filteredRows.add(r);
-                    if (aVal.includes(term)) {
-                        document.getElementById(`cell-A${r}`).classList.add('search-highlight');
-                    }
-                    if (bVal.includes(term)) {
-                        document.getElementById(`cell-B${r}`).classList.add('search-highlight');
-                    }
-                } else {
-                    row.classList.add('hidden-row');
-                }
-            }
-            
-            showToast(`找到 ${state.filteredRows.size} 个匹配项`);
-        }
-
-        function clearSearch() {
-            document.getElementById('searchInput').value = '';
-            state.searchTerm = '';
-            state.filteredRows.clear();
-            
-            document.querySelectorAll('.search-highlight').forEach(el => {
-                el.classList.remove('search-highlight');
-            });
-            document.querySelectorAll('#tableBody tr').forEach(tr => {
-                tr.classList.remove('hidden-row');
-            });
-            
-            if (state.isFilterActive) {
-                applyFilter();
-            }
-        }
-
-        function toggleFilter() {
-            state.isFilterActive = !state.isFilterActive;
-            const btn = document.getElementById('filterToggle');
-            btn.classList.toggle('btn-active', state.isFilterActive);
-            
-            if (state.isFilterActive) {
-                applyFilter();
-            } else {
-                clearFilter();
-            }
-            
-            saveToHistory();
-        }
-
-        function applyFilter() {
-            document.querySelectorAll('#tableBody tr').forEach(tr => {
-                tr.classList.remove('hidden-row');
-            });
-            
-            let visibleCount = 0;
-            
-            for (let r = 1; r <= state.rows; r++) {
-                const dVal = parseInt(state.data[`D${r}`] || '0');
-                const row = document.querySelector(`tr[data-row-num="${r}"]`);
-                
-                if (dVal <= 0) {
-                    row.classList.add('hidden-row');
-                } else {
-                    visibleCount++;
-                }
-            }
-            
-            showToast(`筛选显示 ${visibleCount} 行`);
-        }
-
-        function clearFilter() {
-            document.querySelectorAll('#tableBody tr').forEach(tr => {
-                tr.classList.remove('hidden-row');
-            });
-        }
-
         // ==================== 行列操作 ====================
         function addNewRow() {
             state.rows++;
@@ -1757,19 +1792,16 @@
             document.getElementById('redoBtn').disabled = state.redoStack.length === 0;
         }
 
-        // ==================== Excel导入导出（已修复潜在Bug） ====================
+        // ==================== Excel导入导出 ====================
         async function handleExcelImport(e) {
             const file = e.target.files[0];
             if (!file) return;
             
-            // ========== 新增：上传前完整重置状态 ==========
-            
-            // 1. 结束当前编辑（如果有）
+            // 上传前完整重置状态
             if (state.editingCell) {
                 endEdit();
             }
             
-            // 2. 清空所有数据状态
             state.data = {};
             state.headerData = {};
             state.selectedCell = null;
@@ -1784,14 +1816,12 @@
             state.redoStack = [];
             state.isUndoRedo = false;
             
-            // 3. 重置UI控件状态
             document.getElementById('searchInput').value = '';
             const filterBtn = document.getElementById('filterToggle');
             filterBtn.classList.remove('btn-active');
             filterBtn.textContent = '筛选＞0';
             updateUndoRedoButtons();
             
-            // 4. 强制清除DOM样式
             document.querySelectorAll('.cell-content.selected').forEach(el => {
                 el.classList.remove('selected');
             });
@@ -1808,12 +1838,9 @@
                 el.classList.remove('row-highlight');
             });
             
-            // 5. 关闭可能打开的菜单和弹窗
             document.getElementById('contextMenu').style.display = 'none';
             document.getElementById('commentPopup').classList.remove('show');
             document.getElementById('modalOverlay').classList.remove('show');
-            
-            // ========== 原有导入逻辑 ==========
             
             showLoading('正在导入...');
             
@@ -1852,11 +1879,8 @@
                 
                 calculateLHeader();
                 calculateDColumn();
-                // 注意：不再调用 restoreStyles()，因为数据已完全重置
                 checkDuplicates();
                 saveToHistory();
-                
-                // 立即保存到本地存储，防止刷新后恢复旧数据
                 saveToLocalStorage();
                 
                 hideLoading();
