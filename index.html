@@ -12,6 +12,14 @@
             box-sizing: border-box;
         }
 
+        /* 整体放大20% */
+        html {
+            transform: scale(1.2);
+            transform-origin: 0 0;
+            width: 83.33%; /* 100/1.2 防止出现滚动条 */
+            height: 83.33%;
+        }
+
         body {
             font-family: "Microsoft YaHei", "Segoe UI", Arial, sans-serif;
             background: #f5f5f5;
@@ -22,22 +30,23 @@
             font-size: 15.73px;
         }
 
-        /* 顶部工具栏 */
+        /* 顶部工具栏 - 同步放大 */
         .ribbon {
             background: #fff;
             border-bottom: 1px solid #d4d4d4;
-            padding: 8.8px 13.2px;
+            padding: 10.56px 15.84px; /* 8.8*1.2, 13.2*1.2 */
             display: flex;
-            gap: 13.2px;
+            gap: 15.84px; /* 13.2*1.2 */
             align-items: center;
-            box-shadow: 0 2.2px 4.4px rgba(0,0,0,0.05);
+            box-shadow: 0 2.64px 5.28px rgba(0,0,0,0.05);
             z-index: 100;
+            min-height: 60px; /* 确保放大后高度足够 */
         }
 
         .ribbon-group {
             display: flex;
-            gap: 6.6px;
-            padding-right: 13.2px;
+            gap: 7.92px; /* 6.6*1.2 */
+            padding-right: 15.84px;
             border-right: 1px solid #e0e0e0;
             align-items: center;
         }
@@ -47,17 +56,18 @@
         }
 
         .btn {
-            padding: 6.6px 15.4px;
+            padding: 7.92px 18.48px; /* 6.6*1.2, 15.4*1.2 */
             border: 1px solid #d4d4d4;
             background: #fff;
-            border-radius: 4.4px;
+            border-radius: 5.28px;
             cursor: pointer;
-            font-size: 15.73px;
+            font-size: 16px; /* 稍微放大 */
             display: flex;
             align-items: center;
-            gap: 6.6px;
+            gap: 7.92px;
             transition: all 0.2s;
             color: #333;
+            white-space: nowrap;
         }
 
         .btn:hover {
@@ -97,17 +107,17 @@
         }
 
         #searchInput {
-            width: 330px;
-            padding: 6.6px 13.2px;
+            width: 396px; /* 330*1.2 */
+            padding: 7.92px 15.84px;
             border: 1px solid #d4d4d4;
-            border-radius: 4.4px;
-            font-size: 15.73px;
+            border-radius: 5.28px;
+            font-size: 16px;
         }
 
         #searchInput:focus {
             outline: none;
             border-color: #217346;
-            box-shadow: 0 0 0 3.3px rgba(33, 115, 70, 0.1);
+            box-shadow: 0 0 0 3.96px rgba(33, 115, 70, 0.1);
         }
 
         /* 表格容器 */
@@ -152,15 +162,15 @@
             z-index: 20;
             top: 0;
             left: 0;
-            width: 40px;
-            min-width: 40px;
+            width: 48px; /* 40*1.2 */
+            min-width: 48px;
         }
 
         .sheet-table th.col-header {
             top: 0;
-            min-width: 88px;
-            height: 26.4px;
-            line-height: 26.4px;
+            min-width: 105.6px; /* 88*1.2 */
+            height: 31.68px; /* 26.4*1.2 */
+            line-height: 31.68px;
             font-size: 16px;
             border-bottom: 2px solid #c0c0c0;
             background: #e5f5d7;
@@ -170,17 +180,17 @@
         /* 序号列 */
         .sheet-table th.row-header {
             left: 0;
-            width: 40px;
-            min-width: 40px;
-            height: 26.4px;
-            line-height: 26.4px;
+            width: 48px;
+            min-width: 48px;
+            height: 31.68px;
+            line-height: 31.68px;
             font-size: 16px;
             border-right: 2px solid #c0c0c0;
             cursor: pointer;
             background: #f0f9e8;
             color: #4d7c0f;
             text-align: left;
-            padding-left: 4px;
+            padding-left: 4.8px;
         }
 
         .sheet-table th.row-header:hover {
@@ -189,9 +199,9 @@
 
         /* 单元格样式 */
         .sheet-table td {
-            width: 88px;
-            min-width: 88px;
-            height: 26.4px;
+            width: 105.6px;
+            min-width: 105.6px;
+            height: 31.68px;
             background: #fff;
             cursor: cell;
         }
@@ -199,9 +209,9 @@
         .cell-content {
             width: 100%;
             height: 100%;
-            padding: 2.2px 4.4px;
+            padding: 2.64px 5.28px;
             font-size: 15.73px;
-            line-height: 22px;
+            line-height: 26.4px;
             white-space: nowrap;
             overflow: hidden;
             text-overflow: ellipsis;
@@ -229,16 +239,16 @@
         /* 特殊列样式 - C、E宽度60px，D、F宽度44px */
         td[data-col="D"], th[data-col="D"],
         td[data-col="F"], th[data-col="F"] {
-            width: 44px !important;
-            min-width: 44px !important;
-            max-width: 44px !important;
+            width: 52.8px !important; /* 44*1.2 */
+            min-width: 52.8px !important;
+            max-width: 52.8px !important;
         }
 
         td[data-col="C"], th[data-col="C"],
         td[data-col="E"], th[data-col="E"] {
-            width: 60px !important;
-            min-width: 60px !important;
-            max-width: 60px !important;
+            width: 72px !important; /* 60*1.2 */
+            min-width: 72px !important;
+            max-width: 72px !important;
         }
 
         /* 隐藏固定列的调整手柄 */
@@ -258,16 +268,16 @@
             background: #f9f9f9 !important;
             font-size: 12.1px !important;
             color: #666 !important;
-            width: 66px !important;
-            min-width: 66px !important;
+            width: 79.2px !important; /* 66*1.2 */
+            min-width: 79.2px !important;
         }
 
         th.meta-col {
             background: #e0e0e0 !important;
             color: #666 !important;
             font-size: 13.2px !important;
-            width: 66px !important;
-            min-width: 66px !important;
+            width: 79.2px !important;
+            min-width: 79.2px !important;
         }
 
         /* 可编辑标题 */
@@ -328,10 +338,10 @@
         /* 备注指示器 - 放大 */
         .comment-indicator {
             position: absolute;
-            top: 1px;
-            right: 1px;
-            width: 10px;
-            height: 10px;
+            top: 1.2px;
+            right: 1.2px;
+            width: 12px; /* 10*1.2 */
+            height: 12px;
             background-color: #ef5350;
             border-radius: 50%;
             z-index: 1;
@@ -341,11 +351,11 @@
         /* 列宽调整手柄 */
         .col-resize-handle {
             position: absolute;
-            top: 2.2px;
-            right: 2.2px;
-            width: 13.2px;
-            height: 13.2px;
-            border-radius: 3.3px;
+            top: 2.64px;
+            right: 2.64px;
+            width: 15.84px; /* 13.2*1.2 */
+            height: 15.84px;
+            border-radius: 3.96px;
             background-color: #a3e635;
             cursor: col-resize;
             z-index: 5;
@@ -361,23 +371,23 @@
         /* 右键菜单 */
         .context-menu {
             position: absolute;
-            width: 242px;
+            width: 290.4px; /* 242*1.2 */
             background: white;
             border: 1px solid #d4d4d4;
-            box-shadow: 0 4.4px 13.2px rgba(0,0,0,0.15);
-            border-radius: 4.4px;
-            padding: 4.4px 0;
+            box-shadow: 0 5.28px 15.84px rgba(0,0,0,0.15);
+            border-radius: 5.28px;
+            padding: 5.28px 0;
             z-index: 10000;
             display: none;
         }
 
         .context-menu-item {
-            padding: 8.8px 17.6px;
+            padding: 10.56px 21.12px;
             cursor: pointer;
-            font-size: 15.73px;
+            font-size: 16px;
             display: flex;
             align-items: center;
-            gap: 8.8px;
+            gap: 10.56px;
         }
 
         .context-menu-item:hover {
@@ -388,17 +398,17 @@
         .context-menu-item.pink-item::before {
             content: '';
             display: inline-block;
-            width: 16px;
-            height: 16px;
+            width: 19.2px; /* 16*1.2 */
+            height: 19.2px;
             background-color: #f8bbd9;
-            border-radius: 3px;
-            margin-right: 4px;
+            border-radius: 3.6px;
+            margin-right: 4.8px;
         }
 
         .context-menu-separator {
             height: 1px;
             background-color: #e0e0e0;
-            margin: 4.4px 0;
+            margin: 5.28px 0;
         }
 
         /* 备注弹窗 */
@@ -409,12 +419,12 @@
             transform: translate(-50%, -50%);
             background-color: #ffffe1;
             border: 2px solid #999;
-            border-radius: 8.8px;
-            padding: 22px;
+            border-radius: 10.56px;
+            padding: 26.4px;
             font-size: 16.94px;
-            min-width: 330px;
-            max-width: 550px;
-            box-shadow: 0 8.8px 26.4px rgba(0,0,0,0.3);
+            min-width: 396px;
+            max-width: 660px;
+            box-shadow: 0 10.56px 31.68px rgba(0,0,0,0.3);
             z-index: 10001;
             display: none;
             word-wrap: break-word;
@@ -434,10 +444,10 @@
 
         .comment-popup-close {
             position: absolute;
-            top: 8.8px;
-            right: 13.2px;
+            top: 10.56px;
+            right: 15.84px;
             cursor: pointer;
-            font-size: 22px;
+            font-size: 26.4px;
             color: #666;
         }
 
@@ -450,15 +460,15 @@
             position: fixed;
             background: rgba(51, 51, 51, 0.95);
             color: white;
-            padding: 8px 12px;
-            border-radius: 4px;
+            padding: 9.6px 14.4px;
+            border-radius: 4.8px;
             font-size: 14px;
-            max-width: 300px;
+            max-width: 360px;
             word-wrap: break-word;
             z-index: 10002;
             display: none;
             pointer-events: none;
-            box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+            box-shadow: 0 2.4px 9.6px rgba(0,0,0,0.2);
         }
 
         .comment-tooltip.show {
@@ -488,14 +498,14 @@
             align-items: center;
             z-index: 10000;
             flex-direction: column;
-            gap: 22px;
+            gap: 26.4px;
         }
 
         .loading-spinner {
-            width: 55px;
-            height: 55px;
-            border: 5.5px solid #f3f3f3;
-            border-top: 5.5px solid #217346;
+            width: 66px;
+            height: 66px;
+            border: 6.6px solid #f3f3f3;
+            border-top: 6.6px solid #217346;
             border-radius: 50%;
             animation: spin 1s linear infinite;
         }
@@ -506,10 +516,10 @@
         }
 
         .progress-bar {
-            width: 330px;
-            height: 22px;
+            width: 396px;
+            height: 26.4px;
             background: #e0e0e0;
-            border-radius: 11px;
+            border-radius: 13.2px;
             overflow: hidden;
         }
 
@@ -528,12 +538,12 @@
             transform: translate(-50%, -50%);
             background: rgba(51, 51, 51, 0.95);
             color: white;
-            padding: 17.6px 35.2px;
-            border-radius: 8.8px;
+            padding: 21.12px 42.24px;
+            border-radius: 10.56px;
             font-size: 16.94px;
             z-index: 10001;
             display: none;
-            box-shadow: 0 4.4px 13.2px rgba(0,0,0,0.3);
+            box-shadow: 0 5.28px 15.84px rgba(0,0,0,0.3);
         }
 
         .toast.show {
@@ -564,8 +574,8 @@
 
         /* 滚动条 */
         ::-webkit-scrollbar {
-            width: 13.2px;
-            height: 13.2px;
+            width: 15.84px;
+            height: 15.84px;
         }
 
         ::-webkit-scrollbar-track {
@@ -574,8 +584,8 @@
 
         ::-webkit-scrollbar-thumb {
             background-color: #c1c1c1;
-            border-radius: 6.6px;
-            border: 3.3px solid #f1f1f1;
+            border-radius: 7.92px;
+            border: 3.96px solid #f1f1f1;
         }
 
         ::-webkit-scrollbar-thumb:hover {
@@ -609,7 +619,7 @@
     <div class="ribbon">
         <div class="ribbon-group">
             <input type="text" id="searchInput" placeholder="搜索条码或药品名称(A/B列)...">
-            <button class="btn" id="clearSearchBtn">清空</button>
+            <button class="btn" id="clearSearchBtn">清空搜索</button>
             <button class="btn" id="filterToggle">筛选＞0</button>
         </div>
 
@@ -623,8 +633,8 @@
 
         <div class="ribbon-group">
             <button class="btn" id="addRowBtn">➕ 新增行</button>
-            <button class="btn" id="undoBtn" disabled>↩️ 撤销</button>
-            <button class="btn" id="redoBtn" disabled>↪️ 恢复</button>
+            <button class="btn" id="undoBtn" disabled>↩️ 撤销(Ctrl+Z)</button>
+            <button class="btn" id="redoBtn" disabled>↪️ 恢复(Ctrl+Y)</button>
         </div>
 
         <div style="flex: 1;"></div>
@@ -667,7 +677,7 @@
             dataMaxCol: 'T',
             readOnlyCol: ['D'],
             calcHeaderCol: 'L',
-            editableHeaders: ['H', 'I', 'J', 'K'], // J和K也改为单击编辑
+            editableHeaders: ['H', 'I', 'J', 'K'],
             formulaHeaders: ['J', 'K'],
             traceCodeCol: ['H','I','M','N'],
             countColForD: [],
@@ -763,7 +773,6 @@
                 if (isMeta) classes.push('meta-col');
                 if (isEditable || isI) classes.push('editable-header');
                 
-                // J和K列改为单击编辑
                 const clickHandler = isI ? 'onclick="openWebsite()"' : 
                                    (isEditable ? 'onclick="editHeader(\'' + col + '\')"' : '');
                 
@@ -780,12 +789,12 @@
         }
 
         function getColWidth(col, idx) {
-            if (col === 'A') return 135;
-            if (col === 'C' || col === 'E') return 60; /* 60px */
-            if (col === 'D' || col === 'F') return 44; /* 上限和无空一样宽 */
-            if (idx >= 7 && idx <= 19) return 161;
-            if (idx >= 20) return 66;
-            return 110;
+            if (col === 'A') return 162; /* 135*1.2 */
+            if (col === 'C' || col === 'E') return 72; /* 60*1.2 */
+            if (col === 'D' || col === 'F') return 52.8; /* 44*1.2 */
+            if (idx >= 7 && idx <= 19) return 193.2; /* 161*1.2 */
+            if (idx >= 20) return 79.2; /* 66*1.2 */
+            return 132; /* 110*1.2 */
         }
 
         function renderEmptyRows() {
@@ -926,10 +935,8 @@
             
             initDragSelection();
             
-            // 全局右键双击检测
             document.addEventListener('contextmenu', handleGlobalRightClick);
             
-            // 使用 mousedown 确保右键菜单及时关闭
             document.addEventListener('mousedown', (e) => {
                 const menu = document.getElementById('contextMenu');
                 if (menu.style.display === 'block' && !e.target.closest('.context-menu')) {
@@ -1038,7 +1045,6 @@
             } else {
                 selectCell(cellId);
                 
-                // 单击直接编辑，并定位光标
                 if (td.classList.contains('editable') && !td.classList.contains('meta-col')) {
                     startEdit(cellId, e);
                 }
@@ -1123,7 +1129,6 @@
             state.editingCell = cellId;
             const cell = document.getElementById(`cell-${cellId}`);
             
-            // 保存当前内容（包括红点）
             const currentContent = cell.innerHTML;
             const hasIndicator = cell.querySelector('.comment-indicator');
             
@@ -1131,12 +1136,10 @@
             cell.classList.add('editing');
             cell.focus();
             
-            // 恢复内容以确保红点保留
             if (hasIndicator) {
                 cell.innerHTML = currentContent;
             }
             
-            // 精确定位光标
             if (clickEvent) {
                 const range = document.caretRangeFromPoint(clickEvent.clientX, clickEvent.clientY);
                 if (range) {
@@ -1155,14 +1158,12 @@
             const cellId = state.editingCell;
             const cell = document.getElementById(`cell-${cellId}`);
             
-            // 获取文本内容时排除红点
             const indicator = cell.querySelector('.comment-indicator');
             if (indicator) indicator.remove();
             
             const value = cell.textContent;
             const oldValue = state.data[cellId] || '';
             
-            // 恢复红点
             if (cell.dataset.comment) {
                 if (!cell.querySelector('.comment-indicator')) {
                     const newIndicator = document.createElement('div');
@@ -1194,7 +1195,6 @@
             state.data[cellId] = value;
             const cell = document.getElementById(`cell-${cellId}`);
             if (cell) {
-                // 保留红点的情况下更新文本
                 const indicator = cell.querySelector('.comment-indicator');
                 cell.textContent = value;
                 if (indicator) {
@@ -1425,8 +1425,8 @@
             let menuX = e.pageX;
             let menuY = e.pageY;
             
-            const menuWidth = 242;
-            const menuHeight = 350;
+            const menuWidth = 290.4;
+            const menuHeight = 420;
             
             if (menuX + menuWidth > window.innerWidth) {
                 menuX = window.innerWidth - menuWidth - 10;
