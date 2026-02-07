@@ -916,7 +916,7 @@
                 if (e.key === 'Enter') {
                     e.preventDefault();
                     performSearch();
-                    ();
+                    jumpToSearchResult();
                 }
             });
             
@@ -1153,7 +1153,10 @@
                     return;
                 }
             }
+            
+            // I-T 都满了，什么都不做（不跳转）
         }
+         
         // ==================== 单元格操作 ====================
         function handleCellClick(e, cellId) {
             e.stopPropagation();
@@ -2061,4 +2064,3 @@
     </script>
 </body>
 </html>
-
