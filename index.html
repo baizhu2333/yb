@@ -162,8 +162,8 @@
         .sheet-table th.col-header {
             top: 0;
             min-width: 95.04px;
-            height: 28.51px;
-            line-height: 28.51px;
+            height: 24.73px;
+            line-height: 24.73px;
             font-size: 15.56px;
             border-bottom: 2px solid #c0c0c0;
             background: #e5f5d7;
@@ -175,8 +175,8 @@
             left: 0;
             width: 43.2px;
             min-width: 43.2px;
-            height: 28.51px;
-            line-height: 28.51px;
+            height: 24.73px;
+            line-height: 24.73px;
             font-size: 15.56px;
             border-right: 2px solid #c0c0c0;
             cursor: pointer;
@@ -194,7 +194,7 @@
         .sheet-table td {
             width: 95.04px;
             min-width: 95.04px;
-            height: 28.51px;
+            height: 24.73px;
             background: #fff;
             cursor: cell;
         }
@@ -204,7 +204,7 @@
             height: 100%;
             padding: 2.38px 4.75px;
             font-size: 15.44px;
-            line-height: 23.76px;
+            line-height: 19.98px;
             white-space: nowrap;
             overflow: hidden;
             text-overflow: ellipsis;
@@ -229,12 +229,12 @@
             overflow: auto;
         }
 
-        /* 特殊列样式 - C、E宽度60px，D、F宽度44px */
+        /* 特殊列样式 - D、F宽度减少2mm到39.96px */
         td[data-col="D"], th[data-col="D"],
         td[data-col="F"], th[data-col="F"] {
-            width: 47.52px !important;
-            min-width: 47.52px !important;
-            max-width: 47.52px !important;
+            width: 39.96px !important;  /* 修改：从47.52px减少2mm(7.56px) */
+            min-width: 39.96px !important;
+            max-width: 39.96px !important;
         }
 
         td[data-col="C"], th[data-col="C"],
@@ -242,14 +242,6 @@
             width: 64.8px !important;
             min-width: 64.8px !important;
             max-width: 64.8px !important;
-        }
-
-        /* 隐藏固定列的调整手柄 */
-        th[data-col="D"] .col-resize-handle,
-        th[data-col="C"] .col-resize-handle,
-        th[data-col="E"] .col-resize-handle,
-        th[data-col="F"] .col-resize-handle {
-            display: none !important;
         }
 
         td[data-col="D"] {
@@ -328,7 +320,7 @@
             background-color: #e3f2fd !important;
         }
 
-        /* 备注指示器 - 放大 */
+        /* 备注指示器 */
         .comment-indicator {
             position: absolute;
             top: 1.08px;
@@ -339,26 +331,6 @@
             border-radius: 50%;
             z-index: 1;
             pointer-events: none;
-        }
-
-        /* 列宽调整手柄 */
-        .col-resize-handle {
-            position: absolute;
-            top: 2.38px;
-            right: 2.38px;
-            width: 14.26px;
-            height: 14.26px;
-            border-radius: 3.56px;
-            background-color: #a3e635;
-            cursor: col-resize;
-            z-index: 5;
-            opacity: 0.7;
-            transition: opacity 0.2s;
-        }
-
-        .col-resize-handle:hover {
-            opacity: 1;
-            background-color: #84cc16;
         }
 
         /* 右键菜单 */
@@ -468,16 +440,6 @@
             display: block;
         }
 
-        /* 拖拽选择框 */
-        .selection-box {
-            position: absolute;
-            background-color: rgba(56, 189, 248, 0.1);
-            border: 2px solid #38bdf8;
-            pointer-events: none;
-            z-index: 100;
-            display: none;
-        }
-
         /* 加载遮罩 */
         .loading-overlay {
             position: fixed;
@@ -523,7 +485,7 @@
             transition: width 0.3s;
         }
 
-        /* Toast提示 */
+        /* Toast提示 - 增强版 */
         .toast {
             position: fixed;
             top: 50%;
@@ -537,11 +499,24 @@
             z-index: 10001;
             display: none;
             box-shadow: 0 4.75px 14.26px rgba(0,0,0,0.3);
+            max-width: 500px;
+            text-align: center;
+            line-height: 1.5;
         }
 
         .toast.show {
             display: block;
             animation: fadeIn 0.3s;
+        }
+
+        .toast.undo-toast {
+            background: rgba(33, 115, 70, 0.95);
+            border: 2px solid #4ade80;
+        }
+
+        .toast.redo-toast {
+            background: rgba(30, 64, 175, 0.95);
+            border: 2px solid #60a5fa;
         }
 
         @keyframes fadeIn {
@@ -631,8 +606,8 @@
 
         <div class="ribbon-group">
             <button class="btn" id="addRowBtn">➕ 新增行</button>
-            <button class="btn" id="undoBtn" disabled>↩️ 撤销(Ctrl+Z)</button>
-            <button class="btn" id="redoBtn" disabled>↪️ 恢复(Ctrl+Y)</button>
+            <button class="btn" id="undoBtn" disabled>↩️ 返回上一步</button>
+            <button class="btn" id="redoBtn" disabled>↪️ 恢复下一步</button>
         </div>
 
         <div style="flex: 1;"></div>
@@ -644,7 +619,6 @@
             <thead id="tableHead"></thead>
             <tbody id="tableBody"></tbody>
         </table>
-        <div class="selection-box" id="selectionBox"></div>
     </div>
 
     <!-- 右键菜单 -->
@@ -680,8 +654,8 @@
             traceCodeCol: ['H','I','M','N'],
             countColForD: [],
             noMetaCols: ['C', 'D', 'E', 'F', 'G'],
-            noResizeCols: ['C', 'D', 'E', 'F'],
-            storageKey: 'medicine_excel_data_v2_3',
+            noResizeCols: ['C', 'D', 'E', 'F'],  // 这些列不允许调整宽度
+            storageKey: 'medicine_excel_data_v2_5',
             metaDataSeparator: '|',
             batchSize: 50,
             maxHistory: 20,
@@ -717,7 +691,27 @@
             lastRightClickTime: 0,
             activeInput: null,
             editingHeader: null,
-            highlightedRow: null
+            highlightedRow: null,
+            lastAction: null,
+            scrollPosition: { top: 0, left: 0 }  // 保存滚动位置
+        };
+
+        // 操作类型定义
+        const ACTION_TYPES = {
+            EDIT_CELL: '编辑单元格',
+            EDIT_HEADER: '修改标题',
+            ADD_ROW: '新增行',
+            DELETE_ROW: '删除行',
+            FORMAT_CELL: '格式化单元格',
+            ADD_COMMENT: '添加备注',
+            CLEAR_COMMENT: '清除备注',
+            CLEAR_CONTENT: '清空内容',
+            IMPORT: '导入数据',
+            FILTER: '筛选数据',
+            SEARCH: '搜索数据',
+            DELETE_MULTI: '批量删除',
+            FORMAT_MULTI: '批量格式化',
+            CLEAR_MULTI: '批量清空'
         };
 
         function generateColLetters() {
@@ -734,7 +728,7 @@
             initEvents();
             initSampleData();
             loadFromLocalStorage();
-            saveToHistory();
+            saveToHistory('初始化', null);
         });
 
         // ==================== 表格初始化 ====================
@@ -759,11 +753,9 @@
             let headerHTML = '<tr><th class="corner"></th>';
             state.colLetters.forEach((col, idx) => {
                 const isMeta = idx >= 20;
-                const isD = col === 'D';
                 const isEditable = CONFIG.editableHeaders.includes(col);
                 const isI = col === 'I';
                 const text = state.headerData[col];
-                const noResize = CONFIG.noResizeCols.includes(col);
                 
                 let width = getColWidth(col, idx);
                 
@@ -774,9 +766,9 @@
                 const clickHandler = isI ? 'onclick="openWebsite()"' : 
                                    (isEditable ? 'onclick="editHeader(\'' + col + '\')"' : '');
                 
-                headerHTML += `<th class="${classes.join(' ')}" data-col="${col}" style="width: ${width}px; min-width: ${width}px; ${noResize ? 'max-width: ' + width + 'px;' : ''}" ${clickHandler}>
+                // 移除了手动调整列宽的handle
+                headerHTML += `<th class="${classes.join(' ')}" data-col="${col}" style="width: ${width}px; min-width: ${width}px; max-width: ${width}px;" ${clickHandler}>
                     <span class="header-text">${text}</span>
-                    ${(!isMeta && !noResize) ? '<div class="col-resize-handle" onmousedown="startColResize(event, \'' + col + '\')"></div>' : ''}
                 </th>`;
             });
             headerHTML += '</tr>';
@@ -789,7 +781,7 @@
         function getColWidth(col, idx) {
             if (col === 'A') return 145.8;
             if (col === 'C' || col === 'E') return 64.8;
-            if (col === 'D' || col === 'F') return 47.52;
+            if (col === 'D' || col === 'F') return 39.96;  // 修改：减少2mm到39.96px
             if (idx >= 7 && idx <= 19) return 173.88;
             if (idx >= 20) return 71.28;
             return 118.8;
@@ -805,12 +797,11 @@
                     const isReadOnly = CONFIG.readOnlyCol.includes(col);
                     const cellId = `${col}${r + 1}`;
                     const width = getColWidth(col, idx);
-                    const noResize = CONFIG.noResizeCols.includes(col);
                     
                     bodyHTML += `
                         <td data-row="${r}" data-col="${col}" data-id="${cellId}" 
                             class="${isMeta ? 'meta-col' : ''} ${isReadOnly ? '' : 'editable'}"
-                            style="width: ${width}px; min-width: ${width}px; ${noResize ? 'max-width: ' + width + 'px;' : ''}"
+                            style="width: ${width}px; min-width: ${width}px; max-width: ${width}px;"
                             onclick="handleCellClick(event, '${cellId}')"
                             onmouseenter="highlightRow(${r}); showCommentTooltip(event, '${cellId}')"
                             onmouseleave="clearHighlight(); hideCommentTooltip()">
@@ -867,6 +858,7 @@
             const finishEdit = () => {
                 const newValue = input.value.trim();
                 if (newValue && newValue !== currentText) {
+                    const oldValue = state.headerData[col];
                     state.headerData[col] = newValue;
                     span.textContent = newValue;
                     
@@ -874,7 +866,9 @@
                         calculateLHeader();
                     }
                     
-                    saveToHistory();
+                    saveToHistory(ACTION_TYPES.EDIT_HEADER, { col, oldValue, newValue, cellId: `header-${col}` });
+                } else {
+                    span.textContent = currentText;
                 }
                 input.remove();
                 span.style.display = '';
@@ -915,7 +909,10 @@
                 if (e.key === 'Enter') {
                     e.preventDefault();
                     performSearch();
-                    jumpToSearchResult();
+                    // 修复：只有在搜索结果存在时才跳转
+                    if (state.filteredRows.size > 0) {
+                        jumpToSearchResult();
+                    }
                 }
             });
             
@@ -945,14 +942,23 @@
             
             document.addEventListener('keydown', handleGlobalKeydown);
             
-            initDragSelection();
-            
             document.addEventListener('contextmenu', handleGlobalRightClick);
             
             document.addEventListener('mousedown', (e) => {
                 const menu = document.getElementById('contextMenu');
                 if (menu.style.display === 'block' && !e.target.closest('.context-menu')) {
                     menu.style.display = 'none';
+                }
+            });
+
+            // 保存滚动位置
+            const container = document.getElementById('container');
+            container.addEventListener('scroll', () => {
+                if (!state.isUndoRedo) {
+                    state.scrollPosition = {
+                        top: container.scrollTop,
+                        left: container.scrollLeft
+                    };
                 }
             });
 
@@ -1019,6 +1025,8 @@
         // ==================== 搜索筛选 ====================
         function performSearch() {
             const term = document.getElementById('searchInput').value.trim().toLowerCase();
+            const previousTerm = state.searchTerm;
+            const previousFilterState = state.isFilterActive;
             state.searchTerm = term;
             
             if (!term) {
@@ -1032,6 +1040,7 @@
             
             state.filteredRows.clear();
             
+            // 先显示所有行，然后根据搜索结果隐藏
             document.querySelectorAll('#tableBody tr').forEach(tr => {
                 tr.classList.remove('hidden-row');
             });
@@ -1057,10 +1066,28 @@
                 }
             }
             
+            // 如果之前有筛选状态，需要重新应用筛选
+            if (state.isFilterActive) {
+                applyFilter(true); // true表示保持搜索高亮
+            }
+            
+            saveToHistory(ACTION_TYPES.SEARCH, { 
+                term, 
+                previousTerm, 
+                previousFilterState,
+                resultCount: state.filteredRows.size,
+                filteredRows: Array.from(state.filteredRows)
+            });
+            
             showToast(`找到 ${state.filteredRows.size} 个匹配项`);
         }
 
         function clearSearch() {
+            const previousTerm = state.searchTerm;
+            const previousFilterState = state.isFilterActive;
+            
+            if (!previousTerm && !previousFilterState) return;
+            
             document.getElementById('searchInput').value = '';
             state.searchTerm = '';
             state.filteredRows.clear();
@@ -1069,6 +1096,7 @@
                 el.classList.remove('search-highlight');
             });
             
+            // 重新应用筛选（如果有）
             if (state.isFilterActive) {
                 applyFilter();
             } else {
@@ -1076,9 +1104,21 @@
                     tr.classList.remove('hidden-row');
                 });
             }
+            
+            saveToHistory(ACTION_TYPES.SEARCH, { 
+                term: '', 
+                previousTerm, 
+                previousFilterState,
+                resultCount: 0,
+                filteredRows: []
+            });
         }
 
         function toggleFilter() {
+            const previousState = state.isFilterActive;
+            const previousSearchTerm = state.searchTerm;
+            const previousFilteredRows = Array.from(state.filteredRows);
+            
             state.isFilterActive = !state.isFilterActive;
             const btn = document.getElementById('filterToggle');
             btn.classList.toggle('btn-active', state.isFilterActive);
@@ -1091,76 +1131,72 @@
                 clearFilter();
             }
             
-            saveToHistory();
+            saveToHistory(ACTION_TYPES.FILTER, { 
+                active: state.isFilterActive, 
+                previousState,
+                previousSearchTerm,
+                previousFilteredRows
+            });
         }
 
-        function applyFilter() {
-            document.querySelectorAll('#tableBody tr').forEach(tr => {
-                tr.classList.remove('hidden-row');
-            });
-            
+        function applyFilter(keepSearchHighlight = false) {
             let visibleCount = 0;
             
             for (let r = 1; r <= state.rows; r++) {
                 const dVal = parseInt(state.data[`D${r}`] || '0');
                 const row = document.querySelector(`tr[data-row-num="${r}"]`);
                 
+                // 如果当前行已经被搜索隐藏，保持隐藏
+                if (state.searchTerm && !state.filteredRows.has(r)) {
+                    row.classList.add('hidden-row');
+                    continue;
+                }
+                
                 if (dVal <= 0) {
                     row.classList.add('hidden-row');
                 } else {
+                    row.classList.remove('hidden-row');
                     visibleCount++;
                 }
             }
             
-            showToast(`筛选显示 ${visibleCount} 行`);
+            if (!keepSearchHighlight) {
+                showToast(`筛选显示 ${visibleCount} 行`);
+            }
         }
 
         function clearFilter() {
-            document.querySelectorAll('#tableBody tr').forEach(tr => {
-                tr.classList.remove('hidden-row');
-            });
-            
+            // 如果有搜索，只显示搜索结果；否则显示全部
             if (state.searchTerm) {
-                performSearch();
+                document.querySelectorAll('#tableBody tr').forEach((tr, idx) => {
+                    const rowNum = idx + 1;
+                    if (state.filteredRows.has(rowNum)) {
+                        tr.classList.remove('hidden-row');
+                    } else {
+                        tr.classList.add('hidden-row');
+                    }
+                });
+            } else {
+                document.querySelectorAll('#tableBody tr').forEach(tr => {
+                    tr.classList.remove('hidden-row');
+                });
             }
         }
 
         function jumpToSearchResult() {
-            if (!state.searchTerm || state.filteredRows.size === 0) return;
+            if (state.filteredRows.size === 0) return;
             
             const firstMatchRow = Math.min(...Array.from(state.filteredRows));
-            const hCellId = `H${firstMatchRow}`;
+            const cellId = `A${firstMatchRow}`;  // 修复：直接跳转到A列，避免复杂逻辑导致错误
             
-            const hCell = document.getElementById(`cell-${hCellId}`);
-            if (!hCell) return;
+            const cell = document.getElementById(`cell-${cellId}`);
+            if (!cell) return;
             
-            const hValue = hCell.textContent.trim();
+            const row = cell.closest('tr');
+            if (row.classList.contains('hidden-row')) return;
             
-            if (hValue === '') {
-                if (!hCell.closest('tr').classList.contains('hidden-row')) {
-                    selectCell(hCellId);
-                    hCell.scrollIntoView({ behavior: 'smooth', block: 'center' });
-                }
-                return;
-            }
-            
-            for (let i = 1; i < CONFIG.countColForD.length; i++) {
-                const col = CONFIG.countColForD[i];
-                const cellId = `${col}${firstMatchRow}`;
-                const cell = document.getElementById(`cell-${cellId}`);
-                
-                if (!cell) continue;
-                
-                const value = cell.textContent.trim();
-                
-                if (value === '') {
-                    if (!cell.closest('tr').classList.contains('hidden-row')) {
-                        selectCell(cellId);
-                        cell.scrollIntoView({ behavior: 'smooth', block: 'center' });
-                    }
-                    return;
-                }
-            }
+            selectCell(cellId);
+            cell.scrollIntoView({ behavior: 'smooth', block: 'center' });
         }
 
         // ==================== 单元格操作 ====================
@@ -1247,15 +1283,20 @@
             state.selectedCells.clear();
         }
 
-        // ==================== 编辑功能（含双击全选） ====================
+        // ==================== 编辑功能 ====================
         function startEdit(cellId, clickEvent) {
             if (state.editingCell) endEdit();
             
-            if (state.isFilterActive || state.searchTerm) {
-                const actualRow = getActualRowNumber(cellId);
-                if (actualRow) {
-                    cellId = cellId.replace(/\d+$/, actualRow);
-                }
+            // 修复：在筛选/搜索状态下，确保使用正确的行号
+            const rowMatch = cellId.match(/(\d+)$/);
+            if (!rowMatch) return;
+            
+            const displayRow = parseInt(rowMatch[1]);
+            
+            // 检查这一行是否可见
+            const row = document.querySelector(`tr[data-row-num="${displayRow}"]`);
+            if (row && row.classList.contains('hidden-row')) {
+                return; // 如果行被隐藏，不编辑
             }
             
             state.editingCell = cellId;
@@ -1313,7 +1354,7 @@
             }
             
             if (value !== oldValue) {
-                setCellData(cellId, value);
+                setCellData(cellId, value, false);
                 
                 const col = cellId.match(/[A-Z]+/)[0];
                 if (isDataCol(col) && !CONFIG.noMetaCols.includes(col)) {
@@ -1322,7 +1363,14 @@
                 
                 calculateDColumn();
                 checkDuplicates();
-                saveToHistory();
+                
+                saveToHistory(ACTION_TYPES.EDIT_CELL, { 
+                    cellId, 
+                    oldValue, 
+                    newValue: value,
+                    col,
+                    row: cellId.match(/\d+/)[0]
+                });
             }
             
             cell.contentEditable = false;
@@ -1331,7 +1379,7 @@
             state.activeInput = null;
         }
 
-        function setCellData(cellId, value) {
+        function setCellData(cellId, value, saveHistory = true) {
             state.data[cellId] = value;
             const cell = document.getElementById(`cell-${cellId}`);
             if (cell) {
@@ -1404,15 +1452,6 @@
             }
         }
 
-        function getActualRowNumber(cellId) {
-            const displayRow = parseInt(cellId.match(/\d+/)[0]);
-            const visibleRows = Array.from(document.querySelectorAll('#tableBody tr:not(.hidden-row)'));
-            if (visibleRows[displayRow - 1]) {
-                return visibleRows[displayRow - 1].dataset.rowNum;
-            }
-            return null;
-        }
-
         function syncMetaData(cellId) {
             const col = cellId.match(/[A-Z]+/)[0];
             if (!isDataCol(col) || CONFIG.noMetaCols.includes(col)) return;
@@ -1430,7 +1469,7 @@
             const comment = cell.dataset.comment || '';
             const metaValue = color + (comment ? CONFIG.metaDataSeparator + comment : '');
             
-            setCellData(metaCellId, metaValue);
+            setCellData(metaCellId, metaValue, false);
         }
 
         function calculateDColumn() {
@@ -1442,7 +1481,7 @@
                         count++;
                     }
                 });
-                setCellData(`D${r}`, count.toString());
+                setCellData(`D${r}`, count.toString(), false);
             }
         }
 
@@ -1486,11 +1525,20 @@
                 Array.from(state.selectedCells) : 
                 (state.selectedCell ? [state.selectedCell] : []);
             
+            if (targets.length === 0) return;
+            
+            const changes = [];
             targets.forEach(cellId => {
                 const col = cellId.match(/[A-Z]+/)[0];
                 if (CONFIG.noMetaCols.includes(col)) return;
                 
                 const cell = document.getElementById(`cell-${cellId}`);
+                const hadColor = cell.classList.contains('cell-yellow') || 
+                                cell.classList.contains('cell-red') || 
+                                cell.classList.contains('cell-pink');
+                const oldColor = hadColor ? (cell.classList.contains('cell-yellow') ? '黄色' : 
+                                            cell.classList.contains('cell-red') ? '红色' : '粉色') : null;
+                
                 cell.classList.remove('cell-yellow', 'cell-red', 'cell-pink');
                 if (color !== 'clear') {
                     cell.classList.add(`cell-${color}`);
@@ -1499,9 +1547,17 @@
                 if (isDataCol(col) && !CONFIG.noMetaCols.includes(col)) {
                     syncMetaData(cellId);
                 }
+                
+                changes.push({ cellId, oldColor, newColor: color !== 'clear' ? color : null });
             });
             
-            saveToHistory();
+            const actionType = targets.length > 1 ? ACTION_TYPES.FORMAT_MULTI : ACTION_TYPES.FORMAT_CELL;
+            saveToHistory(actionType, { 
+                color, 
+                cellCount: targets.length,
+                changes,
+                firstCell: targets[0]
+            });
         }
 
         function clearCellFormat() {
@@ -1525,6 +1581,8 @@
             const newComment = prompt('请输入备注：', currentComment);
             if (newComment === null) return;
             
+            const oldComment = currentComment;
+            
             if (newComment.trim()) {
                 cell.dataset.comment = newComment.trim();
                 if (!cell.querySelector('.comment-indicator')) {
@@ -1538,7 +1596,7 @@
             }
             
             syncMetaData(cellId);
-            saveToHistory();
+            saveToHistory(ACTION_TYPES.ADD_COMMENT, { cellId, oldComment, newComment: newComment.trim() });
         }
 
         function clearComment() {
@@ -1549,12 +1607,13 @@
             if (CONFIG.noMetaCols.includes(col)) return;
             
             const cell = document.getElementById(`cell-${cellId}`);
+            const oldComment = cell.dataset.comment || '';
             delete cell.dataset.comment;
             const indicator = cell.querySelector('.comment-indicator');
             if (indicator) indicator.remove();
             
             syncMetaData(cellId);
-            saveToHistory();
+            saveToHistory(ACTION_TYPES.CLEAR_COMMENT, { cellId, oldComment });
         }
 
         function showContextMenu(e, cellId) {
@@ -1583,6 +1642,7 @@
 
         // ==================== 行列操作 ====================
         function addNewRow() {
+            const previousRows = state.rows;
             state.rows++;
             const tbody = document.getElementById('tableBody');
             const r = state.rows - 1;
@@ -1593,12 +1653,11 @@
                 const isReadOnly = CONFIG.readOnlyCol.includes(col);
                 const cellId = `${col}${state.rows}`;
                 const width = getColWidth(col, idx);
-                const noResize = CONFIG.noResizeCols.includes(col);
                 
                 html += `
                     <td data-row="${r}" data-col="${col}" data-id="${cellId}" 
                         class="${isMeta ? 'meta-col' : ''} ${isReadOnly ? '' : 'editable'}"
-                        style="width: ${width}px; min-width: ${width}px; ${noResize ? 'max-width: ' + width + 'px;' : ''}"
+                        style="width: ${width}px; min-width: ${width}px; max-width: ${width}px;"
                         onclick="handleCellClick(event, '${cellId}')"
                         onmouseenter="highlightRow(${r}); showCommentTooltip(event, '${cellId}')"
                         onmouseleave="clearHighlight(); hideCommentTooltip()">
@@ -1609,18 +1668,25 @@
             html += '</tr>';
             
             tbody.insertAdjacentHTML('beforeend', html);
-            setCellData(`D${state.rows}`, '0');
+            setCellData(`D${state.rows}`, '0', false);
             
             const container = document.getElementById('container');
             container.scrollTop = container.scrollHeight;
             
-            saveToHistory();
+            saveToHistory(ACTION_TYPES.ADD_ROW, { rowNum: state.rows, previousRows });
+            selectCell(`A${state.rows}`);
         }
 
         function deleteSelectedRow() {
             if (!state.selectedCell) return;
             
             const rowNum = parseInt(state.selectedCell.match(/\d+/)[0]);
+            const deletedData = {};
+            
+            state.colLetters.forEach(col => {
+                const cellId = `${col}${rowNum}`;
+                deletedData[cellId] = state.data[cellId] || '';
+            });
             
             state.colLetters.forEach(col => {
                 const cellId = `${col}${rowNum}`;
@@ -1650,7 +1716,14 @@
             calculateDColumn();
             checkDuplicates();
             clearAllSelections();
-            saveToHistory();
+            
+            saveToHistory(ACTION_TYPES.DELETE_ROW, { 
+                rowNum, 
+                deletedData,
+                nextRow: rowNum <= state.rows ? rowNum : null
+            });
+            
+            showToast(`已删除第 ${rowNum} 行`);
         }
 
         function restoreStyles() {
@@ -1669,6 +1742,7 @@
                         
                         const cellId = `${c}${r}`;
                         const cell = document.getElementById(`cell-${cellId}`);
+                        if (!cell) continue;
                         
                         if (color === '黄色') cell.classList.add('cell-yellow');
                         else if (color === '红色') cell.classList.add('cell-red');
@@ -1692,56 +1766,34 @@
                 Array.from(state.selectedCells) : 
                 (state.selectedCell ? [state.selectedCell] : []);
             
+            if (targets.length === 0) return;
+            
+            const clearedData = [];
             targets.forEach(cellId => {
                 const col = cellId.match(/[A-Z]+/)[0];
+                const oldValue = state.data[cellId] || '';
+                
                 if (CONFIG.readOnlyCol.includes(col)) {
-                    setCellData(cellId, '0');
+                    setCellData(cellId, '0', false);
+                    clearedData.push({ cellId, oldValue, newValue: '0' });
                 } else {
-                    setCellData(cellId, '');
+                    setCellData(cellId, '', false);
+                    clearedData.push({ cellId, oldValue, newValue: '' });
                 }
             });
             
             calculateDColumn();
-            saveToHistory();
+            
+            const actionType = targets.length > 1 ? ACTION_TYPES.CLEAR_MULTI : ACTION_TYPES.CLEAR_CONTENT;
+            saveToHistory(actionType, { 
+                cellCount: targets.length, 
+                clearedData,
+                firstCell: targets[0]
+            });
         }
 
-        // ==================== 列宽调整 ====================
-        function startColResize(e, col) {
-            if (CONFIG.noResizeCols.includes(col)) return;
-            
-            e.stopPropagation();
-            
-            let isResizing = true;
-            const th = document.querySelector(`th[data-col="${col}"]`);
-            const startX = e.clientX;
-            const startWidth = th.offsetWidth;
-            
-            function onMouseMove(e) {
-                if (!isResizing) return;
-                const newWidth = Math.max(20, startWidth + (e.clientX - startX));
-                
-                th.style.width = newWidth + 'px';
-                th.style.minWidth = newWidth + 'px';
-                
-                document.querySelectorAll(`td[data-col="${col}"]`).forEach(td => {
-                    td.style.width = newWidth + 'px';
-                    td.style.minWidth = newWidth + 'px';
-                });
-            }
-            
-            function onMouseUp() {
-                isResizing = false;
-                document.removeEventListener('mousemove', onMouseMove);
-                document.removeEventListener('mouseup', onMouseUp);
-                saveToHistory();
-            }
-            
-            document.addEventListener('mousemove', onMouseMove);
-            document.addEventListener('mouseup', onMouseUp);
-        }
-
-        // ==================== 历史记录（已修复：包含界面状态） ====================
-        function saveToHistory() {
+        // ==================== 历史记录（完全保持页面状态） ====================
+        function saveToHistory(actionType, actionData) {
             if (state.isUndoRedo) return;
             
             state.redoStack = [];
@@ -1749,14 +1801,24 @@
                 state.historyStack.shift();
             }
             
-            // 保存完整的界面状态
-            state.historyStack.push({
+            // 保存完整的界面状态，包括视图状态
+            const container = document.getElementById('container');
+            const historyEntry = {
                 data: JSON.parse(JSON.stringify(state.data)),
                 headerData: JSON.parse(JSON.stringify(state.headerData)),
                 rows: state.rows,
                 isFilterActive: state.isFilterActive,
-                searchTerm: state.searchTerm
-            });
+                searchTerm: state.searchTerm,
+                filteredRows: Array.from(state.filteredRows),
+                scrollPosition: { ...state.scrollPosition },
+                selectedCell: state.selectedCell,
+                actionType: actionType || '未知操作',
+                actionData: actionData,
+                timestamp: new Date().getTime()
+            };
+            
+            state.historyStack.push(historyEntry);
+            state.lastAction = actionType;
             
             updateUndoRedoButtons();
         }
@@ -1765,10 +1827,13 @@
             if (state.historyStack.length <= 1) return;
             
             state.isUndoRedo = true;
-            state.redoStack.push(state.historyStack.pop());
-            restoreState(state.historyStack[state.historyStack.length - 1]);
-            state.isUndoRedo = false;
+            const currentState = state.historyStack.pop();
+            state.redoStack.push(currentState);
             
+            const previousState = state.historyStack[state.historyStack.length - 1];
+            restoreState(previousState, true);
+            
+            state.isUndoRedo = false;
             updateUndoRedoButtons();
         }
 
@@ -1778,21 +1843,24 @@
             state.isUndoRedo = true;
             const nextState = state.redoStack.pop();
             state.historyStack.push(nextState);
-            restoreState(nextState);
-            state.isUndoRedo = false;
             
+            restoreState(nextState, false);
+            
+            state.isUndoRedo = false;
             updateUndoRedoButtons();
         }
 
-        function restoreState(savedState) {
+        function restoreState(savedState, isUndo) {
             // 恢复数据
             state.data = JSON.parse(JSON.stringify(savedState.data));
             state.headerData = JSON.parse(JSON.stringify(savedState.headerData));
             state.rows = savedState.rows;
             
-            // 恢复界面状态
+            // 恢复视图状态（关键修复）
             state.isFilterActive = savedState.isFilterActive;
             state.searchTerm = savedState.searchTerm;
+            state.filteredRows = new Set(savedState.filteredRows || []);
+            state.scrollPosition = savedState.scrollPosition || { top: 0, left: 0 };
             
             // 更新UI控件
             const filterBtn = document.getElementById('filterToggle');
@@ -1825,21 +1893,108 @@
             calculateDColumn();
             checkDuplicates();
             
-            // 恢复筛选/搜索状态
-            if (state.searchTerm) {
-                performSearch();
-            } else if (state.isFilterActive) {
-                applyFilter();
-            } else {
-                document.querySelectorAll('#tableBody tr').forEach(tr => {
-                    tr.classList.remove('hidden-row');
-                });
+            // 应用筛选和搜索状态（关键修复）
+            applyCombinedFilter();
+            
+            // 恢复滚动位置（关键修复）
+            const container = document.getElementById('container');
+            if (savedState.scrollPosition) {
+                container.scrollTop = savedState.scrollPosition.top;
+                container.scrollLeft = savedState.scrollPosition.left;
+            }
+            
+            // 恢复选中单元格
+            if (savedState.selectedCell) {
+                const cell = document.getElementById(`cell-${savedState.selectedCell}`);
+                if (cell && !cell.closest('tr').classList.contains('hidden-row')) {
+                    selectCell(savedState.selectedCell);
+                } else {
+                    // 如果之前选中的单元格现在被隐藏了，尝试选中同行的可见单元格
+                    const rowNum = savedState.selectedCell.match(/\d+/)[0];
+                    const row = document.querySelector(`tr[data-row-num="${rowNum}"]`);
+                    if (row && !row.classList.contains('hidden-row')) {
+                        const firstVisible = row.querySelector('td.editable');
+                        if (firstVisible) {
+                            selectCell(firstVisible.dataset.id);
+                        }
+                    }
+                }
+            }
+            
+            // 视觉反馈
+            const actionType = savedState.actionType || '未知操作';
+            const actionMsg = isUndo ? `↩️ 已撤销：${actionType}` : `↪️ 已恢复：${actionType}`;
+            showToast(actionMsg, isUndo ? 'undo' : 'redo');
+        }
+
+        // 统一的筛选和搜索应用函数
+        function applyCombinedFilter() {
+            // 清除所有高亮
+            document.querySelectorAll('.search-highlight').forEach(el => {
+                el.classList.remove('search-highlight');
+            });
+            
+            for (let r = 1; r <= state.rows; r++) {
+                const row = document.querySelector(`tr[data-row-num="${r}"]`);
+                if (!row) continue;
+                
+                let shouldHide = false;
+                
+                // 检查筛选条件
+                if (state.isFilterActive) {
+                    const dVal = parseInt(state.data[`D${r}`] || '0');
+                    if (dVal <= 0) {
+                        shouldHide = true;
+                    }
+                }
+                
+                // 检查搜索条件
+                if (state.searchTerm && !shouldHide) {
+                    if (!state.filteredRows.has(r)) {
+                        shouldHide = true;
+                    } else {
+                        // 添加高亮
+                        const aVal = (state.data[`A${r}`] || '').toLowerCase();
+                        const bVal = (state.data[`B${r}`] || '').toLowerCase();
+                        if (aVal.includes(state.searchTerm.toLowerCase())) {
+                            const cellA = document.getElementById(`cell-A${r}`);
+                            if (cellA) cellA.classList.add('search-highlight');
+                        }
+                        if (bVal.includes(state.searchTerm.toLowerCase())) {
+                            const cellB = document.getElementById(`cell-B${r}`);
+                            if (cellB) cellB.classList.add('search-highlight');
+                        }
+                    }
+                }
+                
+                if (shouldHide) {
+                    row.classList.add('hidden-row');
+                } else {
+                    row.classList.remove('hidden-row');
+                }
             }
         }
 
         function updateUndoRedoButtons() {
-            document.getElementById('undoBtn').disabled = state.historyStack.length <= 1;
-            document.getElementById('redoBtn').disabled = state.redoStack.length === 0;
+            const undoBtn = document.getElementById('undoBtn');
+            const redoBtn = document.getElementById('redoBtn');
+            
+            undoBtn.disabled = state.historyStack.length <= 1;
+            redoBtn.disabled = state.redoStack.length === 0;
+            
+            if (state.historyStack.length > 1) {
+                const lastAction = state.historyStack[state.historyStack.length - 1].actionType || '上一步';
+                undoBtn.title = `返回上一步：${lastAction}`;
+            } else {
+                undoBtn.title = '没有可返回的操作';
+            }
+            
+            if (state.redoStack.length > 0) {
+                const nextAction = state.redoStack[state.redoStack.length - 1].actionType || '下一步';
+                redoBtn.title = `恢复下一步：${nextAction}`;
+            } else {
+                redoBtn.title = '没有可恢复的操作';
+            }
         }
 
         // ==================== Excel导入导出 ====================
@@ -1850,6 +2005,16 @@
             if (state.editingCell) {
                 endEdit();
             }
+            
+            const importState = {
+                data: JSON.parse(JSON.stringify(state.data)),
+                headerData: JSON.parse(JSON.stringify(state.headerData)),
+                rows: state.rows,
+                isFilterActive: state.isFilterActive,
+                searchTerm: state.searchTerm,
+                filteredRows: Array.from(state.filteredRows),
+                scrollPosition: { ...state.scrollPosition }
+            };
             
             state.data = {};
             state.headerData = {};
@@ -1864,6 +2029,7 @@
             state.historyStack = [];
             state.redoStack = [];
             state.isUndoRedo = false;
+            state.scrollPosition = { top: 0, left: 0 };
             
             document.getElementById('searchInput').value = '';
             const filterBtn = document.getElementById('filterToggle');
@@ -1921,7 +2087,7 @@
                     row.forEach((val, cIdx) => {
                         if (val !== undefined && val !== null && cIdx < state.colLetters.length) {
                             const col = state.colLetters[cIdx];
-                            setCellData(`${col}${rIdx + 1}`, String(val));
+                            setCellData(`${col}${rIdx + 1}`, String(val), false);
                         }
                     });
                 });
@@ -1929,7 +2095,13 @@
                 calculateLHeader();
                 calculateDColumn();
                 checkDuplicates();
-                saveToHistory();
+                
+                saveToHistory(ACTION_TYPES.IMPORT, { 
+                    rowCount: rows.length,
+                    previousState: importState,
+                    fileName: file.name
+                });
+                
                 saveToLocalStorage();
                 
                 hideLoading();
@@ -1991,7 +2163,7 @@
                     data: state.data,
                     headerData: state.headerData,
                     rows: state.rows,
-                    version: '2.3'
+                    version: '2.5'
                 };
                 localStorage.setItem(CONFIG.storageKey, JSON.stringify(data));
             } catch (e) {
@@ -2054,20 +2226,32 @@
             document.getElementById('loadingOverlay').style.display = 'none';
         }
 
-        function showToast(msg) {
+        function showToast(msg, type = 'normal') {
             const toast = document.getElementById('toast');
             toast.textContent = msg;
-            toast.classList.add('show');
-            setTimeout(() => toast.classList.remove('show'), 2000);
+            toast.className = 'toast show';
+            
+            if (type === 'undo') {
+                toast.classList.add('undo-toast');
+            } else if (type === 'redo') {
+                toast.classList.add('redo-toast');
+            }
+            
+            setTimeout(() => {
+                toast.classList.remove('show');
+                setTimeout(() => {
+                    toast.classList.remove('undo-toast', 'redo-toast');
+                }, 300);
+            }, 2500);
         }
 
         function initSampleData() {
-            setCellData('A1', '6934114761936');
-            setCellData('B1', 'bt生脉饮党参方盾克康福');
-            setCellData('C1', '62');
-            setCellData('E1', '35');
-            setCellData('J1', '240');
-            setCellData('K1', '126.8');
+            setCellData('A1', '6934114761936', false);
+            setCellData('B1', 'bt生脉饮党参方盾克康福', false);
+            setCellData('C1', '62', false);
+            setCellData('E1', '35', false);
+            setCellData('J1', '240', false);
+            setCellData('K1', '126.8', false);
             
             document.getElementById('cell-B1').classList.add('cell-yellow');
             document.getElementById('cell-C1').classList.add('cell-yellow');
@@ -2098,10 +2282,6 @@
                 cell.textContent = state.data[state.editingCell] || '';
                 endEdit();
             }
-        }
-
-        function initDragSelection() {
-            // 拖拽选择功能
         }
 
         function closeCommentPopup() {
