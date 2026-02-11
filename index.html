@@ -139,7 +139,7 @@
             overflow: hidden;
         }
 
-        /* 行列号样式 */
+        /* 行列号样式 - 标题行字体大一号 */
         .sheet-table th {
             background: #f8f9fa;
             color: #666;
@@ -147,7 +147,7 @@
             text-align: center;
             position: sticky;
             z-index: 10;
-            font-size: 15.56px;
+            font-size: 16.63px; /* 修改：从15.56px增大到16.63px */
         }
 
         .sheet-table th.corner {
@@ -164,7 +164,7 @@
             min-width: 95.04px;
             height: 24.73px;
             line-height: 24.73px;
-            font-size: 15.56px;
+            font-size: 16.63px; /* 修改：标题行字体大一号 */
             border-bottom: 2px solid #c0c0c0;
             background: #e5f5d7;
             color: #3f6212;
@@ -177,7 +177,7 @@
             min-width: 43.2px;
             height: 24.73px;
             line-height: 24.73px;
-            font-size: 15.56px;
+            font-size: 16.63px; /* 修改：字体大一号 */
             border-right: 2px solid #c0c0c0;
             cursor: pointer;
             background: #f0f9e8;
@@ -232,7 +232,7 @@
         /* 特殊列样式 - D、F宽度减少2mm到39.96px */
         td[data-col="D"], th[data-col="D"],
         td[data-col="F"], th[data-col="F"] {
-            width: 39.96px !important;  /* 修改：从47.52px减少2mm(7.56px) */
+            width: 39.96px !important;
             min-width: 39.96px !important;
             max-width: 39.96px !important;
         }
@@ -263,6 +263,18 @@
             font-size: 12.96px !important;
             width: 71.28px !important;
             min-width: 71.28px !important;
+        }
+
+        /* A-G列字体大一号 */
+        td[data-col="A"] .cell-content,
+        td[data-col="B"] .cell-content,
+        td[data-col="C"] .cell-content,
+        td[data-col="D"] .cell-content,
+        td[data-col="E"] .cell-content,
+        td[data-col="F"] .cell-content,
+        td[data-col="G"] .cell-content {
+            font-size: 17.44px !important;
+            line-height: 21.98px !important;
         }
 
         /* 可编辑标题 */
@@ -654,13 +666,14 @@
             traceCodeCol: ['H','I','M','N'],
             countColForD: [],
             noMetaCols: ['C', 'D', 'E', 'F', 'G'],
-            noResizeCols: ['C', 'D', 'E', 'F'],  // 这些列不允许调整宽度
+            noResizeCols: ['C', 'D', 'E', 'F'],
             storageKey: 'medicine_excel_data_v2_5',
             metaDataSeparator: '|',
             batchSize: 50,
             maxHistory: 20,
             debounceDelay: 300,
-            importChunkSize: 100
+            importChunkSize: 100,
+            searchJumpStartCol: 'H'
         };
 
         for(let i='H'.charCodeAt(0); i<='T'.charCodeAt(0); i++) {
@@ -693,10 +706,9 @@
             editingHeader: null,
             highlightedRow: null,
             lastAction: null,
-            scrollPosition: { top: 0, left: 0 }  // 保存滚动位置
+            scrollPosition: { top: 0, left: 0 }
         };
 
-        // 操作类型定义
         const ACTION_TYPES = {
             EDIT_CELL: '编辑单元格',
             EDIT_HEADER: '修改标题',
@@ -721,7 +733,6 @@
             return letters;
         }
 
-        // ==================== 初始化 ====================
         document.addEventListener('DOMContentLoaded', () => {
             state.colLetters = generateColLetters();
             initTable();
@@ -731,7 +742,6 @@
             saveToHistory('初始化', null);
         });
 
-        // ==================== 表格初始化 ====================
         function initTable() {
             const thead = document.getElementById('tableHead');
             const tbody = document.getElementById('tableBody');
@@ -756,24 +766,18 @@
                 const isEditable = CONFIG.editableHeaders.includes(col);
                 const isI = col === 'I';
                 const text = state.headerData[col];
-                
                 let width = getColWidth(col, idx);
-                
                 const classes = ['col-header'];
                 if (isMeta) classes.push('meta-col');
                 if (isEditable || isI) classes.push('editable-header');
-                
                 const clickHandler = isI ? 'onclick="openWebsite()"' : 
                                    (isEditable ? 'onclick="editHeader(\'' + col + '\')"' : '');
-                
-                // 移除了手动调整列宽的handle
                 headerHTML += `<th class="${classes.join(' ')}" data-col="${col}" style="width: ${width}px; min-width: ${width}px; max-width: ${width}px;" ${clickHandler}>
                     <span class="header-text">${text}</span>
                 </th>`;
             });
             headerHTML += '</tr>';
             thead.innerHTML = headerHTML;
-
             renderEmptyRows();
             calculateLHeader();
         }
@@ -781,7 +785,7 @@
         function getColWidth(col, idx) {
             if (col === 'A') return 145.8;
             if (col === 'C' || col === 'E') return 64.8;
-            if (col === 'D' || col === 'F') return 39.96;  // 修改：减少2mm到39.96px
+            if (col === 'D' || col === 'F') return 39.96;
             if (idx >= 7 && idx <= 19) return 173.88;
             if (idx >= 20) return 71.28;
             return 118.8;
@@ -797,7 +801,6 @@
                     const isReadOnly = CONFIG.readOnlyCol.includes(col);
                     const cellId = `${col}${r + 1}`;
                     const width = getColWidth(col, idx);
-                    
                     bodyHTML += `
                         <td data-row="${r}" data-col="${col}" data-id="${cellId}" 
                             class="${isMeta ? 'meta-col' : ''} ${isReadOnly ? '' : 'editable'}"
@@ -814,16 +817,12 @@
             tbody.innerHTML = bodyHTML;
         }
 
-        // ==================== 高亮行 ====================
         function highlightRow(rowIdx) {
             clearHighlight();
             state.highlightedRow = rowIdx;
-            
             const row = document.querySelectorAll('#tableBody tr')[rowIdx];
             if (!row || row.classList.contains('hidden-row')) return;
-            
             row.classList.add('row-highlight');
-            
             const rowHeader = row.querySelector('.row-header');
             if (rowHeader) rowHeader.classList.add('row-highlight');
         }
@@ -835,37 +834,29 @@
             state.highlightedRow = null;
         }
 
-        // ==================== 标题编辑 ====================
         function editHeader(col) {
             if (state.editingHeader) return;
-            
             const th = document.querySelector(`th[data-col="${col}"]`);
             const currentText = state.headerData[col];
-            
             const input = document.createElement('input');
             input.type = 'text';
             input.value = currentText;
             input.style.cssText = 'width: 100%; height: 100%; border: none; outline: 2px solid #217346; padding: 2px; font-size: 14px; font-weight: bold; text-align: center;';
-            
             const span = th.querySelector('.header-text');
             span.style.display = 'none';
             th.appendChild(input);
             input.focus();
             input.select();
-            
             state.editingHeader = col;
-            
             const finishEdit = () => {
                 const newValue = input.value.trim();
                 if (newValue && newValue !== currentText) {
                     const oldValue = state.headerData[col];
                     state.headerData[col] = newValue;
                     span.textContent = newValue;
-                    
                     if (CONFIG.formulaHeaders.includes(col)) {
                         calculateLHeader();
                     }
-                    
                     saveToHistory(ACTION_TYPES.EDIT_HEADER, { col, oldValue, newValue, cellId: `header-${col}` });
                 } else {
                     span.textContent = currentText;
@@ -874,7 +865,6 @@
                 span.style.display = '';
                 state.editingHeader = null;
             };
-            
             input.addEventListener('blur', finishEdit);
             input.addEventListener('keydown', (e) => {
                 if (e.key === 'Enter') {
@@ -893,7 +883,6 @@
             const kVal = parseFloat(state.headerData['K']) || 0;
             const lVal = (jVal - kVal).toFixed(1);
             state.headerData['L'] = lVal;
-            
             const thL = document.querySelector(`th[data-col="L"] .header-text`);
             if (thL) thL.textContent = lVal;
         }
@@ -902,29 +891,21 @@
             window.open('https://www.mashangfangxin.com/', '_blank', 'noopener,noreferrer');
         }
 
-        // ==================== 事件处理 ====================
         function initEvents() {
             const searchInput = document.getElementById('searchInput');
             searchInput.addEventListener('keydown', (e) => {
                 if (e.key === 'Enter') {
                     e.preventDefault();
                     performSearch();
-                    // 修复：只有在搜索结果存在时才跳转
-                    if (state.filteredRows.size > 0) {
-                        jumpToSearchResult();
-                    }
                 }
             });
             
             document.getElementById('tableBody').addEventListener('dblclick', (e) => {
                 const td = e.target.closest('td[data-col]');
                 if (!td) return;
-                
                 const cellId = td.dataset.id;
                 const col = cellId.match(/[A-Z]+/)[0];
-                
                 if (CONFIG.readOnlyCol.includes(col) || isMetaCol(col)) return;
-                
                 e.preventDefault();
                 selectCell(cellId);
                 startEdit(cellId, e);
@@ -932,26 +913,19 @@
             
             document.getElementById('clearSearchBtn').addEventListener('click', clearSearch);
             document.getElementById('filterToggle').addEventListener('click', toggleFilter);
-            
             document.getElementById('fileInput').addEventListener('change', handleExcelImport);
             document.getElementById('saveBtn').addEventListener('click', saveToExcel);
-            
             document.getElementById('addRowBtn').addEventListener('click', handleAddRowClick);
             document.getElementById('undoBtn').addEventListener('click', undo);
             document.getElementById('redoBtn').addEventListener('click', redo);
-            
             document.addEventListener('keydown', handleGlobalKeydown);
-            
             document.addEventListener('contextmenu', handleGlobalRightClick);
-            
             document.addEventListener('mousedown', (e) => {
                 const menu = document.getElementById('contextMenu');
                 if (menu.style.display === 'block' && !e.target.closest('.context-menu')) {
                     menu.style.display = 'none';
                 }
             });
-
-            // 保存滚动位置
             const container = document.getElementById('container');
             container.addEventListener('scroll', () => {
                 if (!state.isUndoRedo) {
@@ -961,19 +935,15 @@
                     };
                 }
             });
-
             window.addEventListener('beforeunload', saveToLocalStorage);
         }
 
-        // ==================== 新增行按钮处理 ====================
         function handleAddRowClick() {
             const container = document.getElementById('container');
             const scrollHeight = container.scrollHeight;
             const clientHeight = container.clientHeight;
             const scrollTop = container.scrollTop;
-            
             const isAtBottom = scrollTop + clientHeight >= scrollHeight - 10;
-            
             if (!isAtBottom) {
                 container.scrollTop = scrollHeight;
             } else {
@@ -981,11 +951,9 @@
             }
         }
 
-        // ==================== 悬停备注提示 ====================
         function showCommentTooltip(e, cellId) {
             const cell = document.getElementById(`cell-${cellId}`);
             const comment = cell.dataset.comment;
-            
             if (comment) {
                 const tooltip = document.getElementById('commentTooltip');
                 tooltip.textContent = comment;
@@ -1000,40 +968,38 @@
             tooltip.classList.remove('show');
         }
 
-        // ==================== 右键双击处理 ====================
         function handleGlobalRightClick(e) {
             const cell = e.target.closest('td[data-col]');
             if (!cell) return;
-            
             const currentTime = new Date().getTime();
             const timeDiff = currentTime - state.lastRightClickTime;
-            
             if (timeDiff < 300) {
                 e.preventDefault();
                 e.stopPropagation();
-                
                 const cellId = cell.dataset.id;
                 selectCell(cellId);
                 showContextMenu(e, cellId);
-                
                 state.lastRightClickTime = 0;
             } else {
                 state.lastRightClickTime = currentTime;
             }
         }
 
-        // ==================== 搜索筛选 ====================
+        // ==================== 修复：搜索功能 ====================
         function performSearch() {
             const term = document.getElementById('searchInput').value.trim().toLowerCase();
             const previousTerm = state.searchTerm;
             const previousFilterState = state.isFilterActive;
-            state.searchTerm = term;
             
+            // 修复：如果搜索框为空，执行清空搜索操作（回到首页）
             if (!term) {
                 clearSearch();
                 return;
             }
             
+            state.searchTerm = term;
+            
+            // 清除之前的高亮
             document.querySelectorAll('.search-highlight').forEach(el => {
                 el.classList.remove('search-highlight');
             });
@@ -1045,14 +1011,16 @@
                 tr.classList.remove('hidden-row');
             });
             
+            // 收集匹配的行
+            const matchedRows = [];
             for (let r = 1; r <= state.rows; r++) {
                 const aVal = (state.data[`A${r}`] || '').toLowerCase();
                 const bVal = (state.data[`B${r}`] || '').toLowerCase();
-                
                 const row = document.querySelector(`tr[data-row-num="${r}"]`);
                 
                 if (aVal.includes(term) || bVal.includes(term)) {
                     state.filteredRows.add(r);
+                    matchedRows.push(r);
                     if (aVal.includes(term)) {
                         const cellA = document.getElementById(`cell-A${r}`);
                         if (cellA) cellA.classList.add('search-highlight');
@@ -1066,9 +1034,9 @@
                 }
             }
             
-            // 如果之前有筛选状态，需要重新应用筛选
+            // 如果之前有筛选状态，重新应用筛选
             if (state.isFilterActive) {
-                applyFilter(true); // true表示保持搜索高亮
+                applyFilter(true);
             }
             
             saveToHistory(ACTION_TYPES.SEARCH, { 
@@ -1080,49 +1048,100 @@
             });
             
             showToast(`找到 ${state.filteredRows.size} 个匹配项`);
+            
+            // 搜索后自动跳转到H列开始的第一个空单元格并进入编辑模式
+            if (matchedRows.length > 0) {
+                setTimeout(() => {
+                    jumpToFirstEmptyCellFromH(matchedRows[0]);
+                }, 100);
+            }
         }
 
+        // ==================== 修复：清空搜索功能 ====================
         function clearSearch() {
             const previousTerm = state.searchTerm;
             const previousFilterState = state.isFilterActive;
             
-            if (!previousTerm && !previousFilterState) return;
-            
+            // 清除搜索输入框
             document.getElementById('searchInput').value = '';
+            
+            // 清除搜索状态
             state.searchTerm = '';
             state.filteredRows.clear();
             
+            // 清除所有高亮
             document.querySelectorAll('.search-highlight').forEach(el => {
                 el.classList.remove('search-highlight');
             });
             
-            // 重新应用筛选（如果有）
+            // 修复：显示所有行（回到首页）
+            document.querySelectorAll('#tableBody tr').forEach(tr => {
+                tr.classList.remove('hidden-row');
+            });
+            
+            // 如果筛选状态是激活的，重新应用筛选（但保留所有行可见性由筛选逻辑控制）
             if (state.isFilterActive) {
                 applyFilter();
-            } else {
-                document.querySelectorAll('#tableBody tr').forEach(tr => {
-                    tr.classList.remove('hidden-row');
+            }
+            
+            // 只有真正有变化时才保存历史记录
+            if (previousTerm || previousFilterState !== state.isFilterActive) {
+                saveToHistory(ACTION_TYPES.SEARCH, { 
+                    term: '', 
+                    previousTerm, 
+                    previousFilterState,
+                    resultCount: 0,
+                    filteredRows: []
                 });
             }
             
-            saveToHistory(ACTION_TYPES.SEARCH, { 
-                term: '', 
-                previousTerm, 
-                previousFilterState,
-                resultCount: 0,
-                filteredRows: []
-            });
+            // 滚动到顶部（回到首页）
+            const container = document.getElementById('container');
+            container.scrollTop = 0;
+            container.scrollLeft = 0;
+            
+            // 可选：选中第一个单元格
+            selectCell('A1');
+        }
+
+        function jumpToFirstEmptyCellFromH(rowNum) {
+            const startColIndex = state.colLetters.indexOf(CONFIG.searchJumpStartCol);
+            for (let i = startColIndex; i < state.colLetters.length; i++) {
+                const col = state.colLetters[i];
+                if (CONFIG.readOnlyCol.includes(col) || isMetaCol(col)) continue;
+                const cellId = `${col}${rowNum}`;
+                const cellValue = state.data[cellId];
+                if (!cellValue || cellValue.trim() === '') {
+                    const cell = document.getElementById(`cell-${cellId}`);
+                    if (!cell) continue;
+                    const row = cell.closest('tr');
+                    if (row && row.classList.contains('hidden-row')) continue;
+                    cell.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                    setTimeout(() => {
+                        selectCell(cellId);
+                        startEdit(cellId, null);
+                    }, 300);
+                    return;
+                }
+            }
+            const firstCellId = `${CONFIG.searchJumpStartCol}${rowNum}`;
+            const firstCell = document.getElementById(`cell-${firstCellId}`);
+            if (firstCell) {
+                firstCell.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                setTimeout(() => {
+                    selectCell(firstCellId);
+                    startEdit(firstCellId, null);
+                }, 300);
+            }
         }
 
         function toggleFilter() {
             const previousState = state.isFilterActive;
             const previousSearchTerm = state.searchTerm;
             const previousFilteredRows = Array.from(state.filteredRows);
-            
             state.isFilterActive = !state.isFilterActive;
             const btn = document.getElementById('filterToggle');
             btn.classList.toggle('btn-active', state.isFilterActive);
-            
             if (state.isFilterActive) {
                 btn.textContent = '显示全部';
                 applyFilter();
@@ -1130,7 +1149,6 @@
                 btn.textContent = '筛选＞0';
                 clearFilter();
             }
-            
             saveToHistory(ACTION_TYPES.FILTER, { 
                 active: state.isFilterActive, 
                 previousState,
@@ -1141,17 +1159,13 @@
 
         function applyFilter(keepSearchHighlight = false) {
             let visibleCount = 0;
-            
             for (let r = 1; r <= state.rows; r++) {
                 const dVal = parseInt(state.data[`D${r}`] || '0');
                 const row = document.querySelector(`tr[data-row-num="${r}"]`);
-                
-                // 如果当前行已经被搜索隐藏，保持隐藏
                 if (state.searchTerm && !state.filteredRows.has(r)) {
                     row.classList.add('hidden-row');
                     continue;
                 }
-                
                 if (dVal <= 0) {
                     row.classList.add('hidden-row');
                 } else {
@@ -1159,14 +1173,12 @@
                     visibleCount++;
                 }
             }
-            
             if (!keepSearchHighlight) {
                 showToast(`筛选显示 ${visibleCount} 行`);
             }
         }
 
         function clearFilter() {
-            // 如果有搜索，只显示搜索结果；否则显示全部
             if (state.searchTerm) {
                 document.querySelectorAll('#tableBody tr').forEach((tr, idx) => {
                     const rowNum = idx + 1;
@@ -1183,36 +1195,16 @@
             }
         }
 
-        function jumpToSearchResult() {
-            if (state.filteredRows.size === 0) return;
-            
-            const firstMatchRow = Math.min(...Array.from(state.filteredRows));
-            const cellId = `A${firstMatchRow}`;  // 修复：直接跳转到A列，避免复杂逻辑导致错误
-            
-            const cell = document.getElementById(`cell-${cellId}`);
-            if (!cell) return;
-            
-            const row = cell.closest('tr');
-            if (row.classList.contains('hidden-row')) return;
-            
-            selectCell(cellId);
-            cell.scrollIntoView({ behavior: 'smooth', block: 'center' });
-        }
-
-        // ==================== 单元格操作 ====================
         function handleCellClick(e, cellId) {
             e.stopPropagation();
-            
             const cell = document.getElementById(`cell-${cellId}`);
             const td = cell.parentElement;
-            
             if (e.ctrlKey) {
                 toggleCellSelection(td);
             } else if (e.shiftKey && state.selectedCell) {
                 selectCellRange(state.selectedCell, cellId);
             } else {
                 selectCell(cellId);
-                
                 if (td.classList.contains('editable') && !td.classList.contains('meta-col')) {
                     startEdit(cellId, e);
                 }
@@ -1227,7 +1219,6 @@
                 tr.classList.remove('row-selected');
             });
             state.selectedCells.clear();
-            
             state.selectedCell = cellId;
             const cell = document.getElementById(`cell-${cellId}`);
             if (cell) {
@@ -1240,15 +1231,12 @@
             clearAllSelections();
             const row = document.querySelectorAll('#tableBody tr')[rowIdx];
             if (row.classList.contains('hidden-row')) return;
-            
             row.classList.add('row-selected');
-            
             const editableCells = row.querySelectorAll('td.editable');
             editableCells.forEach(cell => {
                 state.selectedCells.add(cell.dataset.id);
                 cell.querySelector('.cell-content').classList.add('selected');
             });
-            
             if (editableCells.length > 0) {
                 selectCell(editableCells[0].dataset.id);
             }
@@ -1257,7 +1245,6 @@
         function toggleCellSelection(td) {
             const cellId = td.dataset.id;
             const cell = td.querySelector('.cell-content');
-            
             if (state.selectedCells.has(cellId)) {
                 state.selectedCells.delete(cellId);
                 cell.classList.remove('selected');
@@ -1283,32 +1270,22 @@
             state.selectedCells.clear();
         }
 
-        // ==================== 编辑功能 ====================
         function startEdit(cellId, clickEvent) {
             if (state.editingCell) endEdit();
-            
-            // 修复：在筛选/搜索状态下，确保使用正确的行号
             const rowMatch = cellId.match(/(\d+)$/);
             if (!rowMatch) return;
-            
             const displayRow = parseInt(rowMatch[1]);
-            
-            // 检查这一行是否可见
             const row = document.querySelector(`tr[data-row-num="${displayRow}"]`);
             if (row && row.classList.contains('hidden-row')) {
-                return; // 如果行被隐藏，不编辑
+                return;
             }
-            
             state.editingCell = cellId;
             const cell = document.getElementById(`cell-${cellId}`);
-            
             const currentContent = cell.innerHTML;
             const hasIndicator = cell.querySelector('.comment-indicator');
-            
             cell.contentEditable = true;
             cell.classList.add('editing');
             cell.focus();
-            
             if (clickEvent && clickEvent.type === 'dblclick') {
                 const selection = window.getSelection();
                 const range = document.createRange();
@@ -1316,35 +1293,34 @@
                 selection.removeAllRanges();
                 selection.addRange(range);
             }
-            
             if (hasIndicator) {
                 cell.innerHTML = currentContent;
             }
-            
-            if (clickEvent && clickEvent.type !== 'dblclick') {
+            if (clickEvent && clickEvent.type !== 'dblclick' && clickEvent.clientX) {
                 const range = document.caretRangeFromPoint(clickEvent.clientX, clickEvent.clientY);
                 if (range) {
                     const selection = window.getSelection();
                     selection.removeAllRanges();
                     selection.addRange(range);
                 }
+            } else if (!clickEvent) {
+                const selection = window.getSelection();
+                const range = document.createRange();
+                range.selectNodeContents(cell);
+                selection.removeAllRanges();
+                selection.addRange(range);
             }
-            
             state.activeInput = cell;
         }
 
         function endEdit() {
             if (!state.editingCell) return;
-            
             const cellId = state.editingCell;
             const cell = document.getElementById(`cell-${cellId}`);
-            
             const indicator = cell.querySelector('.comment-indicator');
             if (indicator) indicator.remove();
-            
             const value = cell.textContent;
             const oldValue = state.data[cellId] || '';
-            
             if (cell.dataset.comment) {
                 if (!cell.querySelector('.comment-indicator')) {
                     const newIndicator = document.createElement('div');
@@ -1352,18 +1328,14 @@
                     cell.appendChild(newIndicator);
                 }
             }
-            
             if (value !== oldValue) {
                 setCellData(cellId, value, false);
-                
                 const col = cellId.match(/[A-Z]+/)[0];
                 if (isDataCol(col) && !CONFIG.noMetaCols.includes(col)) {
                     syncMetaData(cellId);
                 }
-                
                 calculateDColumn();
                 checkDuplicates();
-                
                 saveToHistory(ACTION_TYPES.EDIT_CELL, { 
                     cellId, 
                     oldValue, 
@@ -1372,7 +1344,6 @@
                     row: cellId.match(/\d+/)[0]
                 });
             }
-            
             cell.contentEditable = false;
             cell.classList.remove('editing');
             state.editingCell = null;
@@ -1393,14 +1364,11 @@
 
         function moveToNextCell() {
             if (!state.selectedCell) return;
-            
             const match = state.selectedCell.match(/([A-Z]+)(\d+)/);
             const col = match[1];
             const row = parseInt(match[2]);
-            
             const colIndex = state.colLetters.indexOf(col);
             let nextColIndex = colIndex + 1;
-            
             while (nextColIndex < state.colLetters.length) {
                 const nextCol = state.colLetters[nextColIndex];
                 if (!CONFIG.readOnlyCol.includes(nextCol) && !isMetaCol(nextCol)) {
@@ -1414,7 +1382,6 @@
                 }
                 nextColIndex++;
             }
-            
             const nextRow = row + 1;
             if (nextRow <= state.rows) {
                 for (let i = 0; i < state.colLetters.length; i++) {
@@ -1432,7 +1399,6 @@
             }
         }
 
-        // ==================== 核心功能 ====================
         function isDataCol(col) {
             return col >= 'A' && col <= 'T';
         }
@@ -1455,20 +1421,16 @@
         function syncMetaData(cellId) {
             const col = cellId.match(/[A-Z]+/)[0];
             if (!isDataCol(col) || CONFIG.noMetaCols.includes(col)) return;
-            
             const row = cellId.match(/\d+/)[0];
             const metaCol = getMetaCol(col);
             const metaCellId = `${metaCol}${row}`;
-            
             const cell = document.getElementById(`cell-${cellId}`);
             let color = '';
             if (cell.classList.contains('cell-yellow')) color = '黄色';
             else if (cell.classList.contains('cell-red')) color = '红色';
             else if (cell.classList.contains('cell-pink')) color = '粉色';
-            
             const comment = cell.dataset.comment || '';
             const metaValue = color + (comment ? CONFIG.metaDataSeparator + comment : '');
-            
             setCellData(metaCellId, metaValue, false);
         }
 
@@ -1488,27 +1450,21 @@
         function checkDuplicates() {
             const excludeCols = ['C','D','E','F','G'];
             const valueMap = new Map();
-            
             for (let r = 1; r <= state.rows; r++) {
                 state.colLetters.forEach(col => {
                     if (!isDataCol(col) || excludeCols.includes(col)) return;
-                    
                     const cellId = `${col}${r}`;
                     const value = (state.data[cellId] || '').trim();
                     if (!value) return;
-                    
                     const num = parseFloat(value);
                     if (!isNaN(num) && num >= 0 && num <= 10) return;
-                    
                     if (!valueMap.has(value)) valueMap.set(value, []);
                     valueMap.get(value).push(cellId);
                 });
             }
-            
             document.querySelectorAll('.duplicate-cell').forEach(el => {
                 el.classList.remove('duplicate-cell');
             });
-            
             valueMap.forEach((cellIds, value) => {
                 if (cellIds.length > 1) {
                     cellIds.forEach(id => {
@@ -1519,38 +1475,30 @@
             });
         }
 
-        // ==================== 格式化 ====================
         function formatCell(color) {
             const targets = state.selectedCells.size > 0 ? 
                 Array.from(state.selectedCells) : 
                 (state.selectedCell ? [state.selectedCell] : []);
-            
             if (targets.length === 0) return;
-            
             const changes = [];
             targets.forEach(cellId => {
                 const col = cellId.match(/[A-Z]+/)[0];
                 if (CONFIG.noMetaCols.includes(col)) return;
-                
                 const cell = document.getElementById(`cell-${cellId}`);
                 const hadColor = cell.classList.contains('cell-yellow') || 
                                 cell.classList.contains('cell-red') || 
                                 cell.classList.contains('cell-pink');
                 const oldColor = hadColor ? (cell.classList.contains('cell-yellow') ? '黄色' : 
                                             cell.classList.contains('cell-red') ? '红色' : '粉色') : null;
-                
                 cell.classList.remove('cell-yellow', 'cell-red', 'cell-pink');
                 if (color !== 'clear') {
                     cell.classList.add(`cell-${color}`);
                 }
-                
                 if (isDataCol(col) && !CONFIG.noMetaCols.includes(col)) {
                     syncMetaData(cellId);
                 }
-                
                 changes.push({ cellId, oldColor, newColor: color !== 'clear' ? color : null });
             });
-            
             const actionType = targets.length > 1 ? ACTION_TYPES.FORMAT_MULTI : ACTION_TYPES.FORMAT_CELL;
             saveToHistory(actionType, { 
                 color, 
@@ -1564,25 +1512,19 @@
             formatCell('clear');
         }
 
-        // ==================== 备注功能 ====================
         function addComment() {
             const cellId = state.selectedCell;
             if (!cellId) return;
-            
             const col = cellId.match(/[A-Z]+/)[0];
             if (CONFIG.noMetaCols.includes(col)) {
                 showToast('C-G列不支持备注功能');
                 return;
             }
-            
             const cell = document.getElementById(`cell-${cellId}`);
             const currentComment = cell.dataset.comment || '';
-            
             const newComment = prompt('请输入备注：', currentComment);
             if (newComment === null) return;
-            
             const oldComment = currentComment;
-            
             if (newComment.trim()) {
                 cell.dataset.comment = newComment.trim();
                 if (!cell.querySelector('.comment-indicator')) {
@@ -1594,7 +1536,6 @@
                 clearComment();
                 return;
             }
-            
             syncMetaData(cellId);
             saveToHistory(ACTION_TYPES.ADD_COMMENT, { cellId, oldComment, newComment: newComment.trim() });
         }
@@ -1602,16 +1543,13 @@
         function clearComment() {
             const cellId = state.selectedCell;
             if (!cellId) return;
-            
             const col = cellId.match(/[A-Z]+/)[0];
             if (CONFIG.noMetaCols.includes(col)) return;
-            
             const cell = document.getElementById(`cell-${cellId}`);
             const oldComment = cell.dataset.comment || '';
             delete cell.dataset.comment;
             const indicator = cell.querySelector('.comment-indicator');
             if (indicator) indicator.remove();
-            
             syncMetaData(cellId);
             saveToHistory(ACTION_TYPES.CLEAR_COMMENT, { cellId, oldComment });
         }
@@ -1619,14 +1557,11 @@
         function showContextMenu(e, cellId) {
             e.preventDefault();
             selectCell(cellId);
-            
             const menu = document.getElementById('contextMenu');
             let menuX = e.pageX;
             let menuY = e.pageY;
-            
             const menuWidth = 261.36;
             const menuHeight = 420;
-            
             if (menuX + menuWidth > window.innerWidth) {
                 menuX = window.innerWidth - menuWidth - 10;
             }
@@ -1634,26 +1569,22 @@
                 menuY = window.innerHeight - menuHeight - 10;
             }
             if (menuY < 0) menuY = 10;
-            
             menu.style.display = 'block';
             menu.style.left = menuX + 'px';
             menu.style.top = menuY + 'px';
         }
 
-        // ==================== 行列操作 ====================
         function addNewRow() {
             const previousRows = state.rows;
             state.rows++;
             const tbody = document.getElementById('tableBody');
             const r = state.rows - 1;
-            
             let html = `<tr data-row-num="${state.rows}"><th class="row-header" onclick="selectRow(${r})">${state.rows}</th>`;
             state.colLetters.forEach((col, idx) => {
                 const isMeta = idx >= 20;
                 const isReadOnly = CONFIG.readOnlyCol.includes(col);
                 const cellId = `${col}${state.rows}`;
                 const width = getColWidth(col, idx);
-                
                 html += `
                     <td data-row="${r}" data-col="${col}" data-id="${cellId}" 
                         class="${isMeta ? 'meta-col' : ''} ${isReadOnly ? '' : 'editable'}"
@@ -1666,33 +1597,26 @@
                 `;
             });
             html += '</tr>';
-            
             tbody.insertAdjacentHTML('beforeend', html);
             setCellData(`D${state.rows}`, '0', false);
-            
             const container = document.getElementById('container');
             container.scrollTop = container.scrollHeight;
-            
             saveToHistory(ACTION_TYPES.ADD_ROW, { rowNum: state.rows, previousRows });
             selectCell(`A${state.rows}`);
         }
 
         function deleteSelectedRow() {
             if (!state.selectedCell) return;
-            
             const rowNum = parseInt(state.selectedCell.match(/\d+/)[0]);
             const deletedData = {};
-            
             state.colLetters.forEach(col => {
                 const cellId = `${col}${rowNum}`;
                 deletedData[cellId] = state.data[cellId] || '';
             });
-            
             state.colLetters.forEach(col => {
                 const cellId = `${col}${rowNum}`;
                 delete state.data[cellId];
             });
-            
             for (let r = rowNum; r < state.rows; r++) {
                 state.colLetters.forEach(col => {
                     const fromId = `${col}${r + 1}`;
@@ -1701,28 +1625,21 @@
                     delete state.data[fromId];
                 });
             }
-            
             state.rows--;
-            
             renderEmptyRows();
-            
             Object.entries(state.data).forEach(([cellId, value]) => {
                 const cell = document.getElementById(`cell-${cellId}`);
                 if (cell) cell.textContent = value;
             });
-            
             restoreStyles();
-            
             calculateDColumn();
             checkDuplicates();
             clearAllSelections();
-            
             saveToHistory(ACTION_TYPES.DELETE_ROW, { 
                 rowNum, 
                 deletedData,
                 nextRow: rowNum <= state.rows ? rowNum : null
             });
-            
             showToast(`已删除第 ${rowNum} 行`);
         }
 
@@ -1730,24 +1647,19 @@
             for (let r = 1; r <= state.rows; r++) {
                 for (let c = 'A'; c <= 'T'; c = String.fromCharCode(c.charCodeAt(0) + 1)) {
                     if (CONFIG.noMetaCols.includes(c)) continue;
-                    
                     const metaCol = getMetaCol(c);
                     const metaCellId = `${metaCol}${r}`;
                     const metaValue = state.data[metaCellId] || '';
-                    
                     if (metaValue) {
                         const parts = metaValue.split(CONFIG.metaDataSeparator);
                         const color = parts[0];
                         const comment = parts[1];
-                        
                         const cellId = `${c}${r}`;
                         const cell = document.getElementById(`cell-${cellId}`);
                         if (!cell) continue;
-                        
                         if (color === '黄色') cell.classList.add('cell-yellow');
                         else if (color === '红色') cell.classList.add('cell-red');
                         else if (color === '粉色') cell.classList.add('cell-pink');
-                        
                         if (comment) {
                             cell.dataset.comment = comment;
                             if (!cell.querySelector('.comment-indicator')) {
@@ -1765,14 +1677,11 @@
             const targets = state.selectedCells.size > 0 ? 
                 Array.from(state.selectedCells) : 
                 (state.selectedCell ? [state.selectedCell] : []);
-            
             if (targets.length === 0) return;
-            
             const clearedData = [];
             targets.forEach(cellId => {
                 const col = cellId.match(/[A-Z]+/)[0];
                 const oldValue = state.data[cellId] || '';
-                
                 if (CONFIG.readOnlyCol.includes(col)) {
                     setCellData(cellId, '0', false);
                     clearedData.push({ cellId, oldValue, newValue: '0' });
@@ -1781,9 +1690,7 @@
                     clearedData.push({ cellId, oldValue, newValue: '' });
                 }
             });
-            
             calculateDColumn();
-            
             const actionType = targets.length > 1 ? ACTION_TYPES.CLEAR_MULTI : ACTION_TYPES.CLEAR_CONTENT;
             saveToHistory(actionType, { 
                 cellCount: targets.length, 
@@ -1792,16 +1699,12 @@
             });
         }
 
-        // ==================== 历史记录（完全保持页面状态） ====================
         function saveToHistory(actionType, actionData) {
             if (state.isUndoRedo) return;
-            
             state.redoStack = [];
             if (state.historyStack.length >= CONFIG.maxHistory) {
                 state.historyStack.shift();
             }
-            
-            // 保存完整的界面状态，包括视图状态
             const container = document.getElementById('container');
             const historyEntry = {
                 data: JSON.parse(JSON.stringify(state.data)),
@@ -1816,56 +1719,42 @@
                 actionData: actionData,
                 timestamp: new Date().getTime()
             };
-            
             state.historyStack.push(historyEntry);
             state.lastAction = actionType;
-            
             updateUndoRedoButtons();
         }
 
         function undo() {
             if (state.historyStack.length <= 1) return;
-            
             state.isUndoRedo = true;
             const currentState = state.historyStack.pop();
             state.redoStack.push(currentState);
-            
             const previousState = state.historyStack[state.historyStack.length - 1];
             restoreState(previousState, true);
-            
             state.isUndoRedo = false;
             updateUndoRedoButtons();
         }
 
         function redo() {
             if (state.redoStack.length === 0) return;
-            
             state.isUndoRedo = true;
             const nextState = state.redoStack.pop();
             state.historyStack.push(nextState);
-            
             restoreState(nextState, false);
-            
             state.isUndoRedo = false;
             updateUndoRedoButtons();
         }
 
         function restoreState(savedState, isUndo) {
-            // 恢复数据
             state.data = JSON.parse(JSON.stringify(savedState.data));
             state.headerData = JSON.parse(JSON.stringify(savedState.headerData));
             state.rows = savedState.rows;
-            
-            // 恢复视图状态（关键修复）
             state.isFilterActive = savedState.isFilterActive;
             state.searchTerm = savedState.searchTerm;
             state.filteredRows = new Set(savedState.filteredRows || []);
             state.scrollPosition = savedState.scrollPosition || { top: 0, left: 0 };
-            
-            // 更新UI控件
             const filterBtn = document.getElementById('filterToggle');
             const searchInput = document.getElementById('searchInput');
-            
             if (state.isFilterActive) {
                 filterBtn.classList.add('btn-active');
                 filterBtn.textContent = '显示全部';
@@ -1873,43 +1762,30 @@
                 filterBtn.classList.remove('btn-active');
                 filterBtn.textContent = '筛选＞0';
             }
-            
             searchInput.value = state.searchTerm || '';
-            
-            // 重新渲染表格
             Object.entries(state.headerData).forEach(([col, value]) => {
                 const th = document.querySelector(`th[data-col="${col}"] .header-text`);
                 if (th) th.textContent = value;
             });
-            
             renderEmptyRows();
-            
             Object.entries(state.data).forEach(([cellId, value]) => {
                 const cell = document.getElementById(`cell-${cellId}`);
                 if (cell) cell.textContent = value;
             });
-            
             restoreStyles();
             calculateDColumn();
             checkDuplicates();
-            
-            // 应用筛选和搜索状态（关键修复）
             applyCombinedFilter();
-            
-            // 恢复滚动位置（关键修复）
             const container = document.getElementById('container');
             if (savedState.scrollPosition) {
                 container.scrollTop = savedState.scrollPosition.top;
                 container.scrollLeft = savedState.scrollPosition.left;
             }
-            
-            // 恢复选中单元格
             if (savedState.selectedCell) {
                 const cell = document.getElementById(`cell-${savedState.selectedCell}`);
                 if (cell && !cell.closest('tr').classList.contains('hidden-row')) {
                     selectCell(savedState.selectedCell);
                 } else {
-                    // 如果之前选中的单元格现在被隐藏了，尝试选中同行的可见单元格
                     const rowNum = savedState.selectedCell.match(/\d+/)[0];
                     const row = document.querySelector(`tr[data-row-num="${rowNum}"]`);
                     if (row && !row.classList.contains('hidden-row')) {
@@ -1920,40 +1796,29 @@
                     }
                 }
             }
-            
-            // 视觉反馈
             const actionType = savedState.actionType || '未知操作';
             const actionMsg = isUndo ? `↩️ 已撤销：${actionType}` : `↪️ 已恢复：${actionType}`;
             showToast(actionMsg, isUndo ? 'undo' : 'redo');
         }
 
-        // 统一的筛选和搜索应用函数
         function applyCombinedFilter() {
-            // 清除所有高亮
             document.querySelectorAll('.search-highlight').forEach(el => {
                 el.classList.remove('search-highlight');
             });
-            
             for (let r = 1; r <= state.rows; r++) {
                 const row = document.querySelector(`tr[data-row-num="${r}"]`);
                 if (!row) continue;
-                
                 let shouldHide = false;
-                
-                // 检查筛选条件
                 if (state.isFilterActive) {
                     const dVal = parseInt(state.data[`D${r}`] || '0');
                     if (dVal <= 0) {
                         shouldHide = true;
                     }
                 }
-                
-                // 检查搜索条件
                 if (state.searchTerm && !shouldHide) {
                     if (!state.filteredRows.has(r)) {
                         shouldHide = true;
                     } else {
-                        // 添加高亮
                         const aVal = (state.data[`A${r}`] || '').toLowerCase();
                         const bVal = (state.data[`B${r}`] || '').toLowerCase();
                         if (aVal.includes(state.searchTerm.toLowerCase())) {
@@ -1966,7 +1831,6 @@
                         }
                     }
                 }
-                
                 if (shouldHide) {
                     row.classList.add('hidden-row');
                 } else {
@@ -1978,17 +1842,14 @@
         function updateUndoRedoButtons() {
             const undoBtn = document.getElementById('undoBtn');
             const redoBtn = document.getElementById('redoBtn');
-            
             undoBtn.disabled = state.historyStack.length <= 1;
             redoBtn.disabled = state.redoStack.length === 0;
-            
             if (state.historyStack.length > 1) {
                 const lastAction = state.historyStack[state.historyStack.length - 1].actionType || '上一步';
                 undoBtn.title = `返回上一步：${lastAction}`;
             } else {
                 undoBtn.title = '没有可返回的操作';
             }
-            
             if (state.redoStack.length > 0) {
                 const nextAction = state.redoStack[state.redoStack.length - 1].actionType || '下一步';
                 redoBtn.title = `恢复下一步：${nextAction}`;
@@ -1997,15 +1858,12 @@
             }
         }
 
-        // ==================== Excel导入导出 ====================
         async function handleExcelImport(e) {
             const file = e.target.files[0];
             if (!file) return;
-            
             if (state.editingCell) {
                 endEdit();
             }
-            
             const importState = {
                 data: JSON.parse(JSON.stringify(state.data)),
                 headerData: JSON.parse(JSON.stringify(state.headerData)),
@@ -2015,7 +1873,6 @@
                 filteredRows: Array.from(state.filteredRows),
                 scrollPosition: { ...state.scrollPosition }
             };
-            
             state.data = {};
             state.headerData = {};
             state.selectedCell = null;
@@ -2030,13 +1887,11 @@
             state.redoStack = [];
             state.isUndoRedo = false;
             state.scrollPosition = { top: 0, left: 0 };
-            
             document.getElementById('searchInput').value = '';
             const filterBtn = document.getElementById('filterToggle');
             filterBtn.classList.remove('btn-active');
             filterBtn.textContent = '筛选＞0';
             updateUndoRedoButtons();
-            
             document.querySelectorAll('.cell-content.selected').forEach(el => {
                 el.classList.remove('selected');
             });
@@ -2052,19 +1907,15 @@
             document.querySelectorAll('.row-highlight').forEach(el => {
                 el.classList.remove('row-highlight');
             });
-            
             document.getElementById('contextMenu').style.display = 'none';
             document.getElementById('commentPopup').classList.remove('show');
             document.getElementById('modalOverlay').classList.remove('show');
-            
             showLoading('正在导入...');
-            
             try {
                 const data = await file.arrayBuffer();
                 const workbook = XLSX.read(data, { type: 'array' });
                 const sheet = workbook.Sheets[workbook.SheetNames[0]];
                 const jsonData = XLSX.utils.sheet_to_json(sheet, { header: 1 });
-                
                 if (jsonData.length > 0) {
                     const headers = jsonData[0];
                     headers.forEach((h, idx) => {
@@ -2073,16 +1924,13 @@
                         }
                     });
                 }
-                
                 const rows = jsonData.slice(1);
                 state.rows = Math.max(rows.length, 100);
                 renderEmptyRows();
-                
                 Object.entries(state.headerData).forEach(([col, value]) => {
                     const th = document.querySelector(`th[data-col="${col}"] .header-text`);
                     if (th) th.textContent = value;
                 });
-                
                 rows.forEach((row, rIdx) => {
                     row.forEach((val, cIdx) => {
                         if (val !== undefined && val !== null && cIdx < state.colLetters.length) {
@@ -2091,38 +1939,30 @@
                         }
                     });
                 });
-                
                 calculateLHeader();
                 calculateDColumn();
                 checkDuplicates();
-                
                 saveToHistory(ACTION_TYPES.IMPORT, { 
                     rowCount: rows.length,
                     previousState: importState,
                     fileName: file.name
                 });
-                
                 saveToLocalStorage();
-                
                 hideLoading();
                 showToast(`成功导入 ${rows.length} 行数据`);
             } catch (err) {
                 hideLoading();
                 showToast('导入失败: ' + err.message);
             }
-            
             e.target.value = '';
         }
 
         function saveToExcel() {
             showLoading('正在导出...');
-            
             try {
                 const data = [];
-                
                 const header = state.colLetters.map(col => state.headerData[col] || col);
                 data.push(header);
-                
                 for (let r = 1; r <= state.rows; r++) {
                     const row = [];
                     let hasData = false;
@@ -2133,11 +1973,9 @@
                     });
                     if (hasData) data.push(row);
                 }
-                
                 const ws = XLSX.utils.aoa_to_sheet(data);
                 const wb = XLSX.utils.book_new();
                 XLSX.utils.book_append_sheet(wb, ws, '药品数据');
-                
                 const now = new Date();
                 const year = now.getFullYear();
                 const month = String(now.getMonth() + 1).padStart(2, '0');
@@ -2145,9 +1983,7 @@
                 const hours = String(now.getHours()).padStart(2, '0');
                 const minutes = String(now.getMinutes()).padStart(2, '0');
                 const filename = `yb数据${year}${month}${day} ${hours}${minutes}.xlsx`;
-                
                 XLSX.writeFile(wb, filename);
-                
                 hideLoading();
                 showToast('导出成功');
             } catch (err) {
@@ -2156,7 +1992,6 @@
             }
         }
 
-        // ==================== 本地存储 ====================
         function saveToLocalStorage() {
             try {
                 const data = {
@@ -2175,24 +2010,19 @@
             try {
                 const saved = localStorage.getItem(CONFIG.storageKey);
                 if (!saved) return false;
-                
                 const parsed = JSON.parse(saved);
                 state.data = parsed.data || {};
                 state.headerData = parsed.headerData || {};
                 state.rows = parsed.rows || 100;
-                
                 renderEmptyRows();
-                
                 Object.entries(state.headerData).forEach(([col, value]) => {
                     const th = document.querySelector(`th[data-col="${col}"] .header-text`);
                     if (th) th.textContent = value;
                 });
-                
                 Object.entries(state.data).forEach(([cellId, value]) => {
                     const cell = document.getElementById(`cell-${cellId}`);
                     if (cell) cell.textContent = value;
                 });
-                
                 calculateLHeader();
                 calculateDColumn();
                 checkDuplicates();
@@ -2204,7 +2034,6 @@
             }
         }
 
-        // ==================== 辅助函数 ====================
         function debounce(func, wait) {
             let timeout;
             return function executedFunction(...args) {
@@ -2230,13 +2059,11 @@
             const toast = document.getElementById('toast');
             toast.textContent = msg;
             toast.className = 'toast show';
-            
             if (type === 'undo') {
                 toast.classList.add('undo-toast');
             } else if (type === 'redo') {
                 toast.classList.add('redo-toast');
             }
-            
             setTimeout(() => {
                 toast.classList.remove('show');
                 setTimeout(() => {
@@ -2252,10 +2079,8 @@
             setCellData('E1', '35', false);
             setCellData('J1', '240', false);
             setCellData('K1', '126.8', false);
-            
             document.getElementById('cell-B1').classList.add('cell-yellow');
             document.getElementById('cell-C1').classList.add('cell-yellow');
-            
             calculateDColumn();
         }
 
