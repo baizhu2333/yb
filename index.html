@@ -122,13 +122,14 @@
             transform-origin: top left;
         }
 
-        /* Excel风格表格 */
+        /* Excel风格表格 - 修改为auto以支持自动调整 */
         .sheet-table {
             border-collapse: separate;
             border-spacing: 0;
-            table-layout: fixed;
+            table-layout: auto; /* 修改：从fixed改为auto，支持自动调整 */
             user-select: none;
             font-size: 15.44px;
+            width: auto; /* 添加：让表格根据内容调整总宽度 */
         }
 
         .sheet-table th,
@@ -147,7 +148,7 @@
             text-align: center;
             position: sticky;
             z-index: 10;
-            font-size: 16.63px; /* 修改：从15.56px增大到16.63px */
+            font-size: 16.63px;
         }
 
         .sheet-table th.corner {
@@ -164,10 +165,11 @@
             min-width: 95.04px;
             height: 24.73px;
             line-height: 24.73px;
-            font-size: 16.63px; /* 修改：标题行字体大一号 */
+            font-size: 16.63px;
             border-bottom: 2px solid #c0c0c0;
             background: #e5f5d7;
             color: #3f6212;
+            white-space: nowrap; /* 添加：防止标题换行 */
         }
 
         /* 序号列 */
@@ -177,7 +179,7 @@
             min-width: 43.2px;
             height: 24.73px;
             line-height: 24.73px;
-            font-size: 16.63px; /* 修改：字体大一号 */
+            font-size: 16.63px;
             border-right: 2px solid #c0c0c0;
             cursor: pointer;
             background: #f0f9e8;
@@ -192,11 +194,11 @@
 
         /* 单元格样式 */
         .sheet-table td {
-            width: 95.04px;
-            min-width: 95.04px;
+            min-width: 95.04px; /* 修改：只保留min-width，去掉固定width */
             height: 24.73px;
             background: #fff;
             cursor: cell;
+            white-space: nowrap; /* 添加：防止内容换行 */
         }
 
         .cell-content {
@@ -229,19 +231,21 @@
             overflow: auto;
         }
 
-        /* 特殊列样式 - D、F宽度减少2mm到39.96px */
-        td[data-col="D"], th[data-col="D"],
-        td[data-col="F"], th[data-col="F"] {
-            width: 39.96px !important;
-            min-width: 39.96px !important;
-            max-width: 39.96px !important;
-        }
-
+        /* C-F列保持固定宽度 - 强制不自动调整 */
         td[data-col="C"], th[data-col="C"],
-        td[data-col="E"], th[data-col="E"] {
-            width: 64.8px !important;
+        td[data-col="D"], th[data-col="D"],
+        td[data-col="E"], th[data-col="E"],
+        td[data-col="F"], th[data-col="F"] {
+            width: 64.8px !important; /* C,E列 */
             min-width: 64.8px !important;
             max-width: 64.8px !important;
+        }
+
+        td[data-col="D"], th[data-col="D"],
+        td[data-col="F"], th[data-col="F"] {
+            width: 39.96px !important; /* D,F列 */
+            min-width: 39.96px !important;
+            max-width: 39.96px !important;
         }
 
         td[data-col="D"] {
@@ -253,7 +257,6 @@
             background: #f9f9f9 !important;
             font-size: 11.88px !important;
             color: #666 !important;
-            width: 71.28px !important;
             min-width: 71.28px !important;
         }
 
@@ -261,7 +264,6 @@
             background: #e0e0e0 !important;
             color: #666 !important;
             font-size: 12.96px !important;
-            width: 71.28px !important;
             min-width: 71.28px !important;
         }
 
@@ -606,6 +608,7 @@
             <input type="text" id="searchInput" placeholder="搜索条码或药品名称(A/B列)...">
             <button class="btn" id="clearSearchBtn">清空搜索</button>
             <button class="btn" id="filterToggle">筛选＞0</button>
+            <!-- 已移除自适应列宽按钮 -->
         </div>
 
         <div class="ribbon-group">
@@ -666,14 +669,16 @@
             traceCodeCol: ['H','I','M','N'],
             countColForD: [],
             noMetaCols: ['C', 'D', 'E', 'F', 'G'],
-            noResizeCols: ['C', 'D', 'E', 'F'],
-            storageKey: 'medicine_excel_data_v2_5',
+            noResizeCols: ['C', 'D', 'E', 'F'], // C-F列不自动调整
+            storageKey: 'medicine_excel_data_v2_6',
             metaDataSeparator: '|',
             batchSize: 50,
             maxHistory: 20,
             debounceDelay: 300,
             importChunkSize: 100,
-            searchJumpStartCol: 'H'
+            searchJumpStartCol: 'H',
+            minColWidth: 50, // 最小列宽
+            maxColWidth: 400 // 最大列宽
         };
 
         for(let i='H'.charCodeAt(0); i<='T'.charCodeAt(0); i++) {
@@ -706,7 +711,9 @@
             editingHeader: null,
             highlightedRow: null,
             lastAction: null,
-            scrollPosition: { top: 0, left: 0 }
+            scrollPosition: { top: 0, left: 0 },
+            colWidths: {}, // 存储各列计算后的宽度
+            originalRowOrder: [] // 存储原始行顺序，用于恢复
         };
 
         const ACTION_TYPES = {
@@ -723,7 +730,8 @@
             SEARCH: '搜索数据',
             DELETE_MULTI: '批量删除',
             FORMAT_MULTI: '批量格式化',
-            CLEAR_MULTI: '批量清空'
+            CLEAR_MULTI: '批量清空',
+            RESIZE_COLS: '调整列宽'
         };
 
         function generateColLetters() {
@@ -739,6 +747,8 @@
             initEvents();
             initSampleData();
             loadFromLocalStorage();
+            // 初始化后自动调整一次列宽
+            setTimeout(() => autoResizeColumns(), 100);
             saveToHistory('初始化', null);
         });
 
@@ -772,7 +782,8 @@
                 if (isEditable || isI) classes.push('editable-header');
                 const clickHandler = isI ? 'onclick="openWebsite()"' : 
                                    (isEditable ? 'onclick="editHeader(\'' + col + '\')"' : '');
-                headerHTML += `<th class="${classes.join(' ')}" data-col="${col}" style="width: ${width}px; min-width: ${width}px; max-width: ${width}px;" ${clickHandler}>
+                // 添加列标题属性用于自动调整
+                headerHTML += `<th class="${classes.join(' ')}" data-col="${col}" data-idx="${idx}" style="min-width: ${width}px;" ${clickHandler}>
                     <span class="header-text">${text}</span>
                 </th>`;
             });
@@ -800,11 +811,15 @@
                     const isMeta = idx >= 20;
                     const isReadOnly = CONFIG.readOnlyCol.includes(col);
                     const cellId = `${col}${r + 1}`;
+                    // C-F列使用固定宽度，其他列使用min-width支持自动调整
+                    const isFixed = CONFIG.noResizeCols.includes(col);
                     const width = getColWidth(col, idx);
+                    const widthStyle = isFixed ? `width: ${width}px; min-width: ${width}px; max-width: ${width}px;` : `min-width: ${width}px;`;
+                    
                     bodyHTML += `
                         <td data-row="${r}" data-col="${col}" data-id="${cellId}" 
                             class="${isMeta ? 'meta-col' : ''} ${isReadOnly ? '' : 'editable'}"
-                            style="width: ${width}px; min-width: ${width}px; max-width: ${width}px;"
+                            style="${widthStyle}"
                             onclick="handleCellClick(event, '${cellId}')"
                             onmouseenter="highlightRow(${r}); showCommentTooltip(event, '${cellId}')"
                             onmouseleave="clearHighlight(); hideCommentTooltip()">
@@ -815,6 +830,107 @@
                 bodyHTML += '</tr>';
             }
             tbody.innerHTML = bodyHTML;
+        }
+
+        // ==================== 自动调整列宽功能（自动执行，无需按钮） ====================
+        function autoResizeColumns() {
+            // 创建临时canvas用于测量文本宽度
+            const canvas = document.createElement('canvas');
+            const context = canvas.getContext('2d');
+            // 设置字体以匹配单元格样式
+            context.font = '15.44px "Microsoft YaHei", "Segoe UI", Arial, sans-serif';
+            
+            const headerContext = canvas.getContext('2d');
+            headerContext.font = 'bold 16.63px "Microsoft YaHei", "Segoe UI", Arial, sans-serif';
+            
+            // 为每个列计算最大宽度
+            state.colLetters.forEach((col, idx) => {
+                // 跳过C-F列（固定宽度）
+                if (CONFIG.noResizeCols.includes(col)) return;
+                
+                let maxWidth = getColWidth(col, idx); // 默认最小宽度
+                const isMeta = idx >= 20;
+                const fontSize = isMeta ? 11.88 : (['A','B','C','D','E','F','G'].includes(col) ? 17.44 : 15.44);
+                context.font = `${fontSize}px "Microsoft YaHei", "Segoe UI", Arial, sans-serif`;
+                
+                // 1. 测量标题宽度
+                const headerText = state.headerData[col] || col;
+                const headerWidth = headerContext.measureText(headerText).width;
+                maxWidth = Math.max(maxWidth, headerWidth + 20); // 加padding
+                
+                // 2. 测量该列所有单元格内容宽度
+                for (let r = 1; r <= state.rows; r++) {
+                    const cellId = `${col}${r}`;
+                    const value = state.data[cellId] || '';
+                    if (value) {
+                        const textWidth = context.measureText(value).width;
+                        maxWidth = Math.max(maxWidth, textWidth + 20); // 加padding
+                    }
+                }
+                
+                // 3. 应用最大/最小限制
+                maxWidth = Math.max(CONFIG.minColWidth, Math.min(maxWidth, CONFIG.maxColWidth));
+                
+                // 4. 应用宽度到表格
+                const th = document.querySelector(`th[data-col="${col}"]`);
+                const tds = document.querySelectorAll(`td[data-col="${col}"]`);
+                
+                if (th) {
+                    th.style.width = maxWidth + 'px';
+                    th.style.minWidth = maxWidth + 'px';
+                }
+                tds.forEach(td => {
+                    td.style.width = maxWidth + 'px';
+                    td.style.minWidth = maxWidth + 'px';
+                });
+                
+                state.colWidths[col] = maxWidth;
+            });
+            
+            showToast('列宽已自动调整');
+        }
+
+        // 调整单列宽度
+        function resizeSingleColumn(col) {
+            const canvas = document.createElement('canvas');
+            const context = canvas.getContext('2d');
+            const idx = state.colLetters.indexOf(col);
+            const isMeta = idx >= 20;
+            const fontSize = isMeta ? 11.88 : (['A','B','C','D','E','F','G'].includes(col) ? 17.44 : 15.44);
+            context.font = `${fontSize}px "Microsoft YaHei", "Segoe UI", Arial, sans-serif`;
+            
+            let maxWidth = getColWidth(col, idx);
+            
+            // 测量标题
+            const headerText = state.headerData[col] || col;
+            const headerWidth = context.measureText(headerText).width;
+            maxWidth = Math.max(maxWidth, headerWidth + 20);
+            
+            // 测量内容
+            for (let r = 1; r <= state.rows; r++) {
+                const cellId = `${col}${r}`;
+                const value = state.data[cellId] || '';
+                if (value) {
+                    const textWidth = context.measureText(value).width;
+                    maxWidth = Math.max(maxWidth, textWidth + 20);
+                }
+            }
+            
+            maxWidth = Math.max(CONFIG.minColWidth, Math.min(maxWidth, CONFIG.maxColWidth));
+            
+            const th = document.querySelector(`th[data-col="${col}"]`);
+            const tds = document.querySelectorAll(`td[data-col="${col}"]`);
+            
+            if (th) {
+                th.style.width = maxWidth + 'px';
+                th.style.minWidth = maxWidth + 'px';
+            }
+            tds.forEach(td => {
+                td.style.width = maxWidth + 'px';
+                td.style.minWidth = maxWidth + 'px';
+            });
+            
+            state.colWidths[col] = maxWidth;
         }
 
         function highlightRow(rowIdx) {
@@ -856,6 +972,10 @@
                     span.textContent = newValue;
                     if (CONFIG.formulaHeaders.includes(col)) {
                         calculateLHeader();
+                    }
+                    // 标题修改后自动调整该列宽度
+                    if (!CONFIG.noResizeCols.includes(col)) {
+                        setTimeout(() => resizeSingleColumn(col), 0);
                     }
                     saveToHistory(ACTION_TYPES.EDIT_HEADER, { col, oldValue, newValue, cellId: `header-${col}` });
                 } else {
@@ -918,6 +1038,8 @@
             document.getElementById('addRowBtn').addEventListener('click', handleAddRowClick);
             document.getElementById('undoBtn').addEventListener('click', undo);
             document.getElementById('redoBtn').addEventListener('click', redo);
+            // 已移除：document.getElementById('autoResizeBtn').addEventListener('click', autoResizeColumns);
+            
             document.addEventListener('keydown', handleGlobalKeydown);
             document.addEventListener('contextmenu', handleGlobalRightClick);
             document.addEventListener('mousedown', (e) => {
@@ -936,6 +1058,9 @@
                 }
             });
             window.addEventListener('beforeunload', saveToLocalStorage);
+            
+            // 初始化列标题双击事件
+            setTimeout(() => initColumnResizeEvents(), 100);
         }
 
         function handleAddRowClick() {
@@ -985,13 +1110,12 @@
             }
         }
 
-        // ==================== 修复：搜索功能 ====================
+        // ==================== 修复：搜索功能（筛选状态下只显示搜索结果） ====================
         function performSearch() {
             const term = document.getElementById('searchInput').value.trim().toLowerCase();
             const previousTerm = state.searchTerm;
             const previousFilterState = state.isFilterActive;
             
-            // 修复：如果搜索框为空，执行清空搜索操作（回到首页）
             if (!term) {
                 clearSearch();
                 return;
@@ -1006,7 +1130,7 @@
             
             state.filteredRows.clear();
             
-            // 先显示所有行，然后根据搜索结果隐藏
+            // 显示所有行（重置筛选）
             document.querySelectorAll('#tableBody tr').forEach(tr => {
                 tr.classList.remove('hidden-row');
             });
@@ -1016,11 +1140,12 @@
             for (let r = 1; r <= state.rows; r++) {
                 const aVal = (state.data[`A${r}`] || '').toLowerCase();
                 const bVal = (state.data[`B${r}`] || '').toLowerCase();
-                const row = document.querySelector(`tr[data-row-num="${r}"]`);
                 
                 if (aVal.includes(term) || bVal.includes(term)) {
                     state.filteredRows.add(r);
                     matchedRows.push(r);
+                    
+                    // 添加高亮
                     if (aVal.includes(term)) {
                         const cellA = document.getElementById(`cell-A${r}`);
                         if (cellA) cellA.classList.add('search-highlight');
@@ -1029,14 +1154,25 @@
                         const cellB = document.getElementById(`cell-B${r}`);
                         if (cellB) cellB.classList.add('search-highlight');
                     }
-                } else {
-                    row.classList.add('hidden-row');
                 }
             }
             
-            // 如果之前有筛选状态，重新应用筛选
+            // 只根据搜索结果隐藏行（不叠加筛选条件）
+            for (let r = 1; r <= state.rows; r++) {
+                const row = document.querySelector(`tr[data-row-num="${r}"]`);
+                if (!state.filteredRows.has(r)) {
+                    row.classList.add('hidden-row');
+                } else {
+                    row.classList.remove('hidden-row');
+                }
+            }
+            
+            // 如果之前有筛选状态，关闭它（因为搜索优先级更高）
             if (state.isFilterActive) {
-                applyFilter(true);
+                state.isFilterActive = false;
+                const filterBtn = document.getElementById('filterToggle');
+                filterBtn.classList.remove('btn-active');
+                filterBtn.textContent = '筛选＞0';
             }
             
             saveToHistory(ACTION_TYPES.SEARCH, { 
@@ -1049,7 +1185,7 @@
             
             showToast(`找到 ${state.filteredRows.size} 个匹配项`);
             
-            // 搜索后自动跳转到H列开始的第一个空单元格并进入编辑模式
+            // 跳转到第一个匹配行的H列空单元格
             if (matchedRows.length > 0) {
                 setTimeout(() => {
                     jumpToFirstEmptyCellFromH(matchedRows[0]);
@@ -1062,29 +1198,27 @@
             const previousTerm = state.searchTerm;
             const previousFilterState = state.isFilterActive;
             
-            // 清除搜索输入框
             document.getElementById('searchInput').value = '';
-            
-            // 清除搜索状态
             state.searchTerm = '';
             state.filteredRows.clear();
             
-            // 清除所有高亮
             document.querySelectorAll('.search-highlight').forEach(el => {
                 el.classList.remove('search-highlight');
             });
             
-            // 修复：显示所有行（回到首页）
+            // 恢复原始行顺序（如果之前有排序）
+            restoreOriginalRowOrder();
+            
+            // 显示所有行（回到首页）
             document.querySelectorAll('#tableBody tr').forEach(tr => {
                 tr.classList.remove('hidden-row');
             });
             
-            // 如果筛选状态是激活的，重新应用筛选（但保留所有行可见性由筛选逻辑控制）
+            // 如果之前有筛选状态，重新应用
             if (state.isFilterActive) {
                 applyFilter();
             }
             
-            // 只有真正有变化时才保存历史记录
             if (previousTerm || previousFilterState !== state.isFilterActive) {
                 saveToHistory(ACTION_TYPES.SEARCH, { 
                     term: '', 
@@ -1095,13 +1229,26 @@
                 });
             }
             
-            // 滚动到顶部（回到首页）
             const container = document.getElementById('container');
             container.scrollTop = 0;
             container.scrollLeft = 0;
-            
-            // 可选：选中第一个单元格
             selectCell('A1');
+        }
+
+        // 恢复原始行顺序
+        function restoreOriginalRowOrder() {
+            const tbody = document.getElementById('tableBody');
+            const rows = Array.from(tbody.querySelectorAll('tr'));
+            
+            // 按data-row-num排序
+            rows.sort((a, b) => {
+                const numA = parseInt(a.dataset.rowNum);
+                const numB = parseInt(b.dataset.rowNum);
+                return numA - numB;
+            });
+            
+            // 重新添加到tbody
+            rows.forEach(row => tbody.appendChild(row));
         }
 
         function jumpToFirstEmptyCellFromH(rowNum) {
@@ -1144,6 +1291,13 @@
             btn.classList.toggle('btn-active', state.isFilterActive);
             if (state.isFilterActive) {
                 btn.textContent = '显示全部';
+                // 清空搜索
+                state.searchTerm = '';
+                document.getElementById('searchInput').value = '';
+                document.querySelectorAll('.search-highlight').forEach(el => {
+                    el.classList.remove('search-highlight');
+                });
+                state.filteredRows.clear();
                 applyFilter();
             } else {
                 btn.textContent = '筛选＞0';
@@ -1157,41 +1311,73 @@
             });
         }
 
+        // ==================== 新增：筛选后按C列降序排序 ====================
         function applyFilter(keepSearchHighlight = false) {
-            let visibleCount = 0;
+            // 获取所有D>0的行
+            const visibleRows = [];
             for (let r = 1; r <= state.rows; r++) {
                 const dVal = parseInt(state.data[`D${r}`] || '0');
-                const row = document.querySelector(`tr[data-row-num="${r}"]`);
-                if (state.searchTerm && !state.filteredRows.has(r)) {
-                    row.classList.add('hidden-row');
-                    continue;
-                }
-                if (dVal <= 0) {
-                    row.classList.add('hidden-row');
-                } else {
-                    row.classList.remove('hidden-row');
-                    visibleCount++;
+                if (dVal > 0) {
+                    const cVal = parseFloat(state.data[`C${r}`] || '0');
+                    visibleRows.push({ rowNum: r, cValue: cVal });
                 }
             }
+            
+            // 按C列数值从大到小排序
+            visibleRows.sort((a, b) => b.cValue - a.cValue);
+            
+            // 获取tbody并重新排列行
+            const tbody = document.getElementById('tableBody');
+            const rowsMap = new Map();
+            
+            // 收集所有行
+            for (let r = 1; r <= state.rows; r++) {
+                const row = document.querySelector(`tr[data-row-num="${r}"]`);
+                if (row) {
+                    rowsMap.set(r, row);
+                }
+            }
+            
+            // 清空tbody
+            tbody.innerHTML = '';
+            
+            // 按排序后的顺序添加可见行
+            visibleRows.forEach(({ rowNum }) => {
+                const row = rowsMap.get(rowNum);
+                if (row) {
+                    row.classList.remove('hidden-row');
+                    tbody.appendChild(row);
+                }
+            });
+            
+            // 添加隐藏的行（保持原始顺序）
+            for (let r = 1; r <= state.rows; r++) {
+                if (!visibleRows.some(v => v.rowNum === r)) {
+                    const row = rowsMap.get(r);
+                    if (row) {
+                        row.classList.add('hidden-row');
+                        tbody.appendChild(row);
+                    }
+                }
+            }
+            
             if (!keepSearchHighlight) {
-                showToast(`筛选显示 ${visibleCount} 行`);
+                showToast(`筛选显示 ${visibleRows.length} 行，已按C列降序排列`);
             }
         }
 
         function clearFilter() {
+            // 恢复原始行顺序
+            restoreOriginalRowOrder();
+            
+            // 显示所有行
+            document.querySelectorAll('#tableBody tr').forEach(tr => {
+                tr.classList.remove('hidden-row');
+            });
+            
+            // 如果有搜索词，重新应用搜索
             if (state.searchTerm) {
-                document.querySelectorAll('#tableBody tr').forEach((tr, idx) => {
-                    const rowNum = idx + 1;
-                    if (state.filteredRows.has(rowNum)) {
-                        tr.classList.remove('hidden-row');
-                    } else {
-                        tr.classList.add('hidden-row');
-                    }
-                });
-            } else {
-                document.querySelectorAll('#tableBody tr').forEach(tr => {
-                    tr.classList.remove('hidden-row');
-                });
+                performSearch();
             }
         }
 
@@ -1336,6 +1522,10 @@
                 }
                 calculateDColumn();
                 checkDuplicates();
+                // 编辑后自动调整该列宽度（如果不是C-F列）
+                if (!CONFIG.noResizeCols.includes(col)) {
+                    setTimeout(() => resizeSingleColumn(col), 0);
+                }
                 saveToHistory(ACTION_TYPES.EDIT_CELL, { 
                     cellId, 
                     oldValue, 
@@ -1584,11 +1774,14 @@
                 const isMeta = idx >= 20;
                 const isReadOnly = CONFIG.readOnlyCol.includes(col);
                 const cellId = `${col}${state.rows}`;
+                const isFixed = CONFIG.noResizeCols.includes(col);
                 const width = getColWidth(col, idx);
+                const widthStyle = isFixed ? `width: ${width}px; min-width: ${width}px; max-width: ${width}px;` : `min-width: ${width}px;`;
+                
                 html += `
                     <td data-row="${r}" data-col="${col}" data-id="${cellId}" 
                         class="${isMeta ? 'meta-col' : ''} ${isReadOnly ? '' : 'editable'}"
-                        style="width: ${width}px; min-width: ${width}px; max-width: ${width}px;"
+                        style="${widthStyle}"
                         onclick="handleCellClick(event, '${cellId}')"
                         onmouseenter="highlightRow(${r}); showCommentTooltip(event, '${cellId}')"
                         onmouseleave="clearHighlight(); hideCommentTooltip()">
@@ -1942,6 +2135,8 @@
                 calculateLHeader();
                 calculateDColumn();
                 checkDuplicates();
+                // 导入后自动调整列宽
+                setTimeout(() => autoResizeColumns(), 100);
                 saveToHistory(ACTION_TYPES.IMPORT, { 
                     rowCount: rows.length,
                     previousState: importState,
@@ -1998,7 +2193,7 @@
                     data: state.data,
                     headerData: state.headerData,
                     rows: state.rows,
-                    version: '2.5'
+                    version: '2.6'
                 };
                 localStorage.setItem(CONFIG.storageKey, JSON.stringify(data));
             } catch (e) {
@@ -2112,6 +2307,20 @@
         function closeCommentPopup() {
             document.getElementById('commentPopup').classList.remove('show');
             document.getElementById('modalOverlay').classList.remove('show');
+        }
+
+        // 新增：双击列标题自动调整该列宽度
+        function initColumnResizeEvents() {
+            const headers = document.querySelectorAll('th.col-header');
+            headers.forEach(th => {
+                const col = th.dataset.col;
+                if (CONFIG.noResizeCols.includes(col)) return; // 跳过C-F列
+                
+                th.addEventListener('dblclick', (e) => {
+                    if (e.target.classList.contains('header-text')) return; // 双击标题文字时编辑
+                    resizeSingleColumn(col);
+                });
+            });
         }
     </script>
 </body>
