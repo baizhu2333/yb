@@ -97,6 +97,19 @@
             cursor: not-allowed;
         }
 
+        /* 新增：导入文件名显示样式 */
+        .import-filename {
+            font-size: 13px;
+            color: #666;
+            max-width: 200px;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+            padding: 0 10px;
+            border-left: 1px solid #e0e0e0;
+            margin-left: 5px;
+        }
+
         #searchInput {
             width: 356px;
             padding: 0 14.26px;
@@ -277,6 +290,44 @@
         td[data-col="G"] .cell-content {
             font-size: 17.44px !important;
             line-height: 21.98px !important;
+        }
+
+        /* H列及之后（H-AN）内容字体调小一号（14.44px），标题保持16.63px不变 */
+        td[data-col="H"] .cell-content,
+        td[data-col="I"] .cell-content,
+        td[data-col="J"] .cell-content,
+        td[data-col="K"] .cell-content,
+        td[data-col="L"] .cell-content,
+        td[data-col="M"] .cell-content,
+        td[data-col="N"] .cell-content,
+        td[data-col="O"] .cell-content,
+        td[data-col="P"] .cell-content,
+        td[data-col="Q"] .cell-content,
+        td[data-col="R"] .cell-content,
+        td[data-col="S"] .cell-content,
+        td[data-col="T"] .cell-content,
+        td[data-col="U"] .cell-content,
+        td[data-col="V"] .cell-content,
+        td[data-col="W"] .cell-content,
+        td[data-col="X"] .cell-content,
+        td[data-col="Y"] .cell-content,
+        td[data-col="Z"] .cell-content,
+        td[data-col="AA"] .cell-content,
+        td[data-col="AB"] .cell-content,
+        td[data-col="AC"] .cell-content,
+        td[data-col="AD"] .cell-content,
+        td[data-col="AE"] .cell-content,
+        td[data-col="AF"] .cell-content,
+        td[data-col="AG"] .cell-content,
+        td[data-col="AH"] .cell-content,
+        td[data-col="AI"] .cell-content,
+        td[data-col="AJ"] .cell-content,
+        td[data-col="AK"] .cell-content,
+        td[data-col="AL"] .cell-content,
+        td[data-col="AM"] .cell-content,
+        td[data-col="AN"] .cell-content {
+            font-size: 14.44px !important;
+            line-height: 18.98px !important;
         }
 
         /* 可编辑标题 */
@@ -620,9 +671,12 @@
         </div>
 
         <div class="ribbon-group">
-            <button class="btn" id="addRowBtn">➕ 新增行</button>
+            <!-- 修改：新增药品（原新增行） -->
+            <button class="btn" id="addRowBtn">➕ 新增药品</button>
             <button class="btn" id="undoBtn" disabled>↩️ 返回上一步</button>
             <button class="btn" id="redoBtn" disabled>↪️ 恢复下一步</button>
+            <!-- 新增：导入文件名显示 -->
+            <span class="import-filename" id="importFilename" title=""></span>
         </div>
 
         <div style="flex: 1;"></div>
@@ -713,7 +767,8 @@
             lastAction: null,
             scrollPosition: { top: 0, left: 0 },
             colWidths: {}, // 存储各列计算后的宽度
-            originalRowOrder: [] // 存储原始行顺序，用于恢复
+            originalRowOrder: [], // 存储原始行顺序，用于恢复
+            lastImportFilename: '' // 新增：存储最后导入的文件名
         };
 
         const ACTION_TYPES = {
@@ -2137,6 +2192,13 @@
                 checkDuplicates();
                 // 导入后自动调整列宽
                 setTimeout(() => autoResizeColumns(), 100);
+                
+                // 新增：保存并显示文件名
+                state.lastImportFilename = file.name;
+                const filenameDisplay = document.getElementById('importFilename');
+                filenameDisplay.textContent = file.name;
+                filenameDisplay.title = file.name;
+                
                 saveToHistory(ACTION_TYPES.IMPORT, { 
                     rowCount: rows.length,
                     previousState: importState,
@@ -2193,6 +2255,7 @@
                     data: state.data,
                     headerData: state.headerData,
                     rows: state.rows,
+                    lastImportFilename: state.lastImportFilename,
                     version: '2.6'
                 };
                 localStorage.setItem(CONFIG.storageKey, JSON.stringify(data));
@@ -2209,6 +2272,13 @@
                 state.data = parsed.data || {};
                 state.headerData = parsed.headerData || {};
                 state.rows = parsed.rows || 100;
+                // 新增：恢复文件名显示
+                if (parsed.lastImportFilename) {
+                    state.lastImportFilename = parsed.lastImportFilename;
+                    const filenameDisplay = document.getElementById('importFilename');
+                    filenameDisplay.textContent = parsed.lastImportFilename;
+                    filenameDisplay.title = parsed.lastImportFilename;
+                }
                 renderEmptyRows();
                 Object.entries(state.headerData).forEach(([col, value]) => {
                     const th = document.querySelector(`th[data-col="${col}"] .header-text`);
