@@ -97,11 +97,29 @@
             cursor: not-allowed;
         }
 
-        /* 新增：导入文件名显示样式 */
+        /* 新增：筛选重复项按钮样式 */
+        .btn-filter-duplicate {
+            background: #9333ea;
+            color: white;
+            border-color: #7c3aed;
+            font-size: 13px;
+            padding: 7.13px 12px;
+        }
+
+        .btn-filter-duplicate:hover {
+            background: #7c3aed;
+        }
+
+        .btn-filter-duplicate.active {
+            background: #c084fc;
+            border-color: #a855f7;
+        }
+
+        /* 导入文件名显示样式 */
         .import-filename {
             font-size: 13px;
             color: #666;
-            max-width: 200px;
+            max-width: 150px;
             overflow: hidden;
             text-overflow: ellipsis;
             white-space: nowrap;
@@ -185,14 +203,14 @@
             white-space: nowrap; /* 添加：防止标题换行 */
         }
 
-        /* 序号列 */
+        /* 序号列 - 字体调小一号（14.63px） */
         .sheet-table th.row-header {
             left: 0;
             width: 43.2px;
             min-width: 43.2px;
             height: 24.73px;
             line-height: 24.73px;
-            font-size: 16.63px;
+            font-size: 14.63px; /* 修改：从16.63px调小一号 */
             border-right: 2px solid #c0c0c0;
             cursor: pointer;
             background: #f0f9e8;
@@ -385,14 +403,14 @@
             background-color: #e3f2fd !important;
         }
 
-        /* 备注指示器 */
+        /* 备注指示器 - 改为紫色 */
         .comment-indicator {
             position: absolute;
             top: 1.08px;
             right: 1.08px;
             width: 10.8px;
             height: 10.8px;
-            background-color: #ef5350;
+            background-color: #9333ea; /* 修改：从#ef5350红色改为#9333ea紫色 */
             border-radius: 50%;
             z-index: 1;
             pointer-events: none;
@@ -677,6 +695,8 @@
             <button class="btn" id="redoBtn" disabled>↪️ 恢复下一步</button>
             <!-- 新增：导入文件名显示 -->
             <span class="import-filename" id="importFilename" title=""></span>
+            <!-- 新增：筛选重复项按钮 -->
+            <button class="btn btn-filter-duplicate" id="filterDuplicateBtn" title="显示所有重复项">🔍 重复项</button>
         </div>
 
         <div style="flex: 1;"></div>
@@ -724,7 +744,7 @@
             countColForD: [],
             noMetaCols: ['C', 'D', 'E', 'F', 'G'],
             noResizeCols: ['C', 'D', 'E', 'F'], // C-F列不自动调整
-            storageKey: 'medicine_excel_data_v2_6',
+            storageKey: 'medicine_excel_data_v2_7',
             metaDataSeparator: '|',
             batchSize: 50,
             maxHistory: 20,
@@ -768,7 +788,8 @@
             scrollPosition: { top: 0, left: 0 },
             colWidths: {}, // 存储各列计算后的宽度
             originalRowOrder: [], // 存储原始行顺序，用于恢复
-            lastImportFilename: '' // 新增：存储最后导入的文件名
+            lastImportFilename: '', // 存储最后导入的文件名
+            isDuplicateFilterActive: false // 新增：是否处于重复项筛选状态
         };
 
         const ACTION_TYPES = {
@@ -786,7 +807,8 @@
             DELETE_MULTI: '批量删除',
             FORMAT_MULTI: '批量格式化',
             CLEAR_MULTI: '批量清空',
-            RESIZE_COLS: '调整列宽'
+            RESIZE_COLS: '调整列宽',
+            FILTER_DUPLICATE: '筛选重复项' // 新增
         };
 
         function generateColLetters() {
@@ -811,8 +833,9 @@
             const thead = document.getElementById('tableHead');
             const tbody = document.getElementById('tableBody');
             
+            // 修改：G列标题改为"备注（不放追溯码）"
             const headerText = {
-                A: '条码', B: '药品名称', C: '价', D: '无空', E: 'hyj', F: '上限', G: '备注',
+                A: '条码', B: '药品名称', C: '价', D: '无空', E: 'hyj', F: '上限', G: '备注（不放码',
                 H: 'Q02000000', I: '点击访问网站', J: '240', K: '126.8', L: '计算值',
                 M: '', N: '', O: '', P: '', Q: '', R: '', S: '', T: '',
                 U: 'A元', V: 'B元', W: 'C元', X: 'D元', Y: 'E元', Z: 'F元',
@@ -1093,7 +1116,8 @@
             document.getElementById('addRowBtn').addEventListener('click', handleAddRowClick);
             document.getElementById('undoBtn').addEventListener('click', undo);
             document.getElementById('redoBtn').addEventListener('click', redo);
-            // 已移除：document.getElementById('autoResizeBtn').addEventListener('click', autoResizeColumns);
+            // 新增：筛选重复项按钮事件
+            document.getElementById('filterDuplicateBtn').addEventListener('click', toggleDuplicateFilter);
             
             document.addEventListener('keydown', handleGlobalKeydown);
             document.addEventListener('contextmenu', handleGlobalRightClick);
@@ -1116,6 +1140,102 @@
             
             // 初始化列标题双击事件
             setTimeout(() => initColumnResizeEvents(), 100);
+        }
+
+        // ==================== 新增：筛选重复项功能 ====================
+        function toggleDuplicateFilter() {
+            const btn = document.getElementById('filterDuplicateBtn');
+            
+            if (state.isDuplicateFilterActive) {
+                // 关闭重复项筛选
+                state.isDuplicateFilterActive = false;
+                btn.classList.remove('active');
+                btn.textContent = '🔍 重复项';
+                
+                // 恢复原始显示
+                restoreOriginalRowOrder();
+                document.querySelectorAll('#tableBody tr').forEach(tr => {
+                    tr.classList.remove('hidden-row');
+                });
+                
+                // 如果有其他筛选状态，重新应用
+                if (state.isFilterActive) {
+                    applyFilter();
+                } else if (state.searchTerm) {
+                    performSearch();
+                }
+                
+                showToast('已取消重复项筛选');
+            } else {
+                // 开启重复项筛选
+                state.isDuplicateFilterActive = true;
+                btn.classList.add('active');
+                btn.textContent = '🔍 显示全部';
+                
+                // 先清除其他筛选状态
+                state.isFilterActive = false;
+                document.getElementById('filterToggle').classList.remove('btn-active');
+                document.getElementById('filterToggle').textContent = '筛选＞0';
+                
+                // 执行重复项筛选
+                filterDuplicateRows();
+            }
+            
+            saveToHistory(ACTION_TYPES.FILTER_DUPLICATE, { 
+                active: state.isDuplicateFilterActive 
+            });
+        }
+
+        function filterDuplicateRows() {
+            // 获取所有重复项
+            const duplicateRows = new Set();
+            const excludeCols = ['C','D','E','F','G'];
+            const valueMap = new Map();
+            
+            // 收集所有值及其所在行
+            for (let r = 1; r <= state.rows; r++) {
+                state.colLetters.forEach(col => {
+                    if (!isDataCol(col) || excludeCols.includes(col)) return;
+                    const cellId = `${col}${r}`;
+                    const value = (state.data[cellId] || '').trim();
+                    if (!value) return;
+                    const num = parseFloat(value);
+                    if (!isNaN(num) && num >= 0 && num <= 10) return;
+                    
+                    if (!valueMap.has(value)) {
+                        valueMap.set(value, new Set());
+                    }
+                    valueMap.get(value).add(r);
+                });
+            }
+            
+            // 找出重复的行
+            valueMap.forEach((rows, value) => {
+                if (rows.size > 1) {
+                    rows.forEach(rowNum => duplicateRows.add(rowNum));
+                }
+            });
+            
+            if (duplicateRows.size === 0) {
+                showToast('未发现重复项');
+                state.isDuplicateFilterActive = false;
+                document.getElementById('filterDuplicateBtn').classList.remove('active');
+                document.getElementById('filterDuplicateBtn').textContent = '🔍 重复项';
+                return;
+            }
+            
+            // 显示所有行，然后隐藏非重复行
+            restoreOriginalRowOrder();
+            document.querySelectorAll('#tableBody tr').forEach(tr => {
+                const rowNum = parseInt(tr.dataset.rowNum);
+                if (duplicateRows.has(rowNum)) {
+                    tr.classList.remove('hidden-row');
+                } else {
+                    tr.classList.add('hidden-row');
+                }
+            });
+            
+            showToast(`发现 ${duplicateRows.size} 行包含重复数据`);
         }
 
         function handleAddRowClick() {
@@ -1228,6 +1348,13 @@
                 const filterBtn = document.getElementById('filterToggle');
                 filterBtn.classList.remove('btn-active');
                 filterBtn.textContent = '筛选＞0';
+            }
+            
+            // 如果处于重复项筛选状态，关闭它
+            if (state.isDuplicateFilterActive) {
+                state.isDuplicateFilterActive = false;
+                document.getElementById('filterDuplicateBtn').classList.remove('active');
+                document.getElementById('filterDuplicateBtn').textContent = '🔍 重复项';
             }
             
             saveToHistory(ACTION_TYPES.SEARCH, { 
@@ -1353,6 +1480,14 @@
                     el.classList.remove('search-highlight');
                 });
                 state.filteredRows.clear();
+                
+                // 如果处于重复项筛选状态，关闭它
+                if (state.isDuplicateFilterActive) {
+                    state.isDuplicateFilterActive = false;
+                    document.getElementById('filterDuplicateBtn').classList.remove('active');
+                    document.getElementById('filterDuplicateBtn').textContent = '🔍 重复项';
+                }
+                
                 applyFilter();
             } else {
                 btn.textContent = '筛选＞0';
@@ -2256,7 +2391,7 @@
                     headerData: state.headerData,
                     rows: state.rows,
                     lastImportFilename: state.lastImportFilename,
-                    version: '2.6'
+                    version: '2.7'
                 };
                 localStorage.setItem(CONFIG.storageKey, JSON.stringify(data));
             } catch (e) {
