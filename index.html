@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>智能药品数据管理系统</title>
-    <script src="https://cdn.sheetjs.com/xlsx-0.20.1/package/dist/xlsx.full.min.js"></script>
+    <script src="https://cdn.sheetjs.com/xlsx-0.20.1/package/dist/xlsx.full.min.js "></script>
     <style>
         * {
             margin: 0;
@@ -115,11 +115,11 @@
             border-color: #a855f7;
         }
 
-        /* 导入文件名显示样式 */
+        /* 导入文件名显示样式 - 增加宽度避免被遮挡 */
         .import-filename {
             font-size: 13px;
             color: #666;
-            max-width: 150px;
+            max-width: 250px; /* 从150px增加到250px */
             overflow: hidden;
             text-overflow: ellipsis;
             white-space: nowrap;
@@ -377,12 +377,13 @@
             background: #e3f2fd !important;
         }
 
-        /* 标记颜色 */
+        /* 标记颜色 - 粉色改为更淡的颜色 */
         .cell-yellow { background-color: #fff200 !important; }
         .cell-red { background-color: #ef5350 !important; color: white !important; }
-        .cell-pink { background-color: #f8bbd9 !important; }
+        .cell-pink { background-color: #fce7f3 !important; } /* 修改：从#f8bbd9改为更淡的#fce7f3 */
         .duplicate-cell { background-color: #ef5350 !important; color: white !important; }
-        .search-highlight { background-color: #fef08a !important; }
+        /* 移除搜索高亮样式 - 不再使用黄色高亮 */
+        /* .search-highlight { background-color: #fef08a !important; } */
 
         /* 行高亮效果 - 淡蓝色背景 */
         tr.row-highlight td {
@@ -393,8 +394,7 @@
         tr.row-highlight td.cell-yellow,
         tr.row-highlight td.cell-red,
         tr.row-highlight td.cell-pink,
-        tr.row-highlight td.duplicate-cell,
-        tr.row-highlight td.search-highlight {
+        tr.row-highlight td.duplicate-cell {
             background-color: inherit !important;
         }
 
@@ -442,15 +442,16 @@
             background-color: #f0f0f0;
         }
 
-        /* 标粉菜单项特殊样式 */
+        /* 标粉菜单项特殊样式 - 更新为新的淡粉色 */
         .context-menu-item.pink-item::before {
             content: '';
             display: inline-block;
             width: 17.28px;
             height: 17.28px;
-            background-color: #f8bbd9;
+            background-color: #fce7f3; /* 修改：与.cell-pink保持一致 */
             border-radius: 3.89px;
             margin-right: 4.32px;
+            border: 1px solid #ddd; /* 添加边框以便在白色背景上可见 */
         }
 
         .context-menu-separator {
@@ -1086,7 +1087,7 @@
         }
 
         function openWebsite() {
-            window.open('https://www.mashangfangxin.com/', '_blank', 'noopener,noreferrer');
+            window.open('https://www.mashangfangxin.com/ ', '_blank', 'noopener,noreferrer');
         }
 
         function initEvents() {
@@ -1298,7 +1299,7 @@
             
             state.searchTerm = term;
             
-            // 清除之前的高亮
+            // 清除之前的高亮（不再添加新的高亮）
             document.querySelectorAll('.search-highlight').forEach(el => {
                 el.classList.remove('search-highlight');
             });
@@ -1319,16 +1320,7 @@
                 if (aVal.includes(term) || bVal.includes(term)) {
                     state.filteredRows.add(r);
                     matchedRows.push(r);
-                    
-                    // 添加高亮
-                    if (aVal.includes(term)) {
-                        const cellA = document.getElementById(`cell-A${r}`);
-                        if (cellA) cellA.classList.add('search-highlight');
-                    }
-                    if (bVal.includes(term)) {
-                        const cellB = document.getElementById(`cell-B${r}`);
-                        if (cellB) cellB.classList.add('search-highlight');
-                    }
+                    // 不再添加黄色高亮
                 }
             }
             
@@ -1384,6 +1376,7 @@
             state.searchTerm = '';
             state.filteredRows.clear();
             
+            // 清除所有高亮（包括搜索高亮）
             document.querySelectorAll('.search-highlight').forEach(el => {
                 el.classList.remove('search-highlight');
             });
@@ -1571,34 +1564,80 @@
             }
         }
 
+        // ==================== 修改：Ctrl多选功能修复 ====================
         function handleCellClick(e, cellId) {
             e.stopPropagation();
             const cell = document.getElementById(`cell-${cellId}`);
             const td = cell.parentElement;
-            if (e.ctrlKey) {
-                toggleCellSelection(td);
+            const col = cellId.match(/[A-Z]+/)[0];
+            
+            if (e.ctrlKey || e.metaKey) {
+                // Ctrl+点击：切换选中状态（多选）
+                e.preventDefault();
+                if (state.selectedCells.has(cellId)) {
+                    // 如果已选中，则取消选中
+                    state.selectedCells.delete(cellId);
+                    cell.classList.remove('selected');
+                    // 如果取消的是当前主选单元格，需要重新设置主选
+                    if (state.selectedCell === cellId) {
+                        if (state.selectedCells.size > 0) {
+                            state.selectedCell = Array.from(state.selectedCells)[0];
+                        } else {
+                            state.selectedCell = null;
+                        }
+                    }
+                } else {
+                    // 添加到多选
+                    if (!state.selectedCell) {
+                        state.selectedCell = cellId;
+                    }
+                    state.selectedCells.add(cellId);
+                    cell.classList.add('selected');
+                }
             } else if (e.shiftKey && state.selectedCell) {
+                // Shift+点击：范围选择
+                e.preventDefault();
                 selectCellRange(state.selectedCell, cellId);
             } else {
-                selectCell(cellId);
-                if (td.classList.contains('editable') && !td.classList.contains('meta-col')) {
-                    startEdit(cellId, e);
+                // 普通点击：单选
+                // 只有在不是多选模式下才清除其他选中
+                if (state.selectedCells.size <= 1) {
+                    selectCell(cellId);
+                } else {
+                    // 如果当前是多选状态，点击新单元格则切换到单选模式
+                    clearAllSelections();
+                    selectCell(cellId);
+                }
+                
+                // 如果是可编辑单元格，开始编辑
+                if (td.classList.contains('editable') && !td.classList.contains('meta-col') && !CONFIG.readOnlyCol.includes(col)) {
+                    // 延迟一点开始编辑，避免与双击冲突
+                    setTimeout(() => {
+                        if (!state.editingCell) {
+                            startEdit(cellId, e);
+                        }
+                    }, 10);
                 }
             }
         }
 
         function selectCell(cellId) {
-            document.querySelectorAll('.cell-content.selected').forEach(el => {
-                el.classList.remove('selected');
-            });
-            document.querySelectorAll('tr.row-selected').forEach(tr => {
-                tr.classList.remove('row-selected');
-            });
-            state.selectedCells.clear();
+            // 只有在没有按住Ctrl时才清除其他选中
+            if (state.selectedCells.size === 0 || !event || (!event.ctrlKey && !event.metaKey)) {
+                document.querySelectorAll('.cell-content.selected').forEach(el => {
+                    el.classList.remove('selected');
+                });
+                document.querySelectorAll('tr.row-selected').forEach(tr => {
+                    tr.classList.remove('row-selected');
+                });
+                state.selectedCells.clear();
+            }
+            
             state.selectedCell = cellId;
             const cell = document.getElementById(`cell-${cellId}`);
             if (cell) {
                 cell.classList.add('selected');
+                state.selectedCells.add(cellId);
                 cell.focus();
             }
         }
@@ -1632,8 +1671,42 @@
         }
 
         function selectCellRange(startId, endId) {
+            // 解析起始和结束位置
+            const startMatch = startId.match(/([A-Z]+)(\d+)/);
+            const endMatch = endId.match(/([A-Z]+)(\d+)/);
+            
+            if (!startMatch || !endMatch) return;
+            
+            const startCol = startMatch[1];
+            const startRow = parseInt(startMatch[2]);
+            const endCol = endMatch[1];
+            const endRow = parseInt(endMatch[2]);
+            
+            const startColIdx = state.colLetters.indexOf(startCol);
+            const endColIdx = state.colLetters.indexOf(endCol);
+            
+            const minCol = Math.min(startColIdx, endColIdx);
+            const maxCol = Math.max(startColIdx, endColIdx);
+            const minRow = Math.min(startRow, endRow);
+            const maxRow = Math.max(startRow, endRow);
+            
+            // 清除之前的选择
             clearAllSelections();
-            selectCell(endId);
+            
+            // 选择范围内的所有单元格
+            for (let r = minRow; r <= maxRow; r++) {
+                for (let c = minCol; c <= maxCol; c++) {
+                    const col = state.colLetters[c];
+                    const cellId = `${col}${r}`;
+                    const cell = document.getElementById(`cell-${cellId}`);
+                    if (cell) {
+                        state.selectedCells.add(cellId);
+                        cell.classList.add('selected');
+                    }
+                }
+            }
+            
+            state.selectedCell = endId;
         }
 
         function clearAllSelections() {
@@ -1855,37 +1928,58 @@
             });
         }
 
+        // ==================== 修改：批量格式化支持多选 ====================
         function formatCell(color) {
+            // 确定目标单元格：优先使用多选集合，否则使用单选单元格
             const targets = state.selectedCells.size > 0 ? 
                 Array.from(state.selectedCells) : 
                 (state.selectedCell ? [state.selectedCell] : []);
+            
             if (targets.length === 0) return;
+            
             const changes = [];
             targets.forEach(cellId => {
                 const col = cellId.match(/[A-Z]+/)[0];
                 if (CONFIG.noMetaCols.includes(col)) return;
                 const cell = document.getElementById(`cell-${cellId}`);
+                if (!cell) return;
+                
                 const hadColor = cell.classList.contains('cell-yellow') || 
                                 cell.classList.contains('cell-red') || 
                                 cell.classList.contains('cell-pink');
                 const oldColor = hadColor ? (cell.classList.contains('cell-yellow') ? '黄色' : 
                                             cell.classList.contains('cell-red') ? '红色' : '粉色') : null;
+                
+                // 清除所有颜色
                 cell.classList.remove('cell-yellow', 'cell-red', 'cell-pink');
+                
+                // 应用新颜色（如果不是清除操作）
                 if (color !== 'clear') {
                     cell.classList.add(`cell-${color}`);
                 }
+                
+                // 同步元数据
                 if (isDataCol(col) && !CONFIG.noMetaCols.includes(col)) {
                     syncMetaData(cellId);
                 }
+                
                 changes.push({ cellId, oldColor, newColor: color !== 'clear' ? color : null });
             });
+            
+            // 确定操作类型
             const actionType = targets.length > 1 ? ACTION_TYPES.FORMAT_MULTI : ACTION_TYPES.FORMAT_CELL;
+            
             saveToHistory(actionType, { 
                 color, 
                 cellCount: targets.length,
                 changes,
                 firstCell: targets[0]
             });
+            
+            // 显示提示
+            if (targets.length > 1) {
+                showToast(`已批量标注 ${targets.length} 个单元格`);
+            }
         }
 
         function clearCellFormat() {
@@ -1893,14 +1987,18 @@
         }
 
         function addComment() {
-            const cellId = state.selectedCell;
-            if (!cellId) return;
-            const col = cellId.match(/[A-Z]+/)[0];
+            // 优先对多选中的第一个单元格添加备注，或当前单选单元格
+            const targetCell = state.selectedCells.size > 0 ? 
+                Array.from(state.selectedCells)[0] : state.selectedCell;
+            
+            if (!targetCell) return;
+            
+            const col = targetCell.match(/[A-Z]+/)[0];
             if (CONFIG.noMetaCols.includes(col)) {
                 showToast('C-G列不支持备注功能');
                 return;
             }
-            const cell = document.getElementById(`cell-${cellId}`);
+            const cell = document.getElementById(`cell-${targetCell}`);
             const currentComment = cell.dataset.comment || '';
             const newComment = prompt('请输入备注：', currentComment);
             if (newComment === null) return;
@@ -1916,27 +2014,39 @@
                 clearComment();
                 return;
             }
-            syncMetaData(cellId);
-            saveToHistory(ACTION_TYPES.ADD_COMMENT, { cellId, oldComment, newComment: newComment.trim() });
+            syncMetaData(targetCell);
+            saveToHistory(ACTION_TYPES.ADD_COMMENT, { cellId: targetCell, oldComment, newComment: newComment.trim() });
         }
 
         function clearComment() {
-            const cellId = state.selectedCell;
-            if (!cellId) return;
-            const col = cellId.match(/[A-Z]+/)[0];
+            const targetCell = state.selectedCells.size > 0 ? 
+                Array.from(state.selectedCells)[0] : state.selectedCell;
+            
+            if (!targetCell) return;
+            
+            const col = targetCell.match(/[A-Z]+/)[0];
             if (CONFIG.noMetaCols.includes(col)) return;
-            const cell = document.getElementById(`cell-${cellId}`);
+            const cell = document.getElementById(`cell-${targetCell}`);
             const oldComment = cell.dataset.comment || '';
             delete cell.dataset.comment;
             const indicator = cell.querySelector('.comment-indicator');
             if (indicator) indicator.remove();
-            syncMetaData(cellId);
-            saveToHistory(ACTION_TYPES.CLEAR_COMMENT, { cellId, oldComment });
+            syncMetaData(targetCell);
+            saveToHistory(ACTION_TYPES.CLEAR_COMMENT, { cellId: targetCell, oldComment });
         }
 
         function showContextMenu(e, cellId) {
             e.preventDefault();
-            selectCell(cellId);
+            
+            // 如果右键点击的单元格不在当前选区中，则选中它
+            if (!state.selectedCells.has(cellId) && state.selectedCell !== cellId) {
+                // 按住Ctrl时不清除其他选择，否则单选
+                if (!e.ctrlKey && !e.metaKey) {
+                    clearAllSelections();
+                }
+                selectCell(cellId);
+            }
+            
             const menu = document.getElementById('contextMenu');
             let menuX = e.pageX;
             let menuY = e.pageY;
@@ -2185,9 +2295,11 @@
         }
 
         function applyCombinedFilter() {
+            // 清除搜索高亮（因为不再使用高亮）
             document.querySelectorAll('.search-highlight').forEach(el => {
                 el.classList.remove('search-highlight');
             });
+            
             for (let r = 1; r <= state.rows; r++) {
                 const row = document.querySelector(`tr[data-row-num="${r}"]`);
                 if (!row) continue;
@@ -2201,18 +2313,8 @@
                 if (state.searchTerm && !shouldHide) {
                     if (!state.filteredRows.has(r)) {
                         shouldHide = true;
-                    } else {
-                        const aVal = (state.data[`A${r}`] || '').toLowerCase();
-                        const bVal = (state.data[`B${r}`] || '').toLowerCase();
-                        if (aVal.includes(state.searchTerm.toLowerCase())) {
-                            const cellA = document.getElementById(`cell-A${r}`);
-                            if (cellA) cellA.classList.add('search-highlight');
-                        }
-                        if (bVal.includes(state.searchTerm.toLowerCase())) {
-                            const cellB = document.getElementById(`cell-B${r}`);
-                            if (cellB) cellB.classList.add('search-highlight');
-                        }
                     }
+                    // 不再添加黄色高亮
                 }
                 if (shouldHide) {
                     row.classList.add('hidden-row');
@@ -2491,7 +2593,7 @@
             } else if (e.ctrlKey && e.key === 'y') {
                 e.preventDefault();
                 redo();
-            } else if (e.key === 'Delete' && state.selectedCell && !state.editingCell) {
+            } else if (e.key === 'Delete' && (state.selectedCell || state.selectedCells.size > 0) && !state.editingCell) {
                 e.preventDefault();
                 clearSelectedCells();
             } else if (e.key === 'F2' && state.selectedCell && !state.editingCell) {
