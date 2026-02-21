@@ -2427,6 +2427,10 @@
                 calculateLHeader();
                 calculateDColumn();
                 checkDuplicates();
+                
+                // ==================== 关键修复：导入后还原颜色和备注 ====================
+                restoreStyles(); // 添加这一行，根据元数据列还原颜色和备注
+                
                 // 导入后自动调整列宽
                 setTimeout(() => autoResizeColumns(), 100);
                 
