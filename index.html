@@ -298,12 +298,8 @@
             min-width: 71.28px !important;
         }
 
-        /* A列字体小2号（15.44px），B-G列保持大一号（17.44px） */
-        td[data-col="A"] .cell-content {
-            font-size: 15.44px !important; /* 修改：从17.44px改为15.44px，小2号 */
-            line-height: 19.98px !important; /* 相应调整行高 */
-        }
-
+        /* A-G列字体大一号 */
+        td[data-col="A"] .cell-content,
         td[data-col="B"] .cell-content,
         td[data-col="C"] .cell-content,
         td[data-col="D"] .cell-content,
@@ -633,7 +629,7 @@
             display: none !important;
         }
 
-        /* 滚动条 - 改为绿色 */
+        /* 滚动条 */
         ::-webkit-scrollbar {
             width: 14.26px;
             height: 14.26px;
@@ -644,13 +640,13 @@
         }
 
         ::-webkit-scrollbar-thumb {
-            background-color: #4ade80; /* 修改：绿色 */
+            background-color: #c1c1c1;
             border-radius: 7.13px;
             border: 3.56px solid #f1f1f1;
         }
 
         ::-webkit-scrollbar-thumb:hover {
-            background-color: #22c55e; /* 修改：深绿色悬停 */
+            background-color: #a1a1a1;
         }
 
         .hidden { display: none !important; }
@@ -757,9 +753,7 @@
             importChunkSize: 100,
             searchJumpStartCol: 'H',
             minColWidth: 50, // 最小列宽
-            maxColWidth: 400, // 最大列宽
-            autoSaveHour: 22, // 自动保存时间：22点（晚上10点）
-            autoSaveMinute: 30 // 自动保存分钟：30分
+            maxColWidth: 400 // 最大列宽
         };
 
         for(let i='H'.charCodeAt(0); i<='T'.charCodeAt(0); i++) {
@@ -796,8 +790,7 @@
             colWidths: {}, // 存储各列计算后的宽度
             originalRowOrder: [], // 存储原始行顺序，用于恢复
             lastImportFilename: '', // 存储最后导入的文件名
-            isDuplicateFilterActive: false, // 新增：是否处于重复项筛选状态
-            autoSaveTimer: null // 新增：自动保存定时器
+            isDuplicateFilterActive: false // 新增：是否处于重复项筛选状态
         };
 
         const ACTION_TYPES = {
@@ -816,8 +809,7 @@
             FORMAT_MULTI: '批量格式化',
             CLEAR_MULTI: '批量清空',
             RESIZE_COLS: '调整列宽',
-            FILTER_DUPLICATE: '筛选重复项', // 新增
-            AUTO_SAVE: '自动保存' // 新增
+            FILTER_DUPLICATE: '筛选重复项' // 新增
         };
 
         function generateColLetters() {
@@ -836,106 +828,7 @@
             // 初始化后自动调整一次列宽
             setTimeout(() => autoResizeColumns(), 100);
             saveToHistory('初始化', null);
-            
-            // 新增：启动自动保存定时器
-            initAutoSave();
         });
-
-        // ==================== 新增：自动保存功能 ====================
-        function initAutoSave() {
-            // 清除现有定时器
-            if (state.autoSaveTimer) {
-                clearInterval(state.autoSaveTimer);
-            }
-            
-            // 计算到下一个10点半的时间
-            function getNextSaveTime() {
-                const now = new Date();
-                const target = new Date();
-                target.setHours(CONFIG.autoSaveHour, CONFIG.autoSaveMinute, 0, 0);
-                
-                // 如果今天的时间已过，设置为明天
-                if (target <= now) {
-                    target.setDate(target.getDate() + 1);
-                }
-                
-                return target - now;
-            }
-            
-            // 设置首次定时
-            const firstDelay = getNextSaveTime();
-            
-            setTimeout(() => {
-                performAutoSave();
-                // 之后每24小时执行一次
-                state.autoSaveTimer = setInterval(performAutoSave, 24 * 60 * 60 * 1000);
-            }, firstDelay);
-            
-            console.log(`自动保存已设置，将在 ${new Date(Date.now() + firstDelay).toLocaleString()} 首次执行`);
-        }
-
-        function performAutoSave() {
-            // 检查是否有数据需要保存
-            let hasData = false;
-            for (let r = 1; r <= state.rows; r++) {
-                for (let c = 0; c < state.colLetters.length; c++) {
-                    const col = state.colLetters[c];
-                    const cellId = `${col}${r}`;
-                    if (state.data[cellId] && state.data[cellId].trim() !== '') {
-                        hasData = true;
-                        break;
-                    }
-                }
-                if (hasData) break;
-            }
-            
-            if (!hasData) {
-                console.log('自动保存：无数据，跳过');
-                return;
-            }
-            
-            try {
-                const data = [];
-                const header = state.colLetters.map(col => state.headerData[col] || col);
-                data.push(header);
-                for (let r = 1; r <= state.rows; r++) {
-                    const row = [];
-                    let hasRowData = false;
-                    state.colLetters.forEach(col => {
-                        const val = state.data[`${col}${r}`] || '';
-                        row.push(val);
-                        if (val) hasRowData = true;
-                    });
-                    if (hasRowData) data.push(row);
-                }
-                const ws = XLSX.utils.aoa_to_sheet(data);
-                const wb = XLSX.utils.book_new();
-                XLSX.utils.book_append_sheet(wb, ws, '药品数据');
-                
-                const now = new Date();
-                const year = now.getFullYear();
-                const month = String(now.getMonth() + 1).padStart(2, '0');
-                const day = String(now.getDate()).padStart(2, '0');
-                const hours = String(now.getHours()).padStart(2, '0');
-                const minutes = String(now.getMinutes()).padStart(2, '0');
-                const filename = `yb数据${year}${month}${day} ${hours}${minutes}_自动保存.xlsx`;
-                
-                XLSX.writeFile(wb, filename);
-                
-                // 记录到历史
-                saveToHistory(ACTION_TYPES.AUTO_SAVE, { 
-                    fileName: filename,
-                    rowCount: data.length - 1,
-                    timestamp: now.toISOString()
-                });
-                
-                showToast(`🕐 自动保存成功：${filename}`);
-                console.log(`自动保存完成：${filename}`);
-            } catch (err) {
-                console.error('自动保存失败:', err);
-                showToast('自动保存失败: ' + err.message);
-            }
-        }
 
         function initTable() {
             const thead = document.getElementById('tableHead');
@@ -1036,15 +929,7 @@
                 
                 let maxWidth = getColWidth(col, idx); // 默认最小宽度
                 const isMeta = idx >= 20;
-                // A列使用15.44px字体测量，B-G列使用17.44px
-                let fontSize;
-                if (col === 'A') {
-                    fontSize = 15.44;
-                } else if (['B','C','D','E','F','G'].includes(col)) {
-                    fontSize = 17.44;
-                } else {
-                    fontSize = isMeta ? 11.88 : 15.44;
-                }
+                const fontSize = isMeta ? 11.88 : (['A','B','C','D','E','F','G'].includes(col) ? 17.44 : 15.44);
                 context.font = `${fontSize}px "Microsoft YaHei", "Segoe UI", Arial, sans-serif`;
                 
                 // 1. 测量标题宽度
@@ -1090,15 +975,7 @@
             const context = canvas.getContext('2d');
             const idx = state.colLetters.indexOf(col);
             const isMeta = idx >= 20;
-            // A列使用15.44px字体测量
-            let fontSize;
-            if (col === 'A') {
-                fontSize = 15.44;
-            } else if (['B','C','D','E','F','G'].includes(col)) {
-                fontSize = 17.44;
-            } else {
-                fontSize = isMeta ? 11.88 : 15.44;
-            }
+            const fontSize = isMeta ? 11.88 : (['A','B','C','D','E','F','G'].includes(col) ? 17.44 : 15.44);
             context.font = `${fontSize}px "Microsoft YaHei", "Segoe UI", Arial, sans-serif`;
             
             let maxWidth = getColWidth(col, idx);
@@ -1260,13 +1137,7 @@
                     };
                 }
             });
-            window.addEventListener('beforeunload', () => {
-                saveToLocalStorage();
-                // 清除自动保存定时器
-                if (state.autoSaveTimer) {
-                    clearInterval(state.autoSaveTimer);
-                }
-            });
+            window.addEventListener('beforeunload', saveToLocalStorage);
             
             // 初始化列标题双击事件
             setTimeout(() => initColumnResizeEvents(), 100);
@@ -1923,7 +1794,7 @@
                     oldValue, 
                     newValue: value,
                     col,
-                    row: cellId.match(/\d+/)0]
+                    row: cellId.match(/\d+/)[0]
                 });
             }
             cell.contentEditable = false;
@@ -2557,7 +2428,7 @@
                 calculateDColumn();
                 checkDuplicates();
                 
-                // 关键修复：导入后还原颜色和备注
+                // ==================== 关键修复：导入后还原颜色和备注 ====================
                 restoreStyles(); // 添加这一行，根据元数据列还原颜色和备注
                 
                 // 导入后自动调整列宽
