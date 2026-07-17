@@ -1,2078 +1,2781 @@
 <!DOCTYPE html>
 <html lang="zh-CN">
-
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>中药计价系统</title>
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <title>智能药品数据管理系统</title>
+    <script src="https://cdn.sheetjs.com/xlsx-0.20.1/package/dist/xlsx.full.min.js"></script>
     <style>
         * {
             margin: 0;
             padding: 0;
             box-sizing: border-box;
-            font-family: 'Microsoft YaHei', sans-serif;
         }
-        
+
         body {
-            background-color: #E8F5E9;
-            color: #333;
-            line-height: 1.5;
-            padding: 10px;
-        }
-        
-        .container {
-            max-width: 1200px;
-            margin: 0 auto;
-        }
-        
-        .nav-tabs {
+            font-family: "Microsoft YaHei", "Segoe UI", Arial, sans-serif;
+            background: #f5f5f5;
+            height: 100vh;
             display: flex;
-            background: white;
-            border-radius: 8px;
+            flex-direction: column;
             overflow: hidden;
-            margin-bottom: 15px;
-            box-shadow: 0 1px 4px rgba(76, 175, 160, 0.1);
-            border: 1px solid #C8E6C9;
+            font-size: 15.44px;
         }
-        
-        .tab {
-            flex: 1;
-            padding: 10px;
-            text-align: center;
-            cursor: pointer;
-            font-weight: 600;
-            font-size: 14px;
-            transition: all 0.3s;
-            color: #666;
-        }
-        
-        .tab.active {
-            background-color: #80cbc4;
-            color: white;
-            text-shadow: 0 1px 1px rgba(0,0,0,0.1);
-        }
-        
-        .tab:hover:not(.active) {
-            background-color: #D0E8D0;
-        }
-        
-        .tab-content {
-            display: none;
-            background: white;
-            border-radius: 8px;
-            padding: 15px;
-            box-shadow: 0 2px 8px rgba(76, 175, 160, 0.08);
-            margin-bottom: 15px;
-            border: 1px solid #C8E6C9;
-        }
-        
-        .tab-content.active {
-            display: block;
-            animation: fadeIn 0.3s ease;
-        }
-        
-        @keyframes fadeIn {
-            from { opacity: 0; transform: translateY(5px); }
-            to { opacity: 1; transform: translateY(0); }
-        }
-        
-        /* 首页布局 - 左右分栏 */
-        .home-container {
+
+        /* 顶部工具栏 */
+        .ribbon {
+            background: #fff;
+            border-bottom: 1px solid #d4d4d4;
+            padding: 9.5px 14.26px;
             display: flex;
-            gap: 20px;
+            gap: 14.26px;
+            align-items: center;
+            box-shadow: 0 2.38px 4.75px rgba(0,0,0,0.05);
+            z-index: 100;
         }
-        
-        @media (max-width: 768px) {
-            .home-container {
-                flex-direction: column;
-            }
-        }
-        
-        .left-panel {
-            flex: 1;
+
+        .ribbon-group {
             display: flex;
-            flex-direction: column;
+            gap: 7.13px;
+            padding-right: 14.26px;
+            border-right: 1px solid #e0e0e0;
+            align-items: center;
         }
-        
-        .right-panel {
-            flex: 1;
-            display: flex;
-            flex-direction: column;
+
+        .ribbon-group:last-child {
+            border-right: none;
         }
-        
-        .input-section {
-            background-color: #E8F5E9;
-            border-radius: 8px;
-            padding: 20px;
-            margin-bottom: 15px;
-            border: 1px solid #C8E6C9;
-        }
-        
-        textarea {
-            width: 100%;
-            padding: 12px;
-            border: 1px solid #b2dfdb;
-            border-radius: 6px;
-            font-size: 14px;
-            resize: vertical;
-            min-height: 180px;
-            margin-bottom: 15px;
-            transition: all 0.3s;
-            background-color: white;
-            line-height: 1.6;
-        }
-        
-        textarea:focus {
-            outline: none;
-            border-color: #80cbc4;
-            box-shadow: 0 0 0 2px rgba(128, 203, 196, 0.2);
-        }
-        
-        .action-buttons {
-            display: flex;
-            gap: 10px;
-            margin-top: 15px;
-            flex-wrap: wrap;
-        }
-        
+
         .btn {
-            padding: 12px 24px;
-            border: none;
-            border-radius: 6px;
-            font-size: 14px;
-            font-weight: 600;
+            padding: 7.13px 16.63px;
+            border: 1px solid #d4d4d4;
+            background: #fff;
+            border-radius: 4.75px;
             cursor: pointer;
-            transition: all 0.3s;
+            font-size: 15.44px;
             display: flex;
             align-items: center;
-            justify-content: center;
-            gap: 8px;
-            flex: 1;
-        }
-        
-        .btn-primary {
-            background-color: #80cbc4;
-            color: white;
-        }
-        
-        .btn-primary:hover {
-            background-color: #6bb9b1;
-            transform: translateY(-2px);
-            box-shadow: 0 4px 8px rgba(128, 203, 196, 0.3);
-        }
-        
-        .btn-secondary {
-            background-color: #ffd54f;
+            gap: 7.13px;
+            transition: all 0.2s;
             color: #333;
+            height: 38px;
         }
-        
-        .btn-secondary:hover {
-            background-color: #ffca28;
-            transform: translateY(-2px);
+
+        .btn:hover {
+            background: #f0f0f0;
+            border-color: #b4b4b4;
         }
-        
-        .btn-outline {
-            background-color: transparent;
-            color: #80cbc4;
-            border: 2px solid #80cbc4;
+
+        .btn-primary {
+            background: #217346;
+            color: white;
+            border-color: #217346;
         }
-        
-        .btn-outline:hover {
-            background-color: rgba(128, 203, 196, 0.1);
+
+        .btn-primary:hover {
+            background: #1e623d;
         }
-        
-        .btn-sm {
-            padding: 6px 12px;
-            font-size: 12px;
-            flex: 0 0 auto;
+
+        .btn-warning {
+            background: #ff6b6b;
+            color: white;
+            border-color: #ff5252;
         }
-        
+
+        .btn-warning:hover {
+            background: #ff5252;
+        }
+
+        .btn-active {
+            background: #84cc16 !important;
+            color: white !important;
+            border-color: #65a30d !important;
+        }
+
         .btn:disabled {
             opacity: 0.5;
             cursor: not-allowed;
-            transform: none !important;
         }
-        
-        .results-section {
-            background-color: #E8F5E9;
-            border-radius: 8px;
-            padding: 20px;
-            border: 1px solid #C8E6C9;
-            height: 100%;
-            min-height: 400px;
-            display: flex;
-            flex-direction: column;
-        }
-        
-        .results-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 15px;
-            padding-bottom: 8px;
-            border-bottom: 2px solid #C8E6C9;
-        }
-        
-        .results-title {
-            color: #4a8c87;
-            font-size: 16px;
-            font-weight: 600;
-        }
-        
-        .price-toggle {
-            display: flex;
-            align-items: center;
-            gap: 8px;
-            cursor: pointer;
-            color: #80cbc4;
-            font-size: 13px;
-            padding: 6px 12px;
-            border-radius: 4px;
-            transition: all 0.3s;
-            background-color: rgba(128, 203, 196, 0.1);
-        }
-        
-        .price-toggle:hover {
-            background-color: rgba(128, 203, 196, 0.2);
-        }
-        
-        .results-table {
-            width: 100%;
-            border-collapse: collapse;
-            font-size: 13px;
-            flex-grow: 1;
-        }
-        
-        .results-table th {
-            background-color: #80cbc4;
+
+        /* 新增：筛选重复项按钮样式 */
+        .btn-filter-duplicate {
+            background: #9333ea;
             color: white;
-            text-align: left;
-            padding: 8px 8px;
-            font-weight: 600;
-            white-space: nowrap;
+            border-color: #7c3aed;
+            font-size: 13px;
+            padding: 7.13px 12px;
         }
-        
-        .results-table td {
-            padding: 4px 8px;
-            border-bottom: 1px solid #D0E8D0;
-            height: 28px;
+
+        .btn-filter-duplicate:hover {
+            background: #7c3aed;
+        }
+
+        .btn-filter-duplicate.active {
+            background: #c084fc;
+            border-color: #a855f7;
+        }
+
+        /* 导入文件名显示样式 - 增加宽度避免被遮挡 */
+        .import-filename {
+            font-size: 13px;
+            color: #666;
+            max-width: 250px; /* 从150px增加到250px */
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+            padding: 0 10px;
+            border-left: 1px solid #e0e0e0;
+            margin-left: 5px;
+        }
+
+        #searchInput {
+            width: 356px;
+            padding: 0 14.26px;
+            border: 1px solid #d4d4d4;
+            border-radius: 4.75px;
+            font-size: 15.44px;
+            height: 38px;
+            line-height: 38px;
+        }
+
+        #searchInput:focus {
+            outline: none;
+            border-color: #217346;
+            box-shadow: 0 0 0 3.56px rgba(33, 115, 70, 0.1);
+        }
+
+        /* 表格容器 */
+        .spreadsheet-container {
+            flex: 1;
+            overflow: auto;
             position: relative;
-            /* 防止换行 */
+            background: #fff;
+            transform-origin: top left;
+        }
+
+        /* Excel风格表格 - 修改为auto以支持自动调整 */
+        .sheet-table {
+            border-collapse: separate;
+            border-spacing: 0;
+            table-layout: auto; /* 修改：从fixed改为auto，支持自动调整 */
+            user-select: none;
+            font-size: 15.44px;
+            width: auto; /* 添加：让表格根据内容调整总宽度 */
+        }
+
+        .sheet-table th,
+        .sheet-table td {
+            border: 1px solid #d4d4d4;
+            padding: 0;
+            position: relative;
+            overflow: hidden;
+        }
+
+        /* 行列号样式 - 标题行字体大一号 */
+        .sheet-table th {
+            background: #f8f9fa;
+            color: #666;
+            font-weight: 600;
+            text-align: center;
+            position: sticky;
+            z-index: 10;
+            font-size: 16.63px;
+        }
+
+        .sheet-table th.corner {
+            background: #f0f0f0;
+            z-index: 20;
+            top: 0;
+            left: 0;
+            width: 43.2px;
+            min-width: 43.2px;
+        }
+
+        .sheet-table th.col-header {
+            top: 0;
+            min-width: 95.04px;
+            height: 24.73px;
+            line-height: 24.73px;
+            font-size: 16.63px;
+            border-bottom: 2px solid #c0c0c0;
+            background: #e5f5d7;
+            color: #3f6212;
+            white-space: nowrap; /* 添加：防止标题换行 */
+        }
+
+        /* 序号列 - 字体调小一号（14.63px） */
+        .sheet-table th.row-header {
+            left: 0;
+            width: 43.2px;
+            min-width: 43.2px;
+            height: 24.73px;
+            line-height: 24.73px;
+            font-size: 14.63px; /* 修改：从16.63px调小一号 */
+            border-right: 2px solid #c0c0c0;
+            cursor: pointer;
+            background: #f0f9e8;
+            color: #4d7c0f;
+            text-align: left;
+            padding-left: 4.32px;
+        }
+
+        .sheet-table th.row-header:hover {
+            background: #dcfce7;
+        }
+
+        /* 单元格样式 */
+        .sheet-table td {
+            min-width: 95.04px; /* 修改：只保留min-width，去掉固定width */
+            height: 24.73px;
+            background: #fff;
+            cursor: cell;
+            white-space: nowrap; /* 添加：防止内容换行 */
+        }
+
+        .cell-content {
+            width: 100%;
+            height: 100%;
+            padding: 2.38px 4.75px;
+            font-size: 15.44px;
+            line-height: 19.98px;
             white-space: nowrap;
             overflow: hidden;
             text-overflow: ellipsis;
-        }
-        
-        .results-table tr:nth-child(even) {
-            background-color: #F1F8E9;
-        }
-        
-        .results-table tr:hover {
-            background-color: #E0F2F1;
-        }
-        
-        .total-price {
-            text-align: right;
-            padding: 15px;
-            font-size: 18px;
-            font-weight: 700;
-            color: #4a8c87;
-            background-color: #E0F2F1;
-            border-radius: 6px;
-            margin-top: 15px;
-            border: 1px solid #C8E6C9;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-        }
-        
-        .total-info {
-            display: flex;
-            align-items: center;
-            gap: 15px;
-            flex-wrap: wrap;
-            width: 100%;
-            justify-content: space-between;
-        }
-        
-        .herb-count {
-            font-size: 14px;
-            color: #4a8c87;
-            font-weight: 600;
-            padding: 4px 12px;
-            background-color: rgba(128, 203, 196, 0.1);
-            border-radius: 4px;
-            display: flex;
-            align-items: center;
-            gap: 8px;
-        }
-        
-        .total-amount {
-            display: flex;
-            align-items: center;
-            gap: 10px;
-        }
-        
-        .copy-btn {
-            background-color: rgba(128, 203, 196, 0.2);
-            border: none;
-            border-radius: 4px;
-            padding: 2px 8px;
-            cursor: pointer;
-            color: #4a8c87;
-            font-size: 12px;
-            transition: all 0.3s;
-            display: flex;
-            align-items: center;
-            gap: 4px;
-            min-width: 50px;
-            justify-content: center;
-        }
-        
-        .copy-btn:hover {
-            background-color: rgba(128, 203, 196, 0.4);
-        }
-        
-        /* 后台管理布局优化 */
-        .admin-header {
-            display: flex;
-            gap: 10px;
-            margin-bottom: 15px;
-            align-items: center;
-            flex-wrap: wrap;
-        }
-        
-        .search-box {
-            flex: 1;
-            min-width: 200px;
-            position: relative;
-        }
-        
-        .search-box input {
-            width: 100%;
-            padding: 10px 15px 10px 38px;
-            border: 1px solid #b2dfdb;
-            border-radius: 6px;
-            font-size: 14px;
-            background-color: white;
-            transition: all 0.3s;
-        }
-        
-        .search-box input:focus {
             outline: none;
-            border-color: #80cbc4;
-            box-shadow: 0 0 0 2px rgba(128, 203, 196, 0.2);
-        }
-        
-        .search-icon {
-            position: absolute;
-            left: 12px;
-            top: 50%;
-            transform: translateY(-50%);
-            color: #80cbc4;
-            font-size: 14px;
-        }
-        
-        .admin-buttons {
-            display: flex;
-            gap: 10px;
-            flex-wrap: wrap;
-        }
-        
-        .price-list {
-            max-height: 500px;
-            overflow-y: auto;
-            border: 1px solid #C8E6C9;
-            border-radius: 6px;
-            background-color: white;
-        }
-        
-        .price-item {
-            display: grid;
-            grid-template-columns: 1.5fr 1fr 0.8fr 1.2fr 1.5fr 0.5fr;
-            gap: 10px;
-            padding: 10px;
-            border-bottom: 1px solid #D0E8D0;
-            align-items: center;
-            font-size: 13px;
-        }
-        
-        .price-item.header {
-            font-weight: 700;
-            background-color: #E0F2F1;
-            color: #4a8c87;
-            border-bottom: 2px solid #b2dfdb;
-            position: sticky;
-            top: 0;
-            z-index: 1;
-        }
-        
-        .price-item:last-child {
-            border-bottom: none;
-        }
-        
-        .price-item:nth-child(even) {
-            background-color: #F1F8E9;
-        }
-        
-        .delete-btn {
-            background: none;
-            border: none;
-            cursor: pointer;
-            font-size: 14px;
-            padding: 4px 6px;
-            border-radius: 4px;
-            transition: all 0.2s;
-            color: #ff8a80;
-        }
-        
-        .delete-btn:hover {
-            background-color: rgba(255, 138, 128, 0.15);
-        }
-        
-        .notification {
-            position: fixed;
-            top: 15px;
-            right: 15px;
-            padding: 12px 20px;
-            border-radius: 6px;
-            color: white;
-            font-weight: 600;
-            font-size: 13px;
-            z-index: 1001;
-            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
-            animation: slideIn 0.3s, fadeOut 0.3s 2.7s;
-        }
-        
-        .success {
-            background-color: #80cbc4;
-        }
-        
-        .error {
-            background-color: #ff8a80;
-        }
-        
-        .info {
-            background-color: #64b5f6;
-        }
-        
-        @keyframes slideIn {
-            from { transform: translateX(100%); opacity: 0; }
-            to { transform: translateX(0); opacity: 1; }
-        }
-        
-        @keyframes fadeOut {
-            from { opacity: 1; }
-            to { opacity: 0; }
-        }
-        
-        .hidden {
-            display: none;
-        }
-        
-        .upload-file-input {
-            display: none;
-        }
-        
-        .upload-progress {
-            margin: 10px 0;
-            padding: 12px;
-            background-color: #E0F2F1;
-            border-radius: 6px;
-            font-size: 13px;
-            color: #4a8c87;
-            border-left: 4px solid #80cbc4;
-        }
-        
-        .data-count {
-            margin: 8px 0 12px 0;
-            font-size: 13px;
-            color: #4a8c87;
-            text-align: center;
-            padding: 6px;
-            background-color: #E8F5E9;
-            border-radius: 4px;
-            border: 1px solid #C8E6C9;
-        }
-        
-        .zero-price {
-            color: #ff8a80;
-            font-weight: 600;
-        }
-        
-        .not-found {
-            color: #ff8a80;
-            font-weight: 600;
-        }
-        
-        .empty-results {
-            text-align: center;
-            color: #7aa9a5;
-            padding: 40px 20px;
-            font-size: 14px;
-        }
-        
-        .empty-results i {
-            font-size: 32px;
-            margin-bottom: 10px;
-            color: #b2dfdb;
-        }
-        
-        /* 可编辑单元格样式 */
-        .editable-cell {
-            cursor: pointer;
+            border: 2px solid transparent;
             position: relative;
-            padding: 4px 8px;
-            border-radius: 3px;
-            transition: all 0.2s;
-        }
-        
-        .editable-cell:hover {
-            background-color: rgba(128, 203, 196, 0.1);
-        }
-        
-        .editable-cell.editing {
-            padding: 0;
-        }
-        
-        .editable-cell input {
-            width: 100%;
-            height: 100%;
-            border: 2px solid #80cbc4;
-            padding: 6px;
-            font-size: 13px;
-            outline: none;
-            border-radius: 3px;
-            background-color: white;
-        }
-        
-        .price-toggle.active .fa-eye {
-            display: none;
-        }
-        
-        .price-toggle.active .fa-eye-slash {
-            display: inline-block;
-        }
-        
-        .price-toggle:not(.active) .fa-eye-slash {
-            display: none;
-        }
-        
-        .price-toggle:not(.active) .fa-eye {
-            display: inline-block;
-        }
-        
-        /* 修改：特殊要求样式 - 去掉边框 */
-        .special-method {
-            color: #e65100;
-            font-size: 12px;
-            /* 去掉背景颜色和边框 */
-            padding: 0;
-            border: none;
-            background: none;
-        }
-        
-        /* 手机端行高缩短1mm */
-        @media (max-width: 768px) {
-            .home-container {
-                flex-direction: column;
-            }
-            
-            .price-item {
-                grid-template-columns: 1fr;
-                gap: 5px;
-                padding: 8px;
-            }
-            
-            .price-item.header {
-                display: none;
-            }
-            
-            .admin-header {
-                flex-direction: column;
-                align-items: stretch;
-            }
-            
-            .search-box {
-                min-width: 100%;
-            }
-            
-            .admin-buttons {
-                justify-content: center;
-            }
-            
-            .results-table {
-                font-size: 12px;
-            }
-            
-            .results-table th, .results-table td {
-                padding: 3px 4px; /* 减少padding，缩短行高 */
-            }
-            
-            .results-table td {
-                height: 26px; /* 从原来的32px减少到26px，缩短约1.5mm */
-                /* 强制不换行 */
-                white-space: nowrap;
-                overflow: hidden;
-                text-overflow: ellipsis;
-                max-width: 80px; /* 限制最大宽度，防止撑开 */
-            }
-            
-            .action-buttons {
-                flex-direction: column;
-            }
-            
-            .results-header {
-                flex-direction: column;
-                align-items: flex-start;
-                gap: 10px;
-            }
-            
-            .total-price {
-                flex-direction: row;
-                align-items: center;
-                gap: 10px;
-                padding: 10px 15px;
-                height: auto;
-            }
-            
-            .total-info {
-                flex-direction: row;
-                justify-content: space-between;
-                align-items: center;
-                gap: 8px;
-                width: 100%;
-                flex-wrap: nowrap;
-            }
-            
-            .herb-count {
-                flex: 0 0 auto;
-                padding: 3px 8px;
-                font-size: 13px;
-                gap: 6px;
-                white-space: nowrap;
-            }
-            
-            .total-amount {
-                flex: 0 0 auto;
-                font-size: 16px;
-                white-space: nowrap;
-            }
-            
-            .copy-btn {
-                flex: 0 0 auto;
-                padding: 2px 6px;
-                font-size: 11px;
-                min-width: 40px;
-            }
-            
-            .btn {
-                min-width: 120px;
-                padding: 10px 20px;
-            }
-            
-            .btn-sm {
-                min-width: auto;
-                padding: 5px 10px;
-            }
-        }
-        
-        @media (max-width: 480px) {
-            .total-info {
-                flex-wrap: nowrap;
-                gap: 6px;
-            }
-            
-            .herb-count {
-                font-size: 12px;
-                padding: 2px 6px;
-            }
-            
-            .total-amount {
-                font-size: 15px;
-            }
-            
-            .copy-btn {
-                font-size: 10px;
-                padding: 2px 4px;
-                min-width: 36px;
-            }
-            
-            .total-price {
-                padding: 8px 12px;
-            }
-            
-            .results-table td {
-                height: 24px;
-                max-width: 60px; /* 更小屏幕进一步限制宽度 */
-            }
-            
-            .results-table th, .results-table td {
-                padding: 2px 3px;
-            }
-        }
-        
-        /* 超小屏幕设备进一步优化 */
-        @media (max-width: 360px) {
-            .results-table td {
-                height: 22px;
-                font-size: 11px;
-                max-width: 50px;
-            }
-            
-            .results-table th {
-                font-size: 11px;
-                padding: 3px 3px;
-            }
-            
-            .total-price {
-                padding: 6px 10px;
-            }
-            
-            .total-amount {
-                font-size: 14px;
-            }
-            
-            .herb-count {
-                font-size: 11px;
-                padding: 2px 4px;
-            }
-            
-            .copy-btn {
-                font-size: 9px;
-                padding: 1px 3px;
-                min-width: 32px;
-            }
         }
 
-        /* 复制成功提示框样式 */
-        .copy-success-tips {
+        .cell-content.selected {
+            border: 2px solid #217346;
+            background: #e8f5e9;
+        }
+
+        .cell-content.editing {
+            background: #fff;
+            border: 2px solid #217346;
+            z-index: 100;
+            position: relative;
+            cursor: text;
+            user-select: text;
+            white-space: pre;
+            overflow: auto;
+        }
+
+        /* C-F列保持固定宽度 - 强制不自动调整 */
+        td[data-col="C"], th[data-col="C"],
+        td[data-col="D"], th[data-col="D"],
+        td[data-col="E"], th[data-col="E"],
+        td[data-col="F"], th[data-col="F"] {
+            width: 64.8px !important; /* C,E列 */
+            min-width: 64.8px !important;
+            max-width: 64.8px !important;
+        }
+
+        td[data-col="D"], th[data-col="D"],
+        td[data-col="F"], th[data-col="F"] {
+            width: 39.96px !important; /* D,F列 */
+            min-width: 39.96px !important;
+            max-width: 39.96px !important;
+        }
+
+        td[data-col="D"] {
+            background: #fcfcec !important;
+            cursor: not-allowed !important;
+        }
+
+        td.meta-col {
+            background: #f9f9f9 !important;
+            font-size: 11.88px !important;
+            color: #666 !important;
+            min-width: 71.28px !important;
+        }
+
+        th.meta-col {
+            background: #e0e0e0 !important;
+            color: #666 !important;
+            font-size: 12.96px !important;
+            min-width: 71.28px !important;
+        }
+
+        /* A列字体小2号（15.44px），B-G列保持大一号（17.44px） */
+        td[data-col="A"] .cell-content {
+            font-size: 15.44px !important; /* 修改：从17.44px改为15.44px，小2号 */
+            line-height: 19.98px !important; /* 相应调整行高 */
+        }
+
+        td[data-col="B"] .cell-content,
+        td[data-col="C"] .cell-content,
+        td[data-col="D"] .cell-content,
+        td[data-col="E"] .cell-content,
+        td[data-col="F"] .cell-content,
+        td[data-col="G"] .cell-content {
+            font-size: 17.44px !important;
+            line-height: 21.98px !important;
+        }
+
+        /* H列及之后（H-AN）内容字体调小一号（14.44px），标题保持16.63px不变 */
+        td[data-col="H"] .cell-content,
+        td[data-col="I"] .cell-content,
+        td[data-col="J"] .cell-content,
+        td[data-col="K"] .cell-content,
+        td[data-col="L"] .cell-content,
+        td[data-col="M"] .cell-content,
+        td[data-col="N"] .cell-content,
+        td[data-col="O"] .cell-content,
+        td[data-col="P"] .cell-content,
+        td[data-col="Q"] .cell-content,
+        td[data-col="R"] .cell-content,
+        td[data-col="S"] .cell-content,
+        td[data-col="T"] .cell-content,
+        td[data-col="U"] .cell-content,
+        td[data-col="V"] .cell-content,
+        td[data-col="W"] .cell-content,
+        td[data-col="X"] .cell-content,
+        td[data-col="Y"] .cell-content,
+        td[data-col="Z"] .cell-content,
+        td[data-col="AA"] .cell-content,
+        td[data-col="AB"] .cell-content,
+        td[data-col="AC"] .cell-content,
+        td[data-col="AD"] .cell-content,
+        td[data-col="AE"] .cell-content,
+        td[data-col="AF"] .cell-content,
+        td[data-col="AG"] .cell-content,
+        td[data-col="AH"] .cell-content,
+        td[data-col="AI"] .cell-content,
+        td[data-col="AJ"] .cell-content,
+        td[data-col="AK"] .cell-content,
+        td[data-col="AL"] .cell-content,
+        td[data-col="AM"] .cell-content,
+        td[data-col="AN"] .cell-content {
+            font-size: 14.44px !important;
+            line-height: 18.98px !important;
+        }
+
+        /* 可编辑标题 */
+        th.col-header.editable-header {
+            cursor: text;
+            background: #f0f9e8;
+        }
+
+        th.col-header.editable-header:hover {
+            background: #dcfce7;
+        }
+
+        th.col-header .header-text {
+            pointer-events: none;
+        }
+
+        th.col-header.editable-header .header-text {
+            pointer-events: auto;
+        }
+
+        /* I列链接样式 */
+        th[data-col="I"] {
+            color: #1976d2 !important;
+            text-decoration: underline !important;
+            cursor: pointer !important;
+        }
+
+        th[data-col="I"]:hover {
+            background: #e3f2fd !important;
+        }
+
+        /* 标记颜色 - 粉色改为更淡的颜色 */
+        .cell-yellow { background-color: #fff200 !important; }
+        .cell-red { background-color: #ef5350 !important; color: white !important; }
+        .cell-pink { background-color: #fce7f3 !important; } /* 修改：从#f8bbd9改为更淡的#fce7f3 */
+        .duplicate-cell { background-color: #ef5350 !important; color: white !important; }
+        /* 移除搜索高亮样式 - 不再使用黄色高亮 */
+        /* .search-highlight { background-color: #fef08a !important; } */
+
+        /* 行高亮效果 - 淡蓝色背景 */
+        tr.row-highlight td {
+            background-color: #e3f2fd !important;
+        }
+
+        /* 有颜色的单元格跳过高亮 */
+        tr.row-highlight td.cell-yellow,
+        tr.row-highlight td.cell-red,
+        tr.row-highlight td.cell-pink,
+        tr.row-highlight td.duplicate-cell {
+            background-color: inherit !important;
+        }
+
+        /* 序号列高亮 */
+        th.row-header.row-highlight {
+            background-color: #e3f2fd !important;
+        }
+
+        /* 备注指示器 - 改为紫色 */
+        .comment-indicator {
+            position: absolute;
+            top: 1.08px;
+            right: 1.08px;
+            width: 10.8px;
+            height: 10.8px;
+            background-color: #9333ea; /* 修改：从#ef5350红色改为#9333ea紫色 */
+            border-radius: 50%;
+            z-index: 1;
+            pointer-events: none;
+        }
+
+        /* 右键菜单 */
+        .context-menu {
+            position: absolute;
+            width: 261.36px;
+            background: white;
+            border: 1px solid #d4d4d4;
+            box-shadow: 0 4.75px 14.26px rgba(0,0,0,0.15);
+            border-radius: 4.75px;
+            padding: 4.75px 0;
+            z-index: 10000;
+            display: none;
+        }
+
+        .context-menu-item {
+            padding: 9.5px 19.01px;
+            cursor: pointer;
+            font-size: 15.44px;
+            display: flex;
+            align-items: center;
+            gap: 9.5px;
+        }
+
+        .context-menu-item:hover {
+            background-color: #f0f0f0;
+        }
+
+        /* 标粉菜单项特殊样式 - 更新为新的淡粉色 */
+        .context-menu-item.pink-item::before {
+            content: '';
+            display: inline-block;
+            width: 17.28px;
+            height: 17.28px;
+            background-color: #fce7f3; /* 修改：与.cell-pink保持一致 */
+            border-radius: 3.89px;
+            margin-right: 4.32px;
+            border: 1px solid #ddd; /* 添加边框以便在白色背景上可见 */
+        }
+
+        .context-menu-separator {
+            height: 1px;
+            background-color: #e0e0e0;
+            margin: 4.75px 0;
+        }
+
+        /* 备注弹窗 */
+        .comment-popup {
             position: fixed;
             top: 50%;
             left: 50%;
             transform: translate(-50%, -50%);
-            padding: 10px 20px;
-            background: rgba(76, 175, 160, 0.9);
+            background-color: #ffffe1;
+            border: 2px solid #999;
+            border-radius: 9.5px;
+            padding: 23.76px;
+            font-size: 16.63px;
+            min-width: 356px;
+            max-width: 594px;
+            box-shadow: 0 9.5px 28.51px rgba(0,0,0,0.3);
+            z-index: 10001;
+            display: none;
+            word-wrap: break-word;
+            line-height: 1.6;
+            color: #333;
+        }
+
+        .comment-popup.show {
+            display: block;
+            animation: popIn 0.3s;
+        }
+
+        @keyframes popIn {
+            from { opacity: 0; transform: translate(-50%, -50%) scale(0.9); }
+            to { opacity: 1; transform: translate(-50%, -50%) scale(1); }
+        }
+
+        .comment-popup-close {
+            position: absolute;
+            top: 9.5px;
+            right: 14.26px;
+            cursor: pointer;
+            font-size: 23.76px;
+            color: #666;
+        }
+
+        .comment-popup-close:hover {
+            color: #000;
+        }
+
+        /* 悬停备注提示 */
+        .comment-tooltip {
+            position: fixed;
+            background: rgba(51, 51, 51, 0.95);
             color: white;
-            border-radius: 6px;
+            padding: 8.64px 12.96px;
+            border-radius: 4.32px;
             font-size: 14px;
-            font-weight: 600;
-            z-index: 9999;
-            opacity: 0;
+            max-width: 324px;
+            word-wrap: break-word;
+            z-index: 10002;
+            display: none;
             pointer-events: none;
-            transition: opacity 0.3s ease, transform 0.3s ease;
-            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+            box-shadow: 0 2.16px 8.64px rgba(0,0,0,0.2);
         }
 
-        .copy-success-tips.show {
-            opacity: 1;
-            transform: translate(-50%, -50%) scale(1.05);
+        .comment-tooltip.show {
+            display: block;
         }
+
+        /* 加载遮罩 */
+        .loading-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(255,255,255,0.9);
+            display: none;
+            justify-content: center;
+            align-items: center;
+            z-index: 10000;
+            flex-direction: column;
+            gap: 23.76px;
+        }
+
+        .loading-spinner {
+            width: 59.4px;
+            height: 59.4px;
+            border: 5.94px solid #f3f3f3;
+            border-top: 5.94px solid #217346;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .progress-bar {
+            width: 356px;
+            height: 23.76px;
+            background: #e0e0e0;
+            border-radius: 11.88px;
+            overflow: hidden;
+        }
+
+        .progress-fill {
+            height: 100%;
+            background: #217346;
+            width: 0%;
+            transition: width 0.3s;
+        }
+
+        /* Toast提示 - 增强版 */
+        .toast {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: rgba(51, 51, 51, 0.95);
+            color: white;
+            padding: 19.01px 38.02px;
+            border-radius: 9.5px;
+            font-size: 16.63px;
+            z-index: 10001;
+            display: none;
+            box-shadow: 0 4.75px 14.26px rgba(0,0,0,0.3);
+            max-width: 500px;
+            text-align: center;
+            line-height: 1.5;
+        }
+
+        .toast.show {
+            display: block;
+            animation: fadeIn 0.3s;
+        }
+
+        .toast.undo-toast {
+            background: rgba(33, 115, 70, 0.95);
+            border: 2px solid #4ade80;
+        }
+
+        .toast.redo-toast {
+            background: rgba(30, 64, 175, 0.95);
+            border: 2px solid #60a5fa;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translate(-50%, -50%) scale(0.9); }
+            to { opacity: 1; transform: translate(-50%, -50%) scale(1); }
+        }
+
+        /* 遮罩层 */
+        .modal-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.5);
+            z-index: 10000;
+            display: none;
+        }
+
+        .modal-overlay.show {
+            display: block;
+        }
+
+        /* 隐藏行样式 */
+        tr.hidden-row {
+            display: none !important;
+        }
+
+        /* 滚动条 - 改为绿色 */
+        ::-webkit-scrollbar {
+            width: 14.26px;
+            height: 14.26px;
+        }
+
+        ::-webkit-scrollbar-track {
+            background: #f1f1f1;
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background-color: #4ade80; /* 修改：绿色 */
+            border-radius: 7.13px;
+            border: 3.56px solid #f1f1f1;
+        }
+
+        ::-webkit-scrollbar-thumb:hover {
+            background-color: #22c55e; /* 修改：深绿色悬停 */
+        }
+
+        .hidden { display: none !important; }
     </style>
-<base target="_blank">
 </head>
-
 <body>
-    <div class="container">
-        <div class="nav-tabs">
-            <div class="tab active" data-tab="home">方剂计价</div>
-            <div class="tab" data-tab="admin">价格管理</div>
-        </div>
 
-        <!-- 首页 - 方剂价格计算 -->
-        <div id="home" class="tab-content active">
-            <div class="home-container">
-                <!-- 左面板：输入区域 -->
-                <div class="left-panel">
-                    <div class="input-section">
-                        <textarea id="prescriptionInput" placeholder="请输入方剂组成，格式：药材 用量，如：桂枝 15，白芍 25。按回车键可直接计算价格"></textarea>
-
-                        <div class="action-buttons">
-                            <button class="btn btn-primary" id="calculateBtn">
-                                <i class="fas fa-calculator"></i> 计算价格
-                            </button>
-                            <button class="btn btn-secondary" id="clearBtn">
-                                <i class="fas fa-broom"></i> 清空
-                            </button>
-                            <button class="btn btn-outline" id="prevPrescriptionBtn" disabled>
-                                <i class="fas fa-arrow-left"></i> 上个方剂
-                            </button>
-                            <button class="btn btn-outline" id="nextPrescriptionBtn" disabled>
-                                <i class="fas fa-arrow-right"></i> 下个方剂
-                            </button>
-                            <button class="btn btn-outline" id="uploadImageBtn">
-                                <i class="fas fa-image"></i> 上传图片
-                            </button>
-                            <input type="file" id="imageUpload" accept="image/*" class="hidden">
-                        </div>
-                    </div>
-                </div>
-
-                <!-- 右面板：结果显示 -->
-                <div class="right-panel">
-                    <div class="results-section">
-                        <div class="results-header">
-                            <div class="results-title">方剂明细</div>
-                            <div class="price-toggle" id="priceToggle">
-                                <i class="fas fa-eye"></i>
-                                <i class="fas fa-eye-slash"></i>
-                            </div>
-                        </div>
-
-                        <div id="resultsContainer" class="hidden">
-                            <table class="results-table" id="resultsTable">
-                                <thead>
-                                    <tr>
-                                        <th>药材</th>
-                                        <th>位置</th>
-                                        <th>用量</th>
-                                        <th>特殊</th>
-                                        <th class="price-header">价格</th>
-                                        <th>提示</th>
-                                    </tr>
-                                </thead>
-                                <tbody id="resultsBody"></tbody>
-                            </table>
-                            <div class="total-price">
-                                <div class="total-info">
-                                    <div class="herb-count" id="herbCount">
-                                        <span id="herbCountText">0味</span>
-                                        <button class="copy-btn" id="copyHerbsBtn" title="复制药材列表">
-                                            <i class="fas fa-copy"></i>
-                                        </button>
-                                    </div>
-                                    <div class="total-amount">
-                                        <span>总价:</span>
-                                        <span id="totalAmount">0.00</span>
-                                        <span>元</span>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-
-                        <div id="emptyResults" class="empty-results">
-                            <i class="fas fa-leaf"></i>
-                            <div>输入方剂并点击"计算价格"查看结果</div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
-
-        <!-- 后台管理页面 -->
-        <div id="admin" class="tab-content">
-            <div class="admin-header">
-                <div class="search-box">
-                    <i class="fas fa-search search-icon"></i>
-                    <input type="text" id="searchHerb" placeholder="搜索药材...">
-                </div>
-
-                <div class="admin-buttons">
-                    <button class="btn btn-primary" id="addHerbBtn">
-                        <i class="fas fa-plus"></i> 添加药材
-                    </button>
-                    <button class="btn btn-outline" id="uploadPriceBtn">
-                        <i class="fas fa-upload"></i> 上传Excel
-                    </button>
-                    <input type="file" id="priceFileUpload" accept=".xlsx,.xls" class="upload-file-input">
-                    <button class="btn btn-secondary" id="clearAllBtn">
-                        <i class="fas fa-trash"></i> 清空
-                    </button>
-                </div>
-            </div>
-
-            <div id="uploadProgress" class="upload-progress hidden">
-                正在处理Excel文件...
-            </div>
-
-            <div class="data-count">
-                当前数据: <span id="dataCount">0</span> 条
-            </div>
-
-            <div class="price-list">
-                <div class="price-item header">
-                    <div>药材</div>
-                    <div>用量</div>
-                    <div>单价</div>
-                    <div>位置</div>
-                    <div>提示</div>
-                    <div>操作</div>
-                </div>
-                <div id="priceList"></div>
-            </div>
+    <!-- 加载遮罩 -->
+    <div class="loading-overlay" id="loadingOverlay">
+        <div class="loading-spinner"></div>
+        <div id="loadingText">正在处理...</div>
+        <div class="progress-bar">
+            <div class="progress-fill" id="progressFill"></div>
         </div>
     </div>
 
-    <!-- 复制成功提示框 -->
-    <div class="copy-success-tips" id="copySuccessTips">复制成功</div>
+    <!-- Toast提示 -->
+    <div class="toast" id="toast"></div>
 
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+    <!-- 悬停备注提示 -->
+    <div class="comment-tooltip" id="commentTooltip"></div>
+
+    <!-- 遮罩层 -->
+    <div class="modal-overlay" id="modalOverlay"></div>
+
+    <!-- 工具栏 -->
+    <div class="ribbon">
+        <div class="ribbon-group">
+            <input type="text" id="searchInput" placeholder="搜索条码或药品名称(A/B列)...">
+            <button class="btn" id="clearSearchBtn">清空搜索</button>
+            <button class="btn" id="filterToggle">筛选＞0</button>
+            <!-- 已移除自适应列宽按钮 -->
+        </div>
+
+        <div class="ribbon-group">
+            <label class="btn btn-primary">
+                <span>📂 打开</span>
+                <input type="file" id="fileInput" accept=".xlsx,.xlsm" style="display: none;">
+            </label>
+            <button class="btn btn-warning" id="saveBtn">💾 保存</button>
+        </div>
+
+        <div class="ribbon-group">
+            <!-- 修改：新增药品（原新增行） -->
+            <button class="btn" id="addRowBtn">➕ 新增药品</button>
+            <button class="btn" id="undoBtn" disabled>↩️ 返回上一步</button>
+            <button class="btn" id="redoBtn" disabled>↪️ 恢复下一步</button>
+            <!-- 新增：导入文件名显示 -->
+            <span class="import-filename" id="importFilename" title=""></span>
+            <!-- 新增：筛选重复项按钮 -->
+            <button class="btn btn-filter-duplicate" id="filterDuplicateBtn" title="显示所有重复项">🔍 重复项</button>
+        </div>
+
+        <div style="flex: 1;"></div>
+    </div>
+
+    <!-- 表格区域 -->
+    <div class="spreadsheet-container" id="container">
+        <table class="sheet-table" id="sheetTable">
+            <thead id="tableHead"></thead>
+            <tbody id="tableBody"></tbody>
+        </table>
+    </div>
+
+    <!-- 右键菜单 -->
+    <div class="context-menu" id="contextMenu">
+        <div class="context-menu-item" onclick="addComment()">📝 添加/编辑备注</div>
+        <div class="context-menu-item" onclick="clearComment()">🗑️ 清除备注</div>
+        <div class="context-menu-separator"></div>
+        <div class="context-menu-item" onclick="formatCell('red')">🟥 红色（有问题）</div>
+        <div class="context-menu-item" onclick="formatCell('yellow')">🟨 标黄（补药）</div>
+        <div class="context-menu-item pink-item" onclick="formatCell('pink')">标粉（妇科）</div>
+        <div class="context-menu-separator"></div>
+        <div class="context-menu-item" onclick="clearCellFormat()">⬜ 清除颜色</div>
+        <div class="context-menu-separator"></div>
+        <div class="context-menu-item" onclick="deleteSelectedRow()">🗑️ 删除整行</div>
+        <div class="context-menu-item" onclick="clearSelectedCells()">⌫ 清空内容</div>
+    </div>
+
+    <!-- 备注弹窗 -->
+    <div class="comment-popup" id="commentPopup">
+        <span class="comment-popup-close" onclick="closeCommentPopup()">×</span>
+        <div id="commentPopupContent"></div>
+    </div>
 
     <script>
-        const STORAGE_KEY = 'herbPriceData';
-        const PRICE_VISIBILITY_KEY = 'priceVisibility';
-        const PRESCRIPTION_HISTORY_KEY = 'prescriptionHistory';
-        let herbsData = [];
-        let isPriceVisible = true;
-        let currentResults = [];
-        let filteredHerbsData = [];
-        
-        // 方剂历史记录管理
-        let prescriptionHistory = [];
-        let currentHistoryIndex = -1;
-        const MAX_HISTORY_SIZE = 10; // 最多保存10个历史记录
-        
-        // OCR配置 - 请替换为你的实际API密钥
-        const OCR_CONFIG = {
-            apiKey: '你的百度API Key',
-            secretKey: '你的百度Secret Key',
-            accessToken: '',
-            tokenExpires: 0
+        // ==================== 配置 ====================
+        const CONFIG = {
+            maxCol: 'AN',
+            dataMaxCol: 'T',
+            readOnlyCol: ['D'],
+            calcHeaderCol: 'L',
+            editableHeaders: ['H', 'I', 'J', 'K'],
+            formulaHeaders: ['J', 'K'],
+            traceCodeCol: ['H','I','M','N'],
+            countColForD: [],
+            noMetaCols: ['C', 'D', 'E', 'F', 'G'],
+            noResizeCols: ['C', 'D', 'E', 'F'], // C-F列不自动调整
+            storageKey: 'medicine_excel_data_v2_7',
+            metaDataSeparator: '|',
+            batchSize: 50,
+            maxHistory: 20,
+            debounceDelay: 300,
+            importChunkSize: 100,
+            searchJumpStartCol: 'H',
+            minColWidth: 50, // 最小列宽
+            maxColWidth: 400, // 最大列宽
+            autoSaveHour: 22, // 自动保存时间：22点（晚上10点）
+            autoSaveMinute: 30 // 自动保存分钟：30分
         };
-        
-        function initializeData() {
-            const storedData = localStorage.getItem(STORAGE_KEY);
-            herbsData = storedData ? JSON.parse(storedData) : [];
-            filteredHerbsData = [...herbsData];
+
+        for(let i='H'.charCodeAt(0); i<='T'.charCodeAt(0); i++) {
+            CONFIG.countColForD.push(String.fromCharCode(i));
+        }
+
+        // ==================== 状态管理 ====================
+        const state = {
+            rows: 100,
+            cols: 40,
+            data: {},
+            headerData: {},
+            selectedCell: null,
+            selectedCells: new Set(),
+            editingCell: null,
+            isFilterActive: false,
+            searchTerm: '',
+            filteredRows: new Set(),
+            originalData: [],
+            historyStack: [],
+            redoStack: [],
+            isUndoRedo: false,
+            isProcessing: false,
+            colLetters: [],
+            dragStartCell: null,
+            isDragging: false,
+            lastClickTime: 0,
+            lastRightClickTime: 0,
+            activeInput: null,
+            editingHeader: null,
+            highlightedRow: null,
+            lastAction: null,
+            scrollPosition: { top: 0, left: 0 },
+            colWidths: {}, // 存储各列计算后的宽度
+            originalRowOrder: [], // 存储原始行顺序，用于恢复
+            lastImportFilename: '', // 存储最后导入的文件名
+            isDuplicateFilterActive: false, // 新增：是否处于重复项筛选状态
+            autoSaveTimer: null, // 新增：自动保存定时器（用于setInterval）
+            autoSaveTimeout: null // 新增：首次自动保存setTimeout引用
+        };
+
+        const ACTION_TYPES = {
+            EDIT_CELL: '编辑单元格',
+            EDIT_HEADER: '修改标题',
+            ADD_ROW: '新增行',
+            DELETE_ROW: '删除行',
+            FORMAT_CELL: '格式化单元格',
+            ADD_COMMENT: '添加备注',
+            CLEAR_COMMENT: '清除备注',
+            CLEAR_CONTENT: '清空内容',
+            IMPORT: '导入数据',
+            FILTER: '筛选数据',
+            SEARCH: '搜索数据',
+            DELETE_MULTI: '批量删除',
+            FORMAT_MULTI: '批量格式化',
+            CLEAR_MULTI: '批量清空',
+            RESIZE_COLS: '调整列宽',
+            FILTER_DUPLICATE: '筛选重复项', // 新增
+            AUTO_SAVE: '自动保存' // 新增
+        };
+
+        function generateColLetters() {
+            const letters = [];
+            for (let i = 0; i < 26; i++) letters.push(String.fromCharCode(65 + i));
+            for (let i = 0; i < 14; i++) letters.push('A' + String.fromCharCode(65 + i));
+            return letters;
+        }
+
+        document.addEventListener('DOMContentLoaded', () => {
+            state.colLetters = generateColLetters();
+            initTable();
+            initEvents();
+            initSampleData();
+            loadFromLocalStorage();
+            // 初始化后自动调整一次列宽
+            setTimeout(() => autoResizeColumns(), 100);
+            saveToHistory('初始化', null);
             
-            const visibilityState = localStorage.getItem(PRICE_VISIBILITY_KEY);
-            isPriceVisible = visibilityState === null ? true : visibilityState === 'true';
-            
-            // 加载历史记录
-            const storedHistory = localStorage.getItem(PRESCRIPTION_HISTORY_KEY);
-            if (storedHistory) {
-                prescriptionHistory = JSON.parse(storedHistory);
-                currentHistoryIndex = prescriptionHistory.length - 1;
+            // 新增：启动自动保存定时器
+            initAutoSave();
+        });
+
+        // ==================== 新增：自动保存功能（修复版） ====================
+        function initAutoSave() {
+            // 清除现有定时器
+            if (state.autoSaveTimer) {
+                clearInterval(state.autoSaveTimer);
+                state.autoSaveTimer = null;
+            }
+            if (state.autoSaveTimeout) {
+                clearTimeout(state.autoSaveTimeout);
+                state.autoSaveTimeout = null;
             }
             
-            updateDataCount();
-            updatePriceToggleState();
-            updateHistoryButtons();
-        }
-        
-        function saveData() {
-            localStorage.setItem(STORAGE_KEY, JSON.stringify(herbsData));
-            updateDataCount();
-        }
-        
-        function savePriceVisibility() {
-            localStorage.setItem(PRICE_VISIBILITY_KEY, isPriceVisible);
-        }
-        
-        // 保存历史记录到本地存储
-        function saveHistory() {
-            localStorage.setItem(PRESCRIPTION_HISTORY_KEY, JSON.stringify(prescriptionHistory));
-        }
-        
-        // 添加到历史记录
-        function addToHistory(prescriptionText) {
-            if (!prescriptionText || prescriptionText.trim() === '') return;
-            
-            // 如果当前不是最后一个，删除当前之后的记录
-            if (currentHistoryIndex < prescriptionHistory.length - 1) {
-                prescriptionHistory = prescriptionHistory.slice(0, currentHistoryIndex + 1);
+            // 计算到下一个10点半的时间
+            function getNextSaveTime() {
+                const now = new Date();
+                const target = new Date();
+                target.setHours(CONFIG.autoSaveHour, CONFIG.autoSaveMinute, 0, 0);
+                
+                // 如果今天的时间已过或正好是22:30，设置为明天
+                // 使用 < 而不是 <= 确保22:30时也会等到明天
+                if (target <= now) {
+                    target.setDate(target.getDate() + 1);
+                }
+                
+                return target - now;
             }
             
-            // 如果与最后一个记录相同，不添加
-            if (prescriptionHistory.length > 0 && 
-                prescriptionHistory[prescriptionHistory.length - 1] === prescriptionText.trim()) {
+            // 设置首次定时
+            const firstDelay = getNextSaveTime();
+            
+            // 保存首次定时器引用，以便可以清除
+            state.autoSaveTimeout = setTimeout(() => {
+                performAutoSave();
+                // 之后每24小时执行一次
+                state.autoSaveTimer = setInterval(performAutoSave, 24 * 60 * 60 * 1000);
+            }, firstDelay);
+            
+            console.log(`自动保存已设置，将在 ${new Date(Date.now() + firstDelay).toLocaleString()} 首次执行`);
+        }
+
+        function performAutoSave() {
+            // 检查是否有数据需要保存
+            let hasData = false;
+            for (let r = 1; r <= state.rows; r++) {
+                for (let c = 0; c < state.colLetters.length; c++) {
+                    const col = state.colLetters[c];
+                    const cellId = `${col}${r}`;
+                    if (state.data[cellId] && state.data[cellId].trim() !== '') {
+                        hasData = true;
+                        break;
+                    }
+                }
+                if (hasData) break;
+            }
+            
+            if (!hasData) {
+                console.log('自动保存：无数据，跳过');
                 return;
             }
             
-            prescriptionHistory.push(prescriptionText.trim());
-            
-            // 限制历史记录数量
-            if (prescriptionHistory.length > MAX_HISTORY_SIZE) {
-                prescriptionHistory.shift();
-            }
-            
-            currentHistoryIndex = prescriptionHistory.length - 1;
-            saveHistory();
-            updateHistoryButtons();
-        }
-        
-        // 更新历史记录按钮状态
-        function updateHistoryButtons() {
-            const prevBtn = document.getElementById('prevPrescriptionBtn');
-            const nextBtn = document.getElementById('nextPrescriptionBtn');
-            
-            prevBtn.disabled = currentHistoryIndex <= 0;
-            nextBtn.disabled = currentHistoryIndex >= prescriptionHistory.length - 1;
-        }
-        
-        // 加载上一个方剂
-        function loadPreviousPrescription() {
-            if (currentHistoryIndex > 0) {
-                currentHistoryIndex--;
-                const text = prescriptionHistory[currentHistoryIndex];
-                document.getElementById('prescriptionInput').value = text;
-                updateHistoryButtons();
-                showNotification(`已恢复到第 ${currentHistoryIndex + 1} 个方剂`);
-                // 自动计算
-                calculatePrice(false); // false表示不添加到历史，避免重复
-            }
-        }
-        
-        // 加载下一个方剂
-        function loadNextPrescription() {
-            if (currentHistoryIndex < prescriptionHistory.length - 1) {
-                currentHistoryIndex++;
-                const text = prescriptionHistory[currentHistoryIndex];
-                document.getElementById('prescriptionInput').value = text;
-                updateHistoryButtons();
-                showNotification(`已恢复到第 ${currentHistoryIndex + 1} 个方剂`);
-                // 自动计算
-                calculatePrice(false); // false表示不添加到历史，避免重复
-            }
-        }
-        
-        function updateDataCount() {
-            document.getElementById('dataCount').textContent = filteredHerbsData.length;
-        }
-        
-        function showNotification(message, type = 'success') {
-            const notification = document.createElement('div');
-            notification.className = `notification ${type}`;
-            notification.textContent = message;
-            document.body.appendChild(notification);
-            setTimeout(() => notification.remove(), 3000);
-        }
-        
-        // 显示复制成功提示框
-        function showCopySuccessTips() {
-            const tips = document.getElementById('copySuccessTips');
-            tips.classList.add('show');
-            
-            // 2秒后自动隐藏
-            setTimeout(() => {
-                tips.classList.remove('show');
-            }, 2000);
-        }
-        
-        // 增强的解析函数 - 新增特殊要求提取功能
-        function parsePrescription(text) {
-            const herbs = [];
-            
-            // 1. 基础预处理
-            text = text.replace(/：/g, ' ').replace(/:/g, ' ');
-            text = text.replace(/大片/g, '3');
-            text = text.replace(/枚/g, '');
-            text = text.replace(/后下化开/g, '后下');
-            text = text.replace(/化开/g, '烊化');
-            text = text.replace(/克/g, '');
-            text = text.replace(/g/g, '');
-            text = text.replace(/（/g, '(').replace(/）/g, ')');
-            text = text.replace(/。/g, ',');
-            text = text.replace(/、/g, ',');
-            
-            // 2. 中药别名映射
-            const herbAliases = {
-                '勾藤': '钩藤',
-                '味子': '五味子'
-            };
-            
-            // 3. 特殊要求关键词列表（需要提取的煎法）
-            const specialMethods = [
-                 '另包','先煎', '后下', '烊化', '冲服', '包煎', '另煎', 
-                '打碎', '捣碎', '研末', '布包', '纱布包'
-            ];
-            
-            // 4. 单位转换映射（个/片 -> 克）
-            const unitConversion = {
-                '生姜': 5,    // 生姜每片5g
-                '大枣': 5,    // 大枣每个5g
-                '草果': 4     // 草果每个4g
-            };
-            
-            // 5. 分割成行
-            const lines = text.split(/[\n,，]/);
-            
-            lines.forEach(line => {
-                line = line.trim();
-                if (!line) return;
-                
-                // 6. 提取特殊要求（括号内外的都提取）
-                let specialMethod = '';
-                let cleanedLine = line;
-                
-                // 先处理括号内的特殊要求
-                const bracketMatch = line.match(/\((.*?)\)/);
-                if (bracketMatch) {
-                    const bracketContent = bracketMatch[1];
-                    for (const method of specialMethods) {
-                        if (bracketContent.includes(method)) {
-                            specialMethod = method;
-                            break;
-                        }
-                    }
-                    cleanedLine = line.replace(bracketMatch[0], '').trim();
-                }
-                
-                // 如果没有找到括号内的特殊要求，检查整个行
-                if (!specialMethod) {
-                    for (const method of specialMethods) {
-                        if (line.includes(method)) {
-                            specialMethod = method;
-                            // 从行中移除该特殊要求
-                            cleanedLine = line.replace(method, '').trim();
-                            break;
-                        }
-                    }
-                }
-                
-                // 7. 处理中文数字格式
-                const chineseNumbers = {
-                    '十五': '15', '十六': '16', '十七': '17', '十八': '18', '十九': '19',
-                    '十一': '11', '十二': '12', '十三': '13', '十四': '14',
-                    '二十': '20', '三十': '30', '四十': '40', '五十': '50', '六十': '60',
-                    '一': '1', '二': '2', '三': '3', '四': '4', '五': '5',
-                    '六': '6', '七': '7', '八': '8', '九': '9', '十': '10'
-                };
-                
-                // 8. 先处理有"个"或"片"的情况
-                const unitPattern = /([\u4e00-\u9fa5]{1,4})\s*(\d+(?:\.\d+)?)\s*(个|片)/;
-                const unitMatch = cleanedLine.match(unitPattern);
-                
-                if (unitMatch) {
-                    let herbName = unitMatch[1];
-                    let quantity = parseFloat(unitMatch[2]);
-                    let unit = unitMatch[3];
-                    
-                    // 处理别名
-                    if (herbAliases[herbName]) {
-                        herbName = herbAliases[herbName];
-                    }
-                    
-                    // 单位转换
-                    let weight = 0;
-                    if (unitConversion[herbName]) {
-                        weight = quantity * unitConversion[herbName];
-                    } else {
-                        // 默认处理：个 -> 克，片 -> 克（按5g计算）
-                        weight = quantity * 5;
-                    }
-                    
-                    if (!isNaN(weight) && weight > 0) {
-                        herbs.push({
-                            name: herbName,
-                            weight: weight, // 存储转换后的重量
-                            specialMethod: specialMethod,
-                            originalUnit: `${quantity}${unit}`, // 保存原始单位信息用于显示
-                            convertedWeight: weight // 转换后的重量
-                        });
-                        
-                        cleanedLine = cleanedLine.replace(unitMatch[0], '');
-                    }
-                }
-                
-                // 9. 处理中文数字格式：药材名 + 中文数字
-                for (const [chineseNum, arabicNum] of Object.entries(chineseNumbers)) {
-                    const pattern = new RegExp(`([\\u4e00-\\u9fa5]{2,4})${chineseNum}`, 'g');
-                    let match;
-                    
-                    while ((match = pattern.exec(cleanedLine)) !== null) {
-                        let herbName = match[1];
-                        
-                        // 处理别名
-                        if (herbAliases[herbName]) {
-                            herbName = herbAliases[herbName];
-                        }
-                        
-                        const weight = parseFloat(arabicNum);
-                        if (!isNaN(weight) && weight > 0) {
-                            herbs.push({
-                                name: herbName,
-                                weight: weight,
-                                specialMethod: specialMethod,
-                                convertedWeight: weight
-                            });
-                            
-                            cleanedLine = cleanedLine.replace(match[0], '');
-                        }
-                    }
-                }
-                
-                // 10. 处理阿拉伯数字格式
-                const arabicPattern = /([\u4e00-\u9fa5]{2,4})\s*(\d+(?:\.\d+)?)/g;
-                let arabicMatch;
-                
-                while ((arabicMatch = arabicPattern.exec(cleanedLine)) !== null) {
-                    let herbName = arabicMatch[1];
-                    const weightStr = arabicMatch[2];
-                    
-                    // 检查是否已经添加过
-                    const alreadyAdded = herbs.some(h => h.name === herbName || 
-                        (herbAliases[herbName] && h.name === herbAliases[herbName]));
-                    
-                    if (!alreadyAdded) {
-                        // 处理别名
-                        if (herbAliases[herbName]) {
-                            herbName = herbAliases[herbName];
-                        }
-                        
-                        const weight = parseFloat(weightStr);
-                        if (!isNaN(weight) && weight > 0) {
-                            herbs.push({
-                                name: herbName,
-                                weight: weight,
-                                specialMethod: specialMethod,
-                                convertedWeight: weight
-                            });
-                        }
-                    }
-                }
-            });
-            
-            // 11. 合并相同药材
-            const herbMap = new Map();
-            herbs.forEach(herb => {
-                const key = herb.name;
-                if (herbMap.has(key)) {
-                    const existingHerb = herbMap.get(key);
-                    existingHerb.weight += herb.weight;
-                    existingHerb.convertedWeight += herb.convertedWeight;
-                    // 合并特殊要求
-                    if (herb.specialMethod && existingHerb.specialMethod !== herb.specialMethod) {
-                        existingHerb.specialMethod = existingHerb.specialMethod ? 
-                            `${existingHerb.specialMethod}；${herb.specialMethod}` : herb.specialMethod;
-                    }
-                    // 保留原始单位信息
-                    if (herb.originalUnit) {
-                        if (existingHerb.originalUnit) {
-                            existingHerb.originalUnit += ` + ${herb.originalUnit}`;
-                        } else {
-                            existingHerb.originalUnit = herb.originalUnit;
-                        }
-                    }
-                } else {
-                    herbMap.set(key, {...herb});
-                }
-            });
-            
-            return Array.from(herbMap.values());
-        }
-        
-        function calculatePrice(addToHistoryFlag = true) {
-            const input = document.getElementById('prescriptionInput').value.trim();
-            if (!input) {
-                showNotification('请输入方剂', 'error');
-                return;
-            }
-            
-            // 添加到历史记录（仅在用户主动计算时添加）
-            if (addToHistoryFlag) {
-                addToHistory(input);
-            }
-            
-            const herbs = parsePrescription(input);
-            
-            if (herbs.length === 0) {
-                showNotification('未识别到有效药材信息，请检查格式', 'error');
-                return;
-            }
-            
-            const results = [];
-            let total = 0;
-            let foundCount = 0;
-            
-            herbs.forEach(herb => {
-                // 精确匹配
-                let herbInfo = herbsData.find(item => item.name === herb.name);
-                
-                // 模糊匹配（如果精确匹配失败）
-                if (!herbInfo) {
-                    herbInfo = herbsData.find(item => 
-                        item.name.includes(herb.name) || 
-                        herb.name.includes(item.name)
-                    );
-                }
-                
-                if (herbInfo) {
-                    const price = herbInfo.price * herb.weight;
-                    total += price;
-                    foundCount++;
-                    
-                    results.push({
-                        name: herb.name,
-                        weight: herb.weight,
-                        convertedWeight: herb.convertedWeight || herb.weight,
-                        specialMethod: herb.specialMethod || '',
-                        location: herbInfo.location,
-                        price: price,
-                        hint: herbInfo.hint || '',
-                        isZeroPrice: herbInfo.price === 0,
-                        isFound: true,
-                        unitPrice: herbInfo.price,
-                        originalUnit: herb.originalUnit || '' // 保存原始单位
+            try {
+                const data = [];
+                const header = state.colLetters.map(col => state.headerData[col] || col);
+                data.push(header);
+                for (let r = 1; r <= state.rows; r++) {
+                    const row = [];
+                    let hasRowData = false;
+                    state.colLetters.forEach(col => {
+                        const val = state.data[`${col}${r}`] || '';
+                        row.push(val);
+                        if (val) hasRowData = true;
                     });
-                } else {
-                    results.push({
-                        name: herb.name,
-                        weight: herb.weight,
-                        convertedWeight: herb.convertedWeight || herb.weight,
-                        specialMethod: herb.specialMethod || '',
-                        location: '无', // 修改：将"未找到"改为"无"
-                        price: 0,
-                        hint: '',
-                        isZeroPrice: true,
-                        isFound: false,
-                        unitPrice: 0,
-                        originalUnit: herb.originalUnit || ''
-                    });
+                    if (hasRowData) data.push(row);
                 }
+                const ws = XLSX.utils.aoa_to_sheet(data);
+                const wb = XLSX.utils.book_new();
+                XLSX.utils.book_append_sheet(wb, ws, '药品数据');
+                
+                const now = new Date();
+                const year = now.getFullYear();
+                const month = String(now.getMonth() + 1).padStart(2, '0');
+                const day = String(now.getDate()).padStart(2, '0');
+                const hours = String(now.getHours()).padStart(2, '0');
+                const minutes = String(now.getMinutes()).padStart(2, '0');
+                const filename = `yb数据${year}${month}${day} ${hours}${minutes}_自动保存.xlsx`;
+                
+                XLSX.writeFile(wb, filename);
+                
+                // 记录到历史
+                saveToHistory(ACTION_TYPES.AUTO_SAVE, { 
+                    fileName: filename,
+                    rowCount: data.length - 1,
+                    timestamp: now.toISOString()
+                });
+                
+                showToast(`🕐 自动保存成功：${filename}`);
+                console.log(`自动保存完成：${filename}`);
+            } catch (err) {
+                console.error('自动保存失败:', err);
+                showToast('自动保存失败: ' + err.message);
+            }
+        }
+
+        function initTable() {
+            const thead = document.getElementById('tableHead');
+            const tbody = document.getElementById('tableBody');
+            
+            // 修改：G列标题改为"备注（不放追溯码）"
+            const headerText = {
+                A: '条码', B: '药品名称', C: '价', D: '无空', E: 'hyj', F: '上限', G: '备注（不放码',
+                H: 'Q02000000', I: '点击访问网站', J: '240', K: '126.8', L: '计算值',
+                M: '', N: '', O: '', P: '', Q: '', R: '', S: '', T: '',
+                U: 'A元', V: 'B元', W: 'C元', X: 'D元', Y: 'E元', Z: 'F元',
+                AA: 'G元', AB: 'H元', AC: 'I元', AD: 'J元', AE: 'K元', AF: 'L元',
+                AG: 'M元', AH: 'N元', AI: 'O元', AJ: 'P元', AK: 'Q元', AL: 'R元',
+                AM: 'S元', AN: 'T元'
+            };
+
+            state.colLetters.forEach(col => {
+                state.headerData[col] = headerText[col] || col;
+            });
+
+            let headerHTML = '<tr><th class="corner"></th>';
+            state.colLetters.forEach((col, idx) => {
+                const isMeta = idx >= 20;
+                const isEditable = CONFIG.editableHeaders.includes(col);
+                const isI = col === 'I';
+                const text = state.headerData[col];
+                let width = getColWidth(col, idx);
+                const classes = ['col-header'];
+                if (isMeta) classes.push('meta-col');
+                if (isEditable || isI) classes.push('editable-header');
+                const clickHandler = isI ? 'onclick="openWebsite()"' : 
+                                   (isEditable ? 'onclick="editHeader(\'' + col + '\')"' : '');
+                // 添加列标题属性用于自动调整
+                headerHTML += `<th class="${classes.join(' ')}" data-col="${col}" data-idx="${idx}" style="min-width: ${width}px;" ${clickHandler}>
+                    <span class="header-text">${text}</span>
+                </th>`;
+            });
+            headerHTML += '</tr>';
+            thead.innerHTML = headerHTML;
+            renderEmptyRows();
+            calculateLHeader();
+        }
+
+        function getColWidth(col, idx) {
+            if (col === 'A') return 145.8;
+            if (col === 'C' || col === 'E') return 64.8;
+            if (col === 'D' || col === 'F') return 39.96;
+            if (idx >= 7 && idx <= 19) return 173.88;
+            if (idx >= 20) return 71.28;
+            return 118.8;
+        }
+
+        function renderEmptyRows() {
+            const tbody = document.getElementById('tableBody');
+            let bodyHTML = '';
+            for (let r = 0; r < state.rows; r++) {
+                bodyHTML += `<tr data-row-num="${r + 1}"><th class="row-header" onclick="selectRow(${r})">${r + 1}</th>`;
+                state.colLetters.forEach((col, idx) => {
+                    const isMeta = idx >= 20;
+                    const isReadOnly = CONFIG.readOnlyCol.includes(col);
+                    const cellId = `${col}${r + 1}`;
+                    // C-F列使用固定宽度，其他列使用min-width支持自动调整
+                    const isFixed = CONFIG.noResizeCols.includes(col);
+                    const width = getColWidth(col, idx);
+                    const widthStyle = isFixed ? `width: ${width}px; min-width: ${width}px; max-width: ${width}px;` : `min-width: ${width}px;`;
+                    
+                    bodyHTML += `
+                        <td data-row="${r}" data-col="${col}" data-id="${cellId}" 
+                            class="${isMeta ? 'meta-col' : ''} ${isReadOnly ? '' : 'editable'}"
+                            style="${widthStyle}"
+                            onclick="handleCellClick(event, '${cellId}')"
+                            onmouseenter="highlightRow(${r}); showCommentTooltip(event, '${cellId}')"
+                            onmouseleave="clearHighlight(); hideCommentTooltip()">
+                            <div class="cell-content" id="cell-${cellId}"></div>
+                        </td>
+                    `;
+                });
+                bodyHTML += '</tr>';
+            }
+            tbody.innerHTML = bodyHTML;
+        }
+
+        // ==================== 自动调整列宽功能（自动执行，无需按钮） ====================
+        function autoResizeColumns() {
+            // 创建临时canvas用于测量文本宽度
+            const canvas = document.createElement('canvas');
+            const context = canvas.getContext('2d');
+            // 设置字体以匹配单元格样式
+            context.font = '15.44px "Microsoft YaHei", "Segoe UI", Arial, sans-serif';
+            
+            const headerContext = canvas.getContext('2d');
+            headerContext.font = 'bold 16.63px "Microsoft YaHei", "Segoe UI", Arial, sans-serif';
+            
+            // 为每个列计算最大宽度
+            state.colLetters.forEach((col, idx) => {
+                // 跳过C-F列（固定宽度）
+                if (CONFIG.noResizeCols.includes(col)) return;
+                
+                let maxWidth = getColWidth(col, idx); // 默认最小宽度
+                const isMeta = idx >= 20;
+                // A列使用15.44px字体测量，B-G列使用17.44px
+                let fontSize;
+                if (col === 'A') {
+                    fontSize = 15.44;
+                } else if (['B','C','D','E','F','G'].includes(col)) {
+                    fontSize = 17.44;
+                } else {
+                    fontSize = isMeta ? 11.88 : 15.44;
+                }
+                context.font = `${fontSize}px "Microsoft YaHei", "Segoe UI", Arial, sans-serif`;
+                
+                // 1. 测量标题宽度
+                const headerText = state.headerData[col] || col;
+                const headerWidth = headerContext.measureText(headerText).width;
+                maxWidth = Math.max(maxWidth, headerWidth + 20); // 加padding
+                
+                // 2. 测量该列所有单元格内容宽度
+                for (let r = 1; r <= state.rows; r++) {
+                    const cellId = `${col}${r}`;
+                    const value = state.data[cellId] || '';
+                    if (value) {
+                        const textWidth = context.measureText(value).width;
+                        maxWidth = Math.max(maxWidth, textWidth + 20); // 加padding
+                    }
+                }
+                
+                // 3. 应用最大/最小限制
+                maxWidth = Math.max(CONFIG.minColWidth, Math.min(maxWidth, CONFIG.maxColWidth));
+                
+                // 4. 应用宽度到表格
+                const th = document.querySelector(`th[data-col="${col}"]`);
+                const tds = document.querySelectorAll(`td[data-col="${col}"]`);
+                
+                if (th) {
+                    th.style.width = maxWidth + 'px';
+                    th.style.minWidth = maxWidth + 'px';
+                }
+                tds.forEach(td => {
+                    td.style.width = maxWidth + 'px';
+                    td.style.minWidth = maxWidth + 'px';
+                });
+                
+                state.colWidths[col] = maxWidth;
             });
             
-            currentResults = results;
-            displayResults(results, total, foundCount, herbs.length);
-            
-            if (foundCount > 0) {
-                showNotification(`识别${herbs.length}味，匹配${foundCount}味，总价${total.toFixed(2)}元`);
+            showToast('列宽已自动调整');
+        }
+
+        // 调整单列宽度
+        function resizeSingleColumn(col) {
+            const canvas = document.createElement('canvas');
+            const context = canvas.getContext('2d');
+            const idx = state.colLetters.indexOf(col);
+            const isMeta = idx >= 20;
+            // A列使用15.44px字体测量
+            let fontSize;
+            if (col === 'A') {
+                fontSize = 15.44;
+            } else if (['B','C','D','E','F','G'].includes(col)) {
+                fontSize = 17.44;
             } else {
-                showNotification(`识别${herbs.length}味，但未匹配到价格`, 'error');
+                fontSize = isMeta ? 11.88 : 15.44;
+            }
+            context.font = `${fontSize}px "Microsoft YaHei", "Segoe UI", Arial, sans-serif`;
+            
+            let maxWidth = getColWidth(col, idx);
+            
+            // 测量标题
+            const headerText = state.headerData[col] || col;
+            const headerWidth = context.measureText(headerText).width;
+            maxWidth = Math.max(maxWidth, headerWidth + 20);
+            
+            // 测量内容
+            for (let r = 1; r <= state.rows; r++) {
+                const cellId = `${col}${r}`;
+                const value = state.data[cellId] || '';
+                if (value) {
+                    const textWidth = context.measureText(value).width;
+                    maxWidth = Math.max(maxWidth, textWidth + 20);
+                }
+            }
+            
+            maxWidth = Math.max(CONFIG.minColWidth, Math.min(maxWidth, CONFIG.maxColWidth));
+            
+            const th = document.querySelector(`th[data-col="${col}"]`);
+            const tds = document.querySelectorAll(`td[data-col="${col}"]`);
+            
+            if (th) {
+                th.style.width = maxWidth + 'px';
+                th.style.minWidth = maxWidth + 'px';
+            }
+            tds.forEach(td => {
+                td.style.width = maxWidth + 'px';
+                td.style.minWidth = maxWidth + 'px';
+            });
+            
+            state.colWidths[col] = maxWidth;
+        }
+
+        function highlightRow(rowIdx) {
+            clearHighlight();
+            state.highlightedRow = rowIdx;
+            const row = document.querySelectorAll('#tableBody tr')[rowIdx];
+            if (!row || row.classList.contains('hidden-row')) return;
+            row.classList.add('row-highlight');
+            const rowHeader = row.querySelector('.row-header');
+            if (rowHeader) rowHeader.classList.add('row-highlight');
+        }
+
+        function clearHighlight() {
+            document.querySelectorAll('.row-highlight').forEach(el => {
+                el.classList.remove('row-highlight');
+            });
+            state.highlightedRow = null;
+        }
+
+        function editHeader(col) {
+            if (state.editingHeader) return;
+            const th = document.querySelector(`th[data-col="${col}"]`);
+            const currentText = state.headerData[col];
+            const input = document.createElement('input');
+            input.type = 'text';
+            input.value = currentText;
+            input.style.cssText = 'width: 100%; height: 100%; border: none; outline: 2px solid #217346; padding: 2px; font-size: 14px; font-weight: bold; text-align: center;';
+            const span = th.querySelector('.header-text');
+            span.style.display = 'none';
+            th.appendChild(input);
+            input.focus();
+            input.select();
+            state.editingHeader = col;
+            const finishEdit = () => {
+                const newValue = input.value.trim();
+                if (newValue && newValue !== currentText) {
+                    const oldValue = state.headerData[col];
+                    state.headerData[col] = newValue;
+                    span.textContent = newValue;
+                    if (CONFIG.formulaHeaders.includes(col)) {
+                        calculateLHeader();
+                    }
+                    // 标题修改后自动调整该列宽度
+                    if (!CONFIG.noResizeCols.includes(col)) {
+                        setTimeout(() => resizeSingleColumn(col), 0);
+                    }
+                    saveToHistory(ACTION_TYPES.EDIT_HEADER, { col, oldValue, newValue, cellId: `header-${col}` });
+                } else {
+                    span.textContent = currentText;
+                }
+                input.remove();
+                span.style.display = '';
+                state.editingHeader = null;
+            };
+            input.addEventListener('blur', finishEdit);
+            input.addEventListener('keydown', (e) => {
+                if (e.key === 'Enter') {
+                    e.preventDefault();
+                    finishEdit();
+                } else if (e.key === 'Escape') {
+                    input.remove();
+                    span.style.display = '';
+                    state.editingHeader = null;
+                }
+            });
+        }
+
+        function calculateLHeader() {
+            const jVal = parseFloat(state.headerData['J']) || 0;
+            const kVal = parseFloat(state.headerData['K']) || 0;
+            const lVal = (jVal - kVal).toFixed(1);
+            state.headerData['L'] = lVal;
+            const thL = document.querySelector(`th[data-col="L"] .header-text`);
+            if (thL) thL.textContent = lVal;
+        }
+
+        function openWebsite() {
+            window.open('https://www.mashangfangxin.com/', '_blank', 'noopener,noreferrer');
+        }
+
+        function initEvents() {
+            const searchInput = document.getElementById('searchInput');
+            searchInput.addEventListener('keydown', (e) => {
+                if (e.key === 'Enter') {
+                    e.preventDefault();
+                    performSearch();
+                }
+            });
+            
+            document.getElementById('tableBody').addEventListener('dblclick', (e) => {
+                const td = e.target.closest('td[data-col]');
+                if (!td) return;
+                const cellId = td.dataset.id;
+                const col = cellId.match(/[A-Z]+/)[0];
+                if (CONFIG.readOnlyCol.includes(col) || isMetaCol(col)) return;
+                e.preventDefault();
+                selectCell(cellId);
+                startEdit(cellId, e);
+            });
+            
+            document.getElementById('clearSearchBtn').addEventListener('click', clearSearch);
+            document.getElementById('filterToggle').addEventListener('click', toggleFilter);
+            document.getElementById('fileInput').addEventListener('change', handleExcelImport);
+            document.getElementById('saveBtn').addEventListener('click', saveToExcel);
+            document.getElementById('addRowBtn').addEventListener('click', handleAddRowClick);
+            document.getElementById('undoBtn').addEventListener('click', undo);
+            document.getElementById('redoBtn').addEventListener('click', redo);
+            // 新增：筛选重复项按钮事件
+            document.getElementById('filterDuplicateBtn').addEventListener('click', toggleDuplicateFilter);
+            
+            document.addEventListener('keydown', handleGlobalKeydown);
+            document.addEventListener('contextmenu', handleGlobalRightClick);
+            document.addEventListener('mousedown', (e) => {
+                const menu = document.getElementById('contextMenu');
+                if (menu.style.display === 'block' && !e.target.closest('.context-menu')) {
+                    menu.style.display = 'none';
+                }
+            });
+            const container = document.getElementById('container');
+            container.addEventListener('scroll', () => {
+                if (!state.isUndoRedo) {
+                    state.scrollPosition = {
+                        top: container.scrollTop,
+                        left: container.scrollLeft
+                    };
+                }
+            });
+            window.addEventListener('beforeunload', () => {
+                saveToLocalStorage();
+                // 清除自动保存定时器
+                if (state.autoSaveTimer) {
+                    clearInterval(state.autoSaveTimer);
+                    state.autoSaveTimer = null;
+                }
+                if (state.autoSaveTimeout) {
+                    clearTimeout(state.autoSaveTimeout);
+                    state.autoSaveTimeout = null;
+                }
+            });
+            
+            // 初始化列标题双击事件
+            setTimeout(() => initColumnResizeEvents(), 100);
+        }
+
+        // ==================== 新增：筛选重复项功能 ====================
+        function toggleDuplicateFilter() {
+            const btn = document.getElementById('filterDuplicateBtn');
+            
+            if (state.isDuplicateFilterActive) {
+                // 关闭重复项筛选
+                state.isDuplicateFilterActive = false;
+                btn.classList.remove('active');
+                btn.textContent = '🔍 重复项';
+                
+                // 恢复原始显示
+                restoreOriginalRowOrder();
+                document.querySelectorAll('#tableBody tr').forEach(tr => {
+                    tr.classList.remove('hidden-row');
+                });
+                
+                // 如果有其他筛选状态，重新应用
+                if (state.isFilterActive) {
+                    applyFilter();
+                } else if (state.searchTerm) {
+                    performSearch();
+                }
+                
+                showToast('已取消重复项筛选');
+            } else {
+                // 开启重复项筛选
+                state.isDuplicateFilterActive = true;
+                btn.classList.add('active');
+                btn.textContent = '🔍 显示全部';
+                
+                // 先清除其他筛选状态
+                state.isFilterActive = false;
+                document.getElementById('filterToggle').classList.remove('btn-active');
+                document.getElementById('filterToggle').textContent = '筛选＞0';
+                
+                // 执行重复项筛选
+                filterDuplicateRows();
+            }
+            
+            saveToHistory(ACTION_TYPES.FILTER_DUPLICATE, { 
+                active: state.isDuplicateFilterActive 
+            });
+        }
+
+        function filterDuplicateRows() {
+            // 获取所有重复项
+            const duplicateRows = new Set();
+            const excludeCols = ['C','D','E','F','G'];
+            const valueMap = new Map();
+            
+            // 收集所有值及其所在行
+            for (let r = 1; r <= state.rows; r++) {
+                state.colLetters.forEach(col => {
+                    if (!isDataCol(col) || excludeCols.includes(col)) return;
+                    const cellId = `${col}${r}`;
+                    const value = (state.data[cellId] || '').trim();
+                    if (!value) return;
+                    const num = parseFloat(value);
+                    if (!isNaN(num) && num >= 0 && num <= 10) return;
+                    
+                    if (!valueMap.has(value)) {
+                        valueMap.set(value, new Set());
+                    }
+                    valueMap.get(value).add(r);
+                });
+            }
+            
+            // 找出重复的行
+            valueMap.forEach((rows, value) => {
+                if (rows.size > 1) {
+                    rows.forEach(rowNum => duplicateRows.add(rowNum));
+                }
+            });
+            
+            if (duplicateRows.size === 0) {
+                showToast('未发现重复项');
+                state.isDuplicateFilterActive = false;
+                document.getElementById('filterDuplicateBtn').classList.remove('active');
+                document.getElementById('filterDuplicateBtn').textContent = '🔍 重复项';
+                return;
+            }
+            
+            // 显示所有行，然后隐藏非重复行
+            restoreOriginalRowOrder();
+            document.querySelectorAll('#tableBody tr').forEach(tr => {
+                const rowNum = parseInt(tr.dataset.rowNum);
+                if (duplicateRows.has(rowNum)) {
+                    tr.classList.remove('hidden-row');
+                } else {
+                    tr.classList.add('hidden-row');
+                }
+            });
+            
+            showToast(`发现 ${duplicateRows.size} 行包含重复数据`);
+        }
+
+        function handleAddRowClick() {
+            const container = document.getElementById('container');
+            const scrollHeight = container.scrollHeight;
+            const clientHeight = container.clientHeight;
+            const scrollTop = container.scrollTop;
+            const isAtBottom = scrollTop + clientHeight >= scrollHeight - 10;
+            if (!isAtBottom) {
+                container.scrollTop = scrollHeight;
+            } else {
+                addNewRow();
             }
         }
-        
-        function displayResults(results, total, foundCount, totalHerbs) {
-            const tbody = document.getElementById('resultsBody');
+
+        function showCommentTooltip(e, cellId) {
+            const cell = document.getElementById(`cell-${cellId}`);
+            const comment = cell.dataset.comment;
+            if (comment) {
+                const tooltip = document.getElementById('commentTooltip');
+                tooltip.textContent = comment;
+                tooltip.style.left = (e.clientX + 10) + 'px';
+                tooltip.style.top = (e.clientY + 10) + 'px';
+                tooltip.classList.add('show');
+            }
+        }
+
+        function hideCommentTooltip() {
+            const tooltip = document.getElementById('commentTooltip');
+            tooltip.classList.remove('show');
+        }
+
+        function handleGlobalRightClick(e) {
+            const cell = e.target.closest('td[data-col]');
+            if (!cell) return;
+            const currentTime = new Date().getTime();
+            const timeDiff = currentTime - state.lastRightClickTime;
+            if (timeDiff < 300) {
+                e.preventDefault();
+                e.stopPropagation();
+                const cellId = cell.dataset.id;
+                selectCell(cellId);
+                showContextMenu(e, cellId);
+                state.lastRightClickTime = 0;
+            } else {
+                state.lastRightClickTime = currentTime;
+            }
+        }
+
+        // ==================== 修复：搜索功能（筛选状态下只显示搜索结果） ====================
+        function performSearch() {
+            const term = document.getElementById('searchInput').value.trim().toLowerCase();
+            const previousTerm = state.searchTerm;
+            const previousFilterState = state.isFilterActive;
+            
+            if (!term) {
+                clearSearch();
+                return;
+            }
+            
+            state.searchTerm = term;
+            
+            // 清除之前的高亮（不再添加新的高亮）
+            document.querySelectorAll('.search-highlight').forEach(el => {
+                el.classList.remove('search-highlight');
+            });
+            
+            state.filteredRows.clear();
+            
+            // 显示所有行（重置筛选）
+            document.querySelectorAll('#tableBody tr').forEach(tr => {
+                tr.classList.remove('hidden-row');
+            });
+            
+            // 收集匹配的行
+            const matchedRows = [];
+            for (let r = 1; r <= state.rows; r++) {
+                const aVal = (state.data[`A${r}`] || '').toLowerCase();
+                const bVal = (state.data[`B${r}`] || '').toLowerCase();
+                
+                if (aVal.includes(term) || bVal.includes(term)) {
+                    state.filteredRows.add(r);
+                    matchedRows.push(r);
+                    // 不再添加黄色高亮
+                }
+            }
+            
+            // 只根据搜索结果隐藏行（不叠加筛选条件）
+            for (let r = 1; r <= state.rows; r++) {
+                const row = document.querySelector(`tr[data-row-num="${r}"]`);
+                if (!state.filteredRows.has(r)) {
+                    row.classList.add('hidden-row');
+                } else {
+                    row.classList.remove('hidden-row');
+                }
+            }
+            
+            // 如果之前有筛选状态，关闭它（因为搜索优先级更高）
+            if (state.isFilterActive) {
+                state.isFilterActive = false;
+                const filterBtn = document.getElementById('filterToggle');
+                filterBtn.classList.remove('btn-active');
+                filterBtn.textContent = '筛选＞0';
+            }
+            
+            // 如果处于重复项筛选状态，关闭它
+            if (state.isDuplicateFilterActive) {
+                state.isDuplicateFilterActive = false;
+                document.getElementById('filterDuplicateBtn').classList.remove('active');
+                document.getElementById('filterDuplicateBtn').textContent = '🔍 重复项';
+            }
+            
+            saveToHistory(ACTION_TYPES.SEARCH, { 
+                term, 
+                previousTerm, 
+                previousFilterState,
+                resultCount: state.filteredRows.size,
+                filteredRows: Array.from(state.filteredRows)
+            });
+            
+            showToast(`找到 ${state.filteredRows.size} 个匹配项`);
+            
+            // 跳转到第一个匹配行的H列空单元格
+            if (matchedRows.length > 0) {
+                setTimeout(() => {
+                    jumpToFirstEmptyCellFromH(matchedRows[0]);
+                }, 100);
+            }
+        }
+
+        // ==================== 修复：清空搜索功能 ====================
+        function clearSearch() {
+            const previousTerm = state.searchTerm;
+            const previousFilterState = state.isFilterActive;
+            
+            document.getElementById('searchInput').value = '';
+            state.searchTerm = '';
+            state.filteredRows.clear();
+            
+            // 清除所有高亮（包括搜索高亮）
+            document.querySelectorAll('.search-highlight').forEach(el => {
+                el.classList.remove('search-highlight');
+            });
+            
+            // 恢复原始行顺序（如果之前有排序）
+            restoreOriginalRowOrder();
+            
+            // 显示所有行（回到首页）
+            document.querySelectorAll('#tableBody tr').forEach(tr => {
+                tr.classList.remove('hidden-row');
+            });
+            
+            // 如果之前有筛选状态，重新应用
+            if (state.isFilterActive) {
+                applyFilter();
+            }
+            
+            if (previousTerm || previousFilterState !== state.isFilterActive) {
+                saveToHistory(ACTION_TYPES.SEARCH, { 
+                    term: '', 
+                    previousTerm, 
+                    previousFilterState,
+                    resultCount: 0,
+                    filteredRows: []
+                });
+            }
+            
+            const container = document.getElementById('container');
+            container.scrollTop = 0;
+            container.scrollLeft = 0;
+            selectCell('A1');
+        }
+
+        // 恢复原始行顺序
+        function restoreOriginalRowOrder() {
+            const tbody = document.getElementById('tableBody');
+            const rows = Array.from(tbody.querySelectorAll('tr'));
+            
+            // 按data-row-num排序
+            rows.sort((a, b) => {
+                const numA = parseInt(a.dataset.rowNum);
+                const numB = parseInt(b.dataset.rowNum);
+                return numA - numB;
+            });
+            
+            // 重新添加到tbody
+            rows.forEach(row => tbody.appendChild(row));
+        }
+
+        function jumpToFirstEmptyCellFromH(rowNum) {
+            const startColIndex = state.colLetters.indexOf(CONFIG.searchJumpStartCol);
+            for (let i = startColIndex; i < state.colLetters.length; i++) {
+                const col = state.colLetters[i];
+                if (CONFIG.readOnlyCol.includes(col) || isMetaCol(col)) continue;
+                const cellId = `${col}${rowNum}`;
+                const cellValue = state.data[cellId];
+                if (!cellValue || cellValue.trim() === '') {
+                    const cell = document.getElementById(`cell-${cellId}`);
+                    if (!cell) continue;
+                    const row = cell.closest('tr');
+                    if (row && row.classList.contains('hidden-row')) continue;
+                    cell.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                    setTimeout(() => {
+                        selectCell(cellId);
+                        startEdit(cellId, null);
+                    }, 300);
+                    return;
+                }
+            }
+            const firstCellId = `${CONFIG.searchJumpStartCol}${rowNum}`;
+            const firstCell = document.getElementById(`cell-${firstCellId}`);
+            if (firstCell) {
+                firstCell.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                setTimeout(() => {
+                    selectCell(firstCellId);
+                    startEdit(firstCellId, null);
+                }, 300);
+            }
+        }
+
+        function toggleFilter() {
+            const previousState = state.isFilterActive;
+            const previousSearchTerm = state.searchTerm;
+            const previousFilteredRows = Array.from(state.filteredRows);
+            state.isFilterActive = !state.isFilterActive;
+            const btn = document.getElementById('filterToggle');
+            btn.classList.toggle('btn-active', state.isFilterActive);
+            if (state.isFilterActive) {
+                btn.textContent = '显示全部';
+                // 清空搜索
+                state.searchTerm = '';
+                document.getElementById('searchInput').value = '';
+                document.querySelectorAll('.search-highlight').forEach(el => {
+                    el.classList.remove('search-highlight');
+                });
+                state.filteredRows.clear();
+                
+                // 如果处于重复项筛选状态，关闭它
+                if (state.isDuplicateFilterActive) {
+                    state.isDuplicateFilterActive = false;
+                    document.getElementById('filterDuplicateBtn').classList.remove('active');
+                    document.getElementById('filterDuplicateBtn').textContent = '🔍 重复项';
+                }
+                
+                applyFilter();
+            } else {
+                btn.textContent = '筛选＞0';
+                clearFilter();
+            }
+            saveToHistory(ACTION_TYPES.FILTER, { 
+                active: state.isFilterActive, 
+                previousState,
+                previousSearchTerm,
+                previousFilteredRows
+            });
+        }
+
+        // ==================== 新增：筛选后按C列降序排序 ====================
+        function applyFilter(keepSearchHighlight = false) {
+            // 获取所有D>0的行
+            const visibleRows = [];
+            for (let r = 1; r <= state.rows; r++) {
+                const dVal = parseInt(state.data[`D${r}`] || '0');
+                if (dVal > 0) {
+                    const cVal = parseFloat(state.data[`C${r}`] || '0');
+                    visibleRows.push({ rowNum: r, cValue: cVal });
+                }
+            }
+            
+            // 按C列数值从大到小排序
+            visibleRows.sort((a, b) => b.cValue - a.cValue);
+            
+            // 获取tbody并重新排列行
+            const tbody = document.getElementById('tableBody');
+            const rowsMap = new Map();
+            
+            // 收集所有行
+            for (let r = 1; r <= state.rows; r++) {
+                const row = document.querySelector(`tr[data-row-num="${r}"]`);
+                if (row) {
+                    rowsMap.set(r, row);
+                }
+            }
+            
+            // 清空tbody
             tbody.innerHTML = '';
             
-            document.getElementById('herbCountText').textContent = `${totalHerbs}味`;
-            
-            results.forEach((item, index) => {
-                const row = document.createElement('tr');
-                const priceClass = item.isZeroPrice ? 'zero-price' : '';
-                const nameClass = item.isFound ? '' : 'not-found';
-                
-                // 处理特殊要求显示 - 去掉边框样式
-                let specialMethodDisplay = item.specialMethod || '';
-                if (specialMethodDisplay) {
-                    specialMethodDisplay = `<span class="special-method">${specialMethodDisplay}</span>`;
+            // 按排序后的顺序添加可见行
+            visibleRows.forEach(({ rowNum }) => {
+                const row = rowsMap.get(rowNum);
+                if (row) {
+                    row.classList.remove('hidden-row');
+                    tbody.appendChild(row);
                 }
-                
-                // 显示重量 - 只显示数字（转换后的重量）
-                // 对于生姜、大枣、草果等，显示转换后的克数
-                const weightDisplay = item.convertedWeight || item.weight;
-                
-                row.innerHTML = `
-                    <td class="${nameClass} editable-cell" data-index="${index}" data-field="name">${item.name}</td>
-                    <td class="editable-cell" data-index="${index}" data-field="location">${item.location}</td>
-                    <td class="editable-cell" data-index="${index}" data-field="weight">${weightDisplay}</td>
-                    <td class="editable-cell" data-index="${index}" data-field="specialMethod">${specialMethodDisplay}</td>
-                    <td class="editable-cell ${priceClass}" data-index="${index}" data-field="price">${item.price.toFixed(2)}</td>
-                    <td class="editable-cell" data-index="${index}" data-field="hint">${item.hint || ''}</td>
-                `;
-                tbody.appendChild(row);
             });
             
-            document.getElementById('totalAmount').textContent = total.toFixed(2);
-            document.getElementById('resultsContainer').classList.remove('hidden');
-            document.getElementById('emptyResults').classList.add('hidden');
-            
-            updatePriceDisplay();
-            setupInlineEditing();
-        }
-        
-        // 修改后的复制功能：只保留「中药名、克数、特殊要求」三列
-        function copyHerbsList() {
-            if (currentResults.length === 0) {
-                showNotification('没有药材数据可复制', 'error');
-                return;
+            // 添加隐藏的行（保持原始顺序）
+            for (let r = 1; r <= state.rows; r++) {
+                if (!visibleRows.some(v => v.rowNum === r)) {
+                    const row = rowsMap.get(r);
+                    if (row) {
+                        row.classList.add('hidden-row');
+                        tbody.appendChild(row);
+                    }
+                }
             }
             
-            let copyText = "";
-            
-            currentResults.forEach(item => {
-                // 只复制三列：中药名、克数(用量)、特殊要求
-                const weightDisplay = item.convertedWeight || item.weight;
-                copyText += `${item.name}\t${weightDisplay}\t${item.specialMethod || ''}\n`;
-            });
-            
-            // 复制到剪贴板
-            navigator.clipboard.writeText(copyText).then(() => {
-                showCopySuccessTips();
-            }).catch(err => {
-                console.error('复制失败:', err);
-                // 备用方法：使用textarea元素
-                const textArea = document.createElement('textarea');
-                textArea.value = copyText;
-                document.body.appendChild(textArea);
-                textArea.select();
-                try {
-                    document.execCommand('copy');
-                    showCopySuccessTips();
-                } catch (e) {
-                    showNotification('复制失败，请手动复制', 'error');
-                }
-                document.body.removeChild(textArea);
-            });
+            if (!keepSearchHighlight) {
+                showToast(`筛选显示 ${visibleRows.length} 行，已按C列降序排列`);
+            }
         }
-        
-        function setupInlineEditing() {
-            const editableCells = document.querySelectorAll('.editable-cell');
+
+        function clearFilter() {
+            // 恢复原始行顺序
+            restoreOriginalRowOrder();
             
+            // 显示所有行
+            document.querySelectorAll('#tableBody tr').forEach(tr => {
+                tr.classList.remove('hidden-row');
+            });
+            
+            // 如果有搜索词，重新应用搜索
+            if (state.searchTerm) {
+                performSearch();
+            }
+        }
+
+        // ==================== 修改：Ctrl多选功能修复 ====================
+        function handleCellClick(e, cellId) {
+            e.stopPropagation();
+            const cell = document.getElementById(`cell-${cellId}`);
+            const td = cell.parentElement;
+            const col = cellId.match(/[A-Z]+/)[0];
+            
+            if (e.ctrlKey || e.metaKey) {
+                // Ctrl+点击：切换选中状态（多选）
+                e.preventDefault();
+                if (state.selectedCells.has(cellId)) {
+                    // 如果已选中，则取消选中
+                    state.selectedCells.delete(cellId);
+                    cell.classList.remove('selected');
+                    // 如果取消的是当前主选单元格，需要重新设置主选
+                    if (state.selectedCell === cellId) {
+                        if (state.selectedCells.size > 0) {
+                            state.selectedCell = Array.from(state.selectedCells)[0];
+                        } else {
+                            state.selectedCell = null;
+                        }
+                    }
+                } else {
+                    // 添加到多选
+                    if (!state.selectedCell) {
+                        state.selectedCell = cellId;
+                    }
+                    state.selectedCells.add(cellId);
+                    cell.classList.add('selected');
+                }
+            } else if (e.shiftKey && state.selectedCell) {
+                // Shift+点击：范围选择
+                e.preventDefault();
+                selectCellRange(state.selectedCell, cellId);
+            } else {
+                // 普通点击：单选
+                // 只有在不是多选模式下才清除其他选中
+                if (state.selectedCells.size <= 1) {
+                    selectCell(cellId);
+                } else {
+                    // 如果当前是多选状态，点击新单元格则切换到单选模式
+                    clearAllSelections();
+                    selectCell(cellId);
+                }
+                
+                // 如果是可编辑单元格，开始编辑
+                if (td.classList.contains('editable') && !td.classList.contains('meta-col') && !CONFIG.readOnlyCol.includes(col)) {
+                    // 延迟一点开始编辑，避免与双击冲突
+                    setTimeout(() => {
+                        if (!state.editingCell) {
+                            startEdit(cellId, e);
+                        }
+                    }, 10);
+                }
+            }
+        }
+
+        function selectCell(cellId) {
+            // 只有在没有按住Ctrl时才清除其他选中
+            if (state.selectedCells.size === 0 || !event || (!event.ctrlKey && !event.metaKey)) {
+                document.querySelectorAll('.cell-content.selected').forEach(el => {
+                    el.classList.remove('selected');
+                });
+                document.querySelectorAll('tr.row-selected').forEach(tr => {
+                    tr.classList.remove('row-selected');
+                });
+                state.selectedCells.clear();
+            }
+            
+            state.selectedCell = cellId;
+            const cell = document.getElementById(`cell-${cellId}`);
+            if (cell) {
+                cell.classList.add('selected');
+                state.selectedCells.add(cellId);
+                cell.focus();
+            }
+        }
+
+        function selectRow(rowIdx) {
+            clearAllSelections();
+            const row = document.querySelectorAll('#tableBody tr')[rowIdx];
+            if (row.classList.contains('hidden-row')) return;
+            row.classList.add('row-selected');
+            const editableCells = row.querySelectorAll('td.editable');
             editableCells.forEach(cell => {
-                cell.addEventListener('dblclick', (e) => {
-                    if (e.target.classList.contains('editable-cell')) {
-                        startEditing(e.target);
-                    }
-                });
+                state.selectedCells.add(cell.dataset.id);
+                cell.querySelector('.cell-content').classList.add('selected');
             });
-        }
-        
-        function startEditing(cell) {
-            const originalContent = cell.textContent;
-            const field = cell.getAttribute('data-field');
-            const index = parseInt(cell.getAttribute('data-index'));
-            
-            // 如果是特殊要求列，需要处理HTML内容
-            let originalValue = originalContent;
-            if (field === 'specialMethod' && cell.querySelector('.special-method')) {
-                originalValue = cell.querySelector('.special-method').textContent;
+            if (editableCells.length > 0) {
+                selectCell(editableCells[0].dataset.id);
             }
-            
-            const input = document.createElement('input');
-            input.type = 'text';
-            input.value = originalValue;
-            
-            cell.textContent = '';
-            cell.appendChild(input);
-            cell.classList.add('editing');
-            
-            input.focus();
-            input.select();
-            
-            input.addEventListener('blur', () => finishEditing(cell, input, field, index, originalContent, originalValue));
-            input.addEventListener('keydown', (e) => {
-                if (e.key === 'Enter') {
-                    input.blur();
-                } else if (e.key === 'Escape') {
-                    cell.innerHTML = originalContent;
-                    cell.classList.remove('editing');
-                }
-            });
         }
-        
-        function finishEditing(cell, input, field, index, originalContent, originalValue) {
-            const newValue = input.value.trim();
-            
-            if (newValue === originalValue) {
-                cell.innerHTML = originalContent;
-                cell.classList.remove('editing');
-                return;
-            }
-            
-            if (currentResults[index]) {
-                if (field === 'price') {
-                    const newPrice = parseFloat(newValue);
-                    if (!isNaN(newPrice)) {
-                        currentResults[index].price = newPrice;
-                        recalculateTotal();
-                        cell.textContent = newPrice.toFixed(2);
-                    } else {
-                        cell.innerHTML = originalContent;
-                    }
-                } else if (field === 'weight') {
-                    const newWeight = parseFloat(newValue);
-                    if (!isNaN(newWeight) && newWeight > 0) {
-                        currentResults[index].weight = newWeight;
-                        currentResults[index].convertedWeight = newWeight;
-                        if (currentResults[index].unitPrice > 0) {
-                            currentResults[index].price = currentResults[index].unitPrice * newWeight;
-                        }
-                        recalculateTotal();
-                        cell.textContent = newWeight;
-                        const row = cell.closest('tr');
-                        const priceCell = row.cells[4];
-                        priceCell.textContent = currentResults[index].price.toFixed(2);
-                    } else {
-                        cell.innerHTML = originalContent;
-                    }
-                } else if (field === 'name') {
-                    currentResults[index].name = newValue;
-                    cell.textContent = newValue;
-                } else if (field === 'location') {
-                    currentResults[index].location = newValue;
-                    cell.textContent = newValue;
-                } else if (field === 'hint') {
-                    currentResults[index].hint = newValue;
-                    cell.textContent = newValue;
-                } else if (field === 'specialMethod') {
-                    currentResults[index].specialMethod = newValue;
-                    if (newValue) {
-                        cell.innerHTML = `<span class="special-method">${newValue}</span>`;
-                    } else {
-                        cell.textContent = '';
-                    }
-                }
-            }
-            
-            cell.classList.remove('editing');
-            showNotification('已更新');
-        }
-        
-        function recalculateTotal() {
-            let total = 0;
-            currentResults.forEach(item => {
-                total += item.price || 0;
-            });
-            document.getElementById('totalAmount').textContent = total.toFixed(2);
-        }
-        
-        function updatePriceDisplay() {
-            const priceHeaders = document.querySelectorAll('.price-header');
-            const priceValues = document.querySelectorAll('td:nth-child(5)');
-            const priceToggles = document.querySelectorAll('.price-toggle');
-            
-            if (isPriceVisible) {
-                priceHeaders.forEach(header => header.style.display = 'table-cell');
-                priceValues.forEach(value => {
-                    value.style.display = 'table-cell';
-                });
-                priceToggles.forEach(toggle => {
-                    toggle.classList.remove('active');
-                });
+
+        function toggleCellSelection(td) {
+            const cellId = td.dataset.id;
+            const cell = td.querySelector('.cell-content');
+            if (state.selectedCells.has(cellId)) {
+                state.selectedCells.delete(cellId);
+                cell.classList.remove('selected');
             } else {
-                priceHeaders.forEach(header => header.style.display = 'none');
-                priceValues.forEach(value => {
-                    value.style.display = 'none';
-                });
-                priceToggles.forEach(toggle => {
-                    toggle.classList.add('active');
-                });
+                state.selectedCells.add(cellId);
+                cell.classList.add('selected');
+                state.selectedCell = cellId;
             }
         }
-        
-        function updatePriceToggleState() {
-            const priceToggles = document.querySelectorAll('.price-toggle');
-            priceToggles.forEach(toggle => {
-                if (isPriceVisible) {
-                    toggle.classList.remove('active');
-                } else {
-                    toggle.classList.add('active');
-                }
-            });
-        }
-        
-        function togglePriceVisibility() {
-            isPriceVisible = !isPriceVisible;
-            savePriceVisibility();
-            updatePriceToggleState();
-            updatePriceDisplay();
+
+        function selectCellRange(startId, endId) {
+            // 解析起始和结束位置
+            const startMatch = startId.match(/([A-Z]+)(\d+)/);
+            const endMatch = endId.match(/([A-Z]+)(\d+)/);
             
-            showNotification(isPriceVisible ? '已显示价格' : '已隐藏价格', 'info');
-        }
-        
-        function clearInput() {
-            document.getElementById('prescriptionInput').value = '';
-            document.getElementById('resultsBody').innerHTML = '';
-            document.getElementById('totalAmount').textContent = '0.00';
-            document.getElementById('resultsContainer').classList.add('hidden');
-            document.getElementById('emptyResults').classList.remove('hidden');
-            document.getElementById('herbCountText').textContent = '0味';
-            currentResults = [];
-            showNotification('已清空输入和计算结果');
-        }
-        
-        // 获取百度OCR Access Token
-        async function getOcrAccessToken() {
-            // 检查token是否过期
-            if (OCR_CONFIG.accessToken && Date.now() < OCR_CONFIG.tokenExpires) {
-                return OCR_CONFIG.accessToken;
-            }
+            if (!startMatch || !endMatch) return;
             
-            try {
-                const response = await fetch(`https://aip.baidubce.com/oauth/2.0/token?grant_type=client_credentials&client_id=${OCR_CONFIG.apiKey}&client_secret=${OCR_CONFIG.secretKey}`, {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json'
+            const startCol = startMatch[1];
+            const startRow = parseInt(startMatch[2]);
+            const endCol = endMatch[1];
+            const endRow = parseInt(endMatch[2]);
+            
+            const startColIdx = state.colLetters.indexOf(startCol);
+            const endColIdx = state.colLetters.indexOf(endCol);
+            
+            const minCol = Math.min(startColIdx, endColIdx);
+            const maxCol = Math.max(startColIdx, endColIdx);
+            const minRow = Math.min(startRow, endRow);
+            const maxRow = Math.max(startRow, endRow);
+            
+            // 清除之前的选择
+            clearAllSelections();
+            
+            // 选择范围内的所有单元格
+            for (let r = minRow; r <= maxRow; r++) {
+                for (let c = minCol; c <= maxCol; c++) {
+                    const col = state.colLetters[c];
+                    const cellId = `${col}${r}`;
+                    const cell = document.getElementById(`cell-${cellId}`);
+                    if (cell) {
+                        state.selectedCells.add(cellId);
+                        cell.classList.add('selected');
                     }
-                });
-                
-                const data = await response.json();
-                
-                if (data.access_token) {
-                    OCR_CONFIG.accessToken = data.access_token;
-                    // token有效期为30天，这里设置为29天
-                    OCR_CONFIG.tokenExpires = Date.now() + (29 * 24 * 60 * 60 * 1000);
-                    return data.access_token;
-                } else {
-                    throw new Error('获取OCR Token失败: ' + (data.error_description || '未知错误'));
                 }
-            } catch (error) {
-                console.error('获取OCR Token出错:', error);
-                throw error;
             }
+            
+            state.selectedCell = endId;
         }
-        
-        // 调用百度OCR识别图片
-        async function recognizeImageWithOCR(file) {
-            return new Promise((resolve, reject) => {
-                const reader = new FileReader();
-                
-                reader.onload = async function(e) {
-                    try {
-                        // 获取base64编码
-                        const base64Data = e.target.result.split(',')[1];
-                        
-                        // 获取access token
-                        const token = await getOcrAccessToken();
-                        
-                        // 调用通用文字识别接口
-                        const response = await fetch(`https://aip.baidubce.com/rest/2.0/ocr/v1/general_basic?access_token=${token}`, {
-                            method: 'POST',
-                            headers: {
-                                'Content-Type': 'application/x-www-form-urlencoded'
-                            },
-                            body: `image=${encodeURIComponent(base64Data)}&language_type=CHN_ENG`
-                        });
-                        
-                        const data = await response.json();
-                        
-                        if (data.words_result) {
-                            // 拼接识别结果
-                            let text = '';
-                            data.words_result.forEach(item => {
-                                text += item.words + '\n';
-                            });
-                            resolve(text.trim());
-                        } else {
-                            reject(new Error('OCR识别失败: ' + (data.error_msg || '未知错误')));
-                        }
-                    } catch (error) {
-                        reject(error);
-                    }
-                };
-                
-                reader.onerror = function() {
-                    reject(new Error('读取图片文件失败'));
-                };
-                
-                // 以base64格式读取文件
-                reader.readAsDataURL(file);
+
+        function clearAllSelections() {
+            document.querySelectorAll('.cell-content.selected').forEach(el => {
+                el.classList.remove('selected');
             });
+            document.querySelectorAll('tr.row-selected').forEach(tr => {
+                tr.classList.remove('row-selected');
+            });
+            state.selectedCells.clear();
         }
-        
-        // 修改后的图片上传处理函数
-        async function handleImageUpload(file) {
-            if (!file) return;
-            
-            try {
-                showNotification('正在识别图片中的文字，请稍候...', 'info');
-                
-                // 调用OCR识别
-                const text = await recognizeImageWithOCR(file);
-                
-                if (text) {
-                    document.getElementById('prescriptionInput').value = text;
-                    showNotification('图片识别完成，已填充识别结果');
-                } else {
-                    showNotification('未识别到任何文字', 'error');
-                }
-            } catch (error) {
-                console.error('OCR识别出错:', error);
-                showNotification(`识别失败: ${error.message}，请手动输入方剂`, 'error');
-            }
-        }
-        
-        function renderPriceList(filter = '') {
-            const container = document.getElementById('priceList');
-            container.innerHTML = '';
-            
-            filteredHerbsData = herbsData.filter(item => 
-                item.name.toLowerCase().includes(filter.toLowerCase())
-            );
-            
-            if (filteredHerbsData.length === 0) {
-                container.innerHTML = '<div class="price-item" style="text-align:center;color:#888;padding:20px;grid-column:1/-1;">无数据，请上传Excel</div>';
-                updateDataCount();
+
+        function startEdit(cellId, clickEvent) {
+            if (state.editingCell) endEdit();
+            const rowMatch = cellId.match(/(\d+)$/);
+            if (!rowMatch) return;
+            const displayRow = parseInt(rowMatch[1]);
+            const row = document.querySelector(`tr[data-row-num="${displayRow}"]`);
+            if (row && row.classList.contains('hidden-row')) {
                 return;
             }
-            
-            filteredHerbsData.forEach((herb, index) => {
-                const item = document.createElement('div');
-                const priceClass = herb.price === 0 ? 'zero-price' : '';
-                item.className = 'price-item';
-                item.setAttribute('data-original-index', herbsData.findIndex(h => h.name === herb.name && h.location === herb.location && h.price === herb.price));
-                item.innerHTML = `
-                    <div class="editable-cell" data-index="${index}" data-field="name">${herb.name}</div>
-                    <div class="editable-cell" data-index="${index}" data-field="weight">-</div>
-                    <div class="editable-cell ${priceClass}" data-index="${index}" data-field="price">${herb.price.toFixed(2)}</div>
-                    <div class="editable-cell" data-index="${index}" data-field="location">${herb.location}</div>
-                    <div class="editable-cell" data-index="${index}" data-field="hint">${herb.hint || ''}</div>
-                    <div>
-                        <button class="delete-btn" data-index="${index}" data-original-index="${herbsData.findIndex(h => h.name === herb.name && h.location === herb.location && h.price === herb.price)}"><i class="fas fa-trash-alt"></i></button>
-                    </div>
-                `;
-                container.appendChild(item);
-            });
-            
-            updateDataCount();
-            
-            setupAdminInlineEditing();
-            
-            container.querySelectorAll('.delete-btn').forEach(btn => {
-                btn.addEventListener('click', (e) => {
-                    e.stopPropagation();
-                    const originalIndex = parseInt(e.currentTarget.getAttribute('data-original-index'));
-                    deleteHerb(originalIndex);
-                });
-            });
-        }
-        
-        function setupAdminInlineEditing() {
-            const container = document.getElementById('priceList');
-            
-            container.addEventListener('dblclick', (e) => {
-                if (e.target.classList.contains('editable-cell')) {
-                    startAdminEditing(e.target);
-                }
-            });
-        }
-        
-        function startAdminEditing(cell) {
-            const originalContent = cell.textContent;
-            const field = cell.getAttribute('data-field');
-            const index = parseInt(cell.getAttribute('data-index'));
-            
-            const input = document.createElement('input');
-            input.type = 'text';
-            input.value = originalContent;
-            
-            cell.textContent = '';
-            cell.appendChild(input);
+            state.editingCell = cellId;
+            const cell = document.getElementById(`cell-${cellId}`);
+            const currentContent = cell.innerHTML;
+            const hasIndicator = cell.querySelector('.comment-indicator');
+            cell.contentEditable = true;
             cell.classList.add('editing');
-            
-            input.focus();
-            input.select();
-            
-            input.addEventListener('blur', () => finishAdminEditing(cell, input, field, index, originalContent));
-            input.addEventListener('keydown', (e) => {
-                if (e.key === 'Enter') {
-                    input.blur();
-                } else if (e.key === 'Escape') {
-                    cell.textContent = originalContent;
-                    cell.classList.remove('editing');
+            cell.focus();
+            if (clickEvent && clickEvent.type === 'dblclick') {
+                const selection = window.getSelection();
+                const range = document.createRange();
+                range.selectNodeContents(cell);
+                selection.removeAllRanges();
+                selection.addRange(range);
+            }
+            if (hasIndicator) {
+                cell.innerHTML = currentContent;
+            }
+            if (clickEvent && clickEvent.type !== 'dblclick' && clickEvent.clientX) {
+                const range = document.caretRangeFromPoint(clickEvent.clientX, clickEvent.clientY);
+                if (range) {
+                    const selection = window.getSelection();
+                    selection.removeAllRanges();
+                    selection.addRange(range);
                 }
-            });
+            } else if (!clickEvent) {
+                const selection = window.getSelection();
+                const range = document.createRange();
+                range.selectNodeContents(cell);
+                selection.removeAllRanges();
+                selection.addRange(range);
+            }
+            state.activeInput = cell;
         }
-        
-        function finishAdminEditing(cell, input, field, index, originalContent) {
-            const newValue = input.value.trim();
-            const item = cell.closest('.price-item');
-            const originalIndex = parseInt(item.getAttribute('data-original-index'));
-            
-            if (!newValue || newValue === originalContent) {
-                cell.textContent = originalContent;
-                cell.classList.remove('editing');
-                return;
-            }
-            
-            if (originalIndex === -1 || !herbsData[originalIndex]) {
-                cell.textContent = originalContent;
-                cell.classList.remove('editing');
-                showNotification('未找到对应药材数据', 'error');
-                return;
-            }
-            
-            let success = false;
-            let displayValue = newValue;
-            
-            if (field === 'name') {
-                herbsData[originalIndex].name = newValue;
-                filteredHerbsData[index].name = newValue;
-                success = true;
-            } else if (field === 'location') {
-                herbsData[originalIndex].location = newValue;
-                filteredHerbsData[index].location = newValue;
-                success = true;
-            } else if (field === 'price') {
-                const newPrice = parseFloat(newValue);
-                if (!isNaN(newPrice) && newPrice >= 0) {
-                    herbsData[originalIndex].price = newPrice;
-                    filteredHerbsData[index].price = newPrice;
-                    displayValue = newPrice.toFixed(2);
-                    success = true;
-                } else {
-                    displayValue = originalContent;
+
+        function endEdit() {
+            if (!state.editingCell) return;
+            const cellId = state.editingCell;
+            const cell = document.getElementById(`cell-${cellId}`);
+            const indicator = cell.querySelector('.comment-indicator');
+            if (indicator) indicator.remove();
+            const value = cell.textContent;
+            const oldValue = state.data[cellId] || '';
+            if (cell.dataset.comment) {
+                if (!cell.querySelector('.comment-indicator')) {
+                    const newIndicator = document.createElement('div');
+                    newIndicator.className = 'comment-indicator';
+                    cell.appendChild(newIndicator);
                 }
-            } else if (field === 'hint') {
-                herbsData[originalIndex].hint = newValue;
-                filteredHerbsData[index].hint = newValue;
-                success = true;
-            } else if (field === 'weight') {
-                // 后台管理中的重量列通常是占位符，不需要修改
-                displayValue = originalContent;
-                success = true;
             }
-            
-            if (success) {
-                saveData();
-                cell.textContent = displayValue;
-                
-                if (field === 'price') {
-                    const newPrice = parseFloat(newValue);
-                    if (newPrice === 0) {
-                        cell.classList.add('zero-price');
-                    } else {
-                        cell.classList.remove('zero-price');
-                    }
+            if (value !== oldValue) {
+                setCellData(cellId, value, false);
+                const col = cellId.match(/[A-Z]+/)[0];
+                if (isDataCol(col) && !CONFIG.noMetaCols.includes(col)) {
+                    syncMetaData(cellId);
                 }
-                
-                showNotification('已更新');
-            } else {
-                cell.textContent = originalContent;
+                calculateDColumn();
+                checkDuplicates();
+                // 编辑后自动调整该列宽度（如果不是C-F列）
+                if (!CONFIG.noResizeCols.includes(col)) {
+                    setTimeout(() => resizeSingleColumn(col), 0);
+                }
+                // 修复：修正语法错误 cellId.match(/\d+/)0] 改为 cellId.match(/\d+/)[0]
+                saveToHistory(ACTION_TYPES.EDIT_CELL, { 
+                    cellId, 
+                    oldValue, 
+                    newValue: value,
+                    col,
+                    row: cellId.match(/\d+/)[0]
+                });
             }
-            
+            cell.contentEditable = false;
             cell.classList.remove('editing');
+            state.editingCell = null;
+            state.activeInput = null;
         }
-        
-        function deleteHerb(originalIndex) {
-            if (originalIndex === -1 || !herbsData[originalIndex]) {
-                showNotification('未找到对应药材数据', 'error');
-                return;
+
+        function setCellData(cellId, value, saveHistory = true) {
+            state.data[cellId] = value;
+            const cell = document.getElementById(`cell-${cellId}`);
+            if (cell) {
+                const indicator = cell.querySelector('.comment-indicator');
+                cell.textContent = value;
+                if (indicator) {
+                    cell.appendChild(indicator);
+                }
             }
-            
-            if (confirm(`删除 ${herbsData[originalIndex].name}？`)) {
-                herbsData.splice(originalIndex, 1);
-                saveData();
-                renderPriceList(document.getElementById('searchHerb').value);
-                showNotification('药材已删除');
-            }
         }
-        
-        function handleBulkUpload() {
-            document.getElementById('priceFileUpload').click();
-        }
-        
-        function handleImageBtnClick() {
-            document.getElementById('imageUpload').click();
-        }
-        
-        function processUploadedFile(event) {
-            const file = event.target.files[0];
-            if (!file) return;
-            
-            const progressDiv = document.getElementById('uploadProgress');
-            progressDiv.classList.remove('hidden');
-            progressDiv.innerHTML = '正在读取Excel文件...';
-            
-            const reader = new FileReader();
-            
-            reader.onload = function(e) {
-                try {
-                    const data = new Uint8Array(e.target.result);
-                    progressDiv.innerHTML = '正在解析工作表...';
-                    
-                    const workbook = XLSX.read(data, { 
-                        type: 'array',
-                        cellDates: false,
-                        cellNF: false,
-                        cellText: true,
-                        raw: false
-                    });
-                    
-                    const sheetNames = workbook.SheetNames;
-                    progressDiv.innerHTML = `找到 ${sheetNames.length} 个工作表，处理第一个工作表...`;
-                    
-                    const firstSheet = workbook.Sheets[sheetNames[0]];
-                    
-                    const sheetData = XLSX.utils.sheet_to_json(firstSheet, { 
-                        header: 1,
-                        defval: '',
-                        blankrows: false
-                    });
-                    
-                    progressDiv.innerHTML = `找到 ${sheetData.length} 行数据，正在处理...`;
-                    
-                    const newHerbsData = [];
-                    let processedCount = 0;
-                    let skippedCount = 0;
-                    let zeroPriceCount = 0;
-                    
-                    for (let i = 0; i < sheetData.length; i++) {
-                        const row = sheetData[i];
-                        
-                        if (!Array.isArray(row) || row.length === 0) {
-                            skippedCount++;
-                            continue;
-                        }
-                        
-                        const herbName = row[0] !== undefined && row[0] !== null ? String(row[0]).trim() : '';
-                        const location = row[1] !== undefined && row[1] !== null ? String(row[1]).trim() : '';
-                        const hint = row[4] !== undefined && row[4] !== null ? String(row[4]).trim() : '';
-                        const priceCell = row[10] !== undefined ? row[10] : '';
-                        
-                        if (!herbName || herbName === '' || herbName === 'undefined' || herbName.toLowerCase() === 'null') {
-                            skippedCount++;
-                            continue;
-                        }
-                        
-                        let price = 0;
-                        
-                        if (priceCell === '' || priceCell === null || priceCell === undefined) {
-                            price = 0;
-                            zeroPriceCount++;
-                        } else {
-                            price = parseFloat(priceCell);
-                            if (isNaN(price)) {
-                                const priceStr = String(priceCell);
-                                const priceMatch = priceStr.match(/[-+]?\d*\.?\d+/);
-                                if (priceMatch) {
-                                    price = parseFloat(priceMatch[0]);
-                                }
-                            }
-                            
-                            if (isNaN(price)) {
-                                price = 0;
-                            }
-                            
-                            if (price === 0) zeroPriceCount++;
-                        }
-                        
-                        newHerbsData.push({
-                            name: herbName,
-                            location: location,
-                            price: price,
-                            hint: hint
-                        });
-                        
-                        processedCount++;
-                        
-                        if (processedCount % 200 === 0) {
-                            progressDiv.innerHTML = `已处理 ${processedCount} 条数据...`;
-                        }
-                    }
-                    
-                    progressDiv.innerHTML = `处理完成！有效数据: ${processedCount} 条，跳过: ${skippedCount} 条，零价格: ${zeroPriceCount} 条`;
-                    
-                    if (newHerbsData.length === 0) {
-                        showNotification('未在Excel文件中找到有效数据', 'error');
-                        progressDiv.classList.add('hidden');
+
+        function moveToNextCell() {
+            if (!state.selectedCell) return;
+            const match = state.selectedCell.match(/([A-Z]+)(\d+)/);
+            const col = match[1];
+            const row = parseInt(match[2]);
+            const colIndex = state.colLetters.indexOf(col);
+            let nextColIndex = colIndex + 1;
+            while (nextColIndex < state.colLetters.length) {
+                const nextCol = state.colLetters[nextColIndex];
+                if (!CONFIG.readOnlyCol.includes(nextCol) && !isMetaCol(nextCol)) {
+                    const nextCellId = `${nextCol}${row}`;
+                    const nextCell = document.getElementById(`cell-${nextCellId}`);
+                    if (nextCell && !nextCell.closest('tr').classList.contains('hidden-row')) {
+                        selectCell(nextCellId);
+                        startEdit(nextCellId);
                         return;
                     }
-                    
-                    herbsData = newHerbsData;
-                    saveData();
-                    
-                    setTimeout(() => {
-                        renderPriceList();
-                        progressDiv.classList.add('hidden');
-                        showNotification(`成功上传 ${newHerbsData.length} 条药材记录（其中 ${zeroPriceCount} 条价格为0）`, 'success');
-                    }, 800);
-                    
-                    event.target.value = '';
-                    
-                } catch (error) {
-                    console.error('处理Excel文件时出错:', error);
-                    progressDiv.classList.add('hidden');
-                    showNotification(`处理文件出错: ${error.message}`, 'error');
                 }
-            };
-            
-            reader.onerror = function() {
-                progressDiv.classList.add('hidden');
-                showNotification('读取文件失败', 'error');
-            };
-            
-            reader.readAsArrayBuffer(file);
+                nextColIndex++;
+            }
+            const nextRow = row + 1;
+            if (nextRow <= state.rows) {
+                for (let i = 0; i < state.colLetters.length; i++) {
+                    const c = state.colLetters[i];
+                    if (!CONFIG.readOnlyCol.includes(c) && !isMetaCol(c)) {
+                        const nextCellId = `${c}${nextRow}`;
+                        const nextCell = document.getElementById(`cell-${nextCellId}`);
+                        if (nextCell && !nextCell.closest('tr').classList.contains('hidden-row')) {
+                            selectCell(nextCellId);
+                            startEdit(nextCellId);
+                            return;
+                        }
+                    }
+                }
+            }
         }
-        
-        function clearAllData() {
-            if (herbsData.length === 0) {
-                showNotification('无数据可清空', 'info');
+
+        function isDataCol(col) {
+            return col >= 'A' && col <= 'T';
+        }
+
+        function isMetaCol(col) {
+            const idx = state.colLetters.indexOf(col);
+            return idx >= 20;
+        }
+
+        function getMetaCol(dataCol) {
+            const index = dataCol.charCodeAt(0) - 'A'.charCodeAt(0);
+            const metaIndex = index + 20;
+            if (metaIndex < 26) {
+                return String.fromCharCode(65 + metaIndex);
+            } else {
+                return 'A' + String.fromCharCode(65 + (metaIndex - 26));
+            }
+        }
+
+        function syncMetaData(cellId) {
+            const col = cellId.match(/[A-Z]+/)[0];
+            if (!isDataCol(col) || CONFIG.noMetaCols.includes(col)) return;
+            const row = cellId.match(/\d+/)[0];
+            const metaCol = getMetaCol(col);
+            const metaCellId = `${metaCol}${row}`;
+            const cell = document.getElementById(`cell-${cellId}`);
+            let color = '';
+            if (cell.classList.contains('cell-yellow')) color = '黄色';
+            else if (cell.classList.contains('cell-red')) color = '红色';
+            else if (cell.classList.contains('cell-pink')) color = '粉色';
+            const comment = cell.dataset.comment || '';
+            const metaValue = color + (comment ? CONFIG.metaDataSeparator + comment : '');
+            setCellData(metaCellId, metaValue, false);
+        }
+
+        function calculateDColumn() {
+            for (let r = 1; r <= state.rows; r++) {
+                let count = 0;
+                CONFIG.countColForD.forEach(col => {
+                    const cellId = `${col}${r}`;
+                    if (state.data[cellId] && state.data[cellId].trim() !== '') {
+                        count++;
+                    }
+                });
+                setCellData(`D${r}`, count.toString(), false);
+            }
+        }
+
+        function checkDuplicates() {
+            const excludeCols = ['C','D','E','F','G'];
+            const valueMap = new Map();
+            for (let r = 1; r <= state.rows; r++) {
+                state.colLetters.forEach(col => {
+                    if (!isDataCol(col) || excludeCols.includes(col)) return;
+                    const cellId = `${col}${r}`;
+                    const value = (state.data[cellId] || '').trim();
+                    if (!value) return;
+                    const num = parseFloat(value);
+                    if (!isNaN(num) && num >= 0 && num <= 10) return;
+                    if (!valueMap.has(value)) valueMap.set(value, []);
+                    valueMap.get(value).push(cellId);
+                });
+            }
+            document.querySelectorAll('.duplicate-cell').forEach(el => {
+                el.classList.remove('duplicate-cell');
+            });
+            valueMap.forEach((cellIds, value) => {
+                if (cellIds.length > 1) {
+                    cellIds.forEach(id => {
+                        const cell = document.getElementById(`cell-${id}`);
+                        if (cell) cell.classList.add('duplicate-cell');
+                    });
+                }
+            });
+        }
+
+        // ==================== 修改：批量格式化支持多选 ====================
+        function formatCell(color) {
+            // 确定目标单元格：优先使用多选集合，否则使用单选单元格
+            const targets = state.selectedCells.size > 0 ? 
+                Array.from(state.selectedCells) : 
+                (state.selectedCell ? [state.selectedCell] : []);
+            
+            if (targets.length === 0) return;
+            
+            const changes = [];
+            targets.forEach(cellId => {
+                const col = cellId.match(/[A-Z]+/)[0];
+                if (CONFIG.noMetaCols.includes(col)) return;
+                const cell = document.getElementById(`cell-${cellId}`);
+                if (!cell) return;
+                
+                const hadColor = cell.classList.contains('cell-yellow') || 
+                                cell.classList.contains('cell-red') || 
+                                cell.classList.contains('cell-pink');
+                const oldColor = hadColor ? (cell.classList.contains('cell-yellow') ? '黄色' : 
+                                            cell.classList.contains('cell-red') ? '红色' : '粉色') : null;
+                
+                // 清除所有颜色
+                cell.classList.remove('cell-yellow', 'cell-red', 'cell-pink');
+                
+                // 应用新颜色（如果不是清除操作）
+                if (color !== 'clear') {
+                    cell.classList.add(`cell-${color}`);
+                }
+                
+                // 同步元数据
+                if (isDataCol(col) && !CONFIG.noMetaCols.includes(col)) {
+                    syncMetaData(cellId);
+                }
+                
+                changes.push({ cellId, oldColor, newColor: color !== 'clear' ? color : null });
+            });
+            
+            // 确定操作类型
+            const actionType = targets.length > 1 ? ACTION_TYPES.FORMAT_MULTI : ACTION_TYPES.FORMAT_CELL;
+            
+            saveToHistory(actionType, { 
+                color, 
+                cellCount: targets.length,
+                changes,
+                firstCell: targets[0]
+            });
+            
+            // 显示提示
+            if (targets.length > 1) {
+                showToast(`已批量标注 ${targets.length} 个单元格`);
+            }
+        }
+
+        function clearCellFormat() {
+            formatCell('clear');
+        }
+
+        function addComment() {
+            // 优先对多选中的第一个单元格添加备注，或当前单选单元格
+            const targetCell = state.selectedCells.size > 0 ? 
+                Array.from(state.selectedCells)[0] : state.selectedCell;
+            
+            if (!targetCell) return;
+            
+            const col = targetCell.match(/[A-Z]+/)[0];
+            if (CONFIG.noMetaCols.includes(col)) {
+                showToast('C-G列不支持备注功能');
                 return;
             }
+            const cell = document.getElementById(`cell-${targetCell}`);
+            const currentComment = cell.dataset.comment || '';
+            const newComment = prompt('请输入备注：', currentComment);
+            if (newComment === null) return;
+            const oldComment = currentComment;
+            if (newComment.trim()) {
+                cell.dataset.comment = newComment.trim();
+                if (!cell.querySelector('.comment-indicator')) {
+                    const indicator = document.createElement('div');
+                    indicator.className = 'comment-indicator';
+                    cell.appendChild(indicator);
+                }
+            } else {
+                clearComment();
+                return;
+            }
+            syncMetaData(targetCell);
+            saveToHistory(ACTION_TYPES.ADD_COMMENT, { cellId: targetCell, oldComment, newComment: newComment.trim() });
+        }
+
+        function clearComment() {
+            const targetCell = state.selectedCells.size > 0 ? 
+                Array.from(state.selectedCells)[0] : state.selectedCell;
             
-            if (confirm(`清空${herbsData.length}条记录？`)) {
-                herbsData = [];
-                filteredHerbsData = [];
-                saveData();
-                renderPriceList();
-                showNotification('已清空所有数据');
+            if (!targetCell) return;
+            
+            const col = targetCell.match(/[A-Z]+/)[0];
+            if (CONFIG.noMetaCols.includes(col)) return;
+            const cell = document.getElementById(`cell-${targetCell}`);
+            const oldComment = cell.dataset.comment || '';
+            delete cell.dataset.comment;
+            const indicator = cell.querySelector('.comment-indicator');
+            if (indicator) indicator.remove();
+            syncMetaData(targetCell);
+            saveToHistory(ACTION_TYPES.CLEAR_COMMENT, { cellId: targetCell, oldComment });
+        }
+
+        function showContextMenu(e, cellId) {
+            e.preventDefault();
+            
+            // 如果右键点击的单元格不在当前选区中，则选中它
+            if (!state.selectedCells.has(cellId) && state.selectedCell !== cellId) {
+                // 按住Ctrl时不清除其他选择，否则单选
+                if (!e.ctrlKey && !e.metaKey) {
+                    clearAllSelections();
+                }
+                selectCell(cellId);
+            }
+            
+            const menu = document.getElementById('contextMenu');
+            let menuX = e.pageX;
+            let menuY = e.pageY;
+            const menuWidth = 261.36;
+            const menuHeight = 420;
+            if (menuX + menuWidth > window.innerWidth) {
+                menuX = window.innerWidth - menuWidth - 10;
+            }
+            if (menuY + menuHeight > window.innerHeight) {
+                menuY = window.innerHeight - menuHeight - 10;
+            }
+            if (menuY < 0) menuY = 10;
+            menu.style.display = 'block';
+            menu.style.left = menuX + 'px';
+            menu.style.top = menuY + 'px';
+        }
+
+        function addNewRow() {
+            const previousRows = state.rows;
+            state.rows++;
+            const tbody = document.getElementById('tableBody');
+            const r = state.rows - 1;
+            let html = `<tr data-row-num="${state.rows}"><th class="row-header" onclick="selectRow(${r})">${state.rows}</th>`;
+            state.colLetters.forEach((col, idx) => {
+                const isMeta = idx >= 20;
+                const isReadOnly = CONFIG.readOnlyCol.includes(col);
+                const cellId = `${col}${state.rows}`;
+                const isFixed = CONFIG.noResizeCols.includes(col);
+                const width = getColWidth(col, idx);
+                const widthStyle = isFixed ? `width: ${width}px; min-width: ${width}px; max-width: ${width}px;` : `min-width: ${width}px;`;
+                
+                html += `
+                    <td data-row="${r}" data-col="${col}" data-id="${cellId}" 
+                        class="${isMeta ? 'meta-col' : ''} ${isReadOnly ? '' : 'editable'}"
+                        style="${widthStyle}"
+                        onclick="handleCellClick(event, '${cellId}')"
+                        onmouseenter="highlightRow(${r}); showCommentTooltip(event, '${cellId}')"
+                        onmouseleave="clearHighlight(); hideCommentTooltip()">
+                        <div class="cell-content" id="cell-${cellId}"></div>
+                    </td>
+                `;
+            });
+            html += '</tr>';
+            tbody.insertAdjacentHTML('beforeend', html);
+            setCellData(`D${state.rows}`, '0', false);
+            const container = document.getElementById('container');
+            container.scrollTop = container.scrollHeight;
+            saveToHistory(ACTION_TYPES.ADD_ROW, { rowNum: state.rows, previousRows });
+            selectCell(`A${state.rows}`);
+        }
+
+        function deleteSelectedRow() {
+            if (!state.selectedCell) return;
+            const rowNum = parseInt(state.selectedCell.match(/\d+/)[0]);
+            const deletedData = {};
+            state.colLetters.forEach(col => {
+                const cellId = `${col}${rowNum}`;
+                deletedData[cellId] = state.data[cellId] || '';
+            });
+            state.colLetters.forEach(col => {
+                const cellId = `${col}${rowNum}`;
+                delete state.data[cellId];
+            });
+            for (let r = rowNum; r < state.rows; r++) {
+                state.colLetters.forEach(col => {
+                    const fromId = `${col}${r + 1}`;
+                    const toId = `${col}${r}`;
+                    state.data[toId] = state.data[fromId];
+                    delete state.data[fromId];
+                });
+            }
+            state.rows--;
+            renderEmptyRows();
+            Object.entries(state.data).forEach(([cellId, value]) => {
+                const cell = document.getElementById(`cell-${cellId}`);
+                if (cell) cell.textContent = value;
+            });
+            restoreStyles();
+            calculateDColumn();
+            checkDuplicates();
+            clearAllSelections();
+            saveToHistory(ACTION_TYPES.DELETE_ROW, { 
+                rowNum, 
+                deletedData,
+                nextRow: rowNum <= state.rows ? rowNum : null
+            });
+            showToast(`已删除第 ${rowNum} 行`);
+        }
+
+        function restoreStyles() {
+            for (let r = 1; r <= state.rows; r++) {
+                for (let c = 'A'; c <= 'T'; c = String.fromCharCode(c.charCodeAt(0) + 1)) {
+                    if (CONFIG.noMetaCols.includes(c)) continue;
+                    const metaCol = getMetaCol(c);
+                    const metaCellId = `${metaCol}${r}`;
+                    const metaValue = state.data[metaCellId] || '';
+                    if (metaValue) {
+                        const parts = metaValue.split(CONFIG.metaDataSeparator);
+                        const color = parts[0];
+                        const comment = parts[1];
+                        const cellId = `${c}${r}`;
+                        const cell = document.getElementById(`cell-${cellId}`);
+                        if (!cell) continue;
+                        if (color === '黄色') cell.classList.add('cell-yellow');
+                        else if (color === '红色') cell.classList.add('cell-red');
+                        else if (color === '粉色') cell.classList.add('cell-pink');
+                        if (comment) {
+                            cell.dataset.comment = comment;
+                            if (!cell.querySelector('.comment-indicator')) {
+                                const indicator = document.createElement('div');
+                                indicator.className = 'comment-indicator';
+                                cell.appendChild(indicator);
+                            }
+                        }
+                    }
+                }
             }
         }
-        
-        // 新增：回车键计算功能
-        function setupEnterKeyCalculation() {
-            const prescriptionInput = document.getElementById('prescriptionInput');
-            
-            prescriptionInput.addEventListener('keydown', (e) => {
-                // 检查是否按下回车键，且没有按着Ctrl或Shift
-                if (e.key === 'Enter' && !e.ctrlKey && !e.shiftKey) {
-                    e.preventDefault(); // 防止在textarea中换行
-                    calculatePrice();
+
+        function clearSelectedCells() {
+            const targets = state.selectedCells.size > 0 ? 
+                Array.from(state.selectedCells) : 
+                (state.selectedCell ? [state.selectedCell] : []);
+            if (targets.length === 0) return;
+            const clearedData = [];
+            targets.forEach(cellId => {
+                const col = cellId.match(/[A-Z]+/)[0];
+                const oldValue = state.data[cellId] || '';
+                if (CONFIG.readOnlyCol.includes(col)) {
+                    setCellData(cellId, '0', false);
+                    clearedData.push({ cellId, oldValue, newValue: '0' });
+                } else {
+                    setCellData(cellId, '', false);
+                    clearedData.push({ cellId, oldValue, newValue: '' });
                 }
             });
+            calculateDColumn();
+            const actionType = targets.length > 1 ? ACTION_TYPES.CLEAR_MULTI : ACTION_TYPES.CLEAR_CONTENT;
+            saveToHistory(actionType, { 
+                cellCount: targets.length, 
+                clearedData,
+                firstCell: targets[0]
+            });
         }
-        
-        function initApp() {
-            initializeData();
+
+        function saveToHistory(actionType, actionData) {
+            if (state.isUndoRedo) return;
+            state.redoStack = [];
+            if (state.historyStack.length >= CONFIG.maxHistory) {
+                state.historyStack.shift();
+            }
+            const container = document.getElementById('container');
+            const historyEntry = {
+                data: JSON.parse(JSON.stringify(state.data)),
+                headerData: JSON.parse(JSON.stringify(state.headerData)),
+                rows: state.rows,
+                isFilterActive: state.isFilterActive,
+                searchTerm: state.searchTerm,
+                filteredRows: Array.from(state.filteredRows),
+                scrollPosition: { ...state.scrollPosition },
+                selectedCell: state.selectedCell,
+                actionType: actionType || '未知操作',
+                actionData: actionData,
+                timestamp: new Date().getTime()
+            };
+            state.historyStack.push(historyEntry);
+            state.lastAction = actionType;
+            updateUndoRedoButtons();
+        }
+
+        function undo() {
+            if (state.historyStack.length <= 1) return;
+            state.isUndoRedo = true;
+            const currentState = state.historyStack.pop();
+            state.redoStack.push(currentState);
+            const previousState = state.historyStack[state.historyStack.length - 1];
+            restoreState(previousState, true);
+            state.isUndoRedo = false;
+            updateUndoRedoButtons();
+        }
+
+        function redo() {
+            if (state.redoStack.length === 0) return;
+            state.isUndoRedo = true;
+            const nextState = state.redoStack.pop();
+            state.historyStack.push(nextState);
+            restoreState(nextState, false);
+            state.isUndoRedo = false;
+            updateUndoRedoButtons();
+        }
+
+        function restoreState(savedState, isUndo) {
+            state.data = JSON.parse(JSON.stringify(savedState.data));
+            state.headerData = JSON.parse(JSON.stringify(savedState.headerData));
+            state.rows = savedState.rows;
+            state.isFilterActive = savedState.isFilterActive;
+            state.searchTerm = savedState.searchTerm;
+            state.filteredRows = new Set(savedState.filteredRows || []);
+            state.scrollPosition = savedState.scrollPosition || { top: 0, left: 0 };
+            const filterBtn = document.getElementById('filterToggle');
+            const searchInput = document.getElementById('searchInput');
+            if (state.isFilterActive) {
+                filterBtn.classList.add('btn-active');
+                filterBtn.textContent = '显示全部';
+            } else {
+                filterBtn.classList.remove('btn-active');
+                filterBtn.textContent = '筛选＞0';
+            }
+            searchInput.value = state.searchTerm || '';
+            Object.entries(state.headerData).forEach(([col, value]) => {
+                const th = document.querySelector(`th[data-col="${col}"] .header-text`);
+                if (th) th.textContent = value;
+            });
+            renderEmptyRows();
+            Object.entries(state.data).forEach(([cellId, value]) => {
+                const cell = document.getElementById(`cell-${cellId}`);
+                if (cell) cell.textContent = value;
+            });
+            restoreStyles();
+            calculateDColumn();
+            checkDuplicates();
+            applyCombinedFilter();
+            const container = document.getElementById('container');
+            if (savedState.scrollPosition) {
+                container.scrollTop = savedState.scrollPosition.top;
+                container.scrollLeft = savedState.scrollPosition.left;
+            }
+            if (savedState.selectedCell) {
+                const cell = document.getElementById(`cell-${savedState.selectedCell}`);
+                if (cell && !cell.closest('tr').classList.contains('hidden-row')) {
+                    selectCell(savedState.selectedCell);
+                } else {
+                    const rowNum = savedState.selectedCell.match(/\d+/)[0];
+                    const row = document.querySelector(`tr[data-row-num="${rowNum}"]`);
+                    if (row && !row.classList.contains('hidden-row')) {
+                        const firstVisible = row.querySelector('td.editable');
+                        if (firstVisible) {
+                            selectCell(firstVisible.dataset.id);
+                        }
+                    }
+                }
+            }
+            const actionType = savedState.actionType || '未知操作';
+            const actionMsg = isUndo ? `↩️ 已撤销：${actionType}` : `↪️ 已恢复：${actionType}`;
+            showToast(actionMsg, isUndo ? 'undo' : 'redo');
+        }
+
+        function applyCombinedFilter() {
+            // 清除搜索高亮（因为不再使用高亮）
+            document.querySelectorAll('.search-highlight').forEach(el => {
+                el.classList.remove('search-highlight');
+            });
             
-            // 添加事件监听器
-            document.querySelectorAll('.tab').forEach(tab => {
-                tab.addEventListener('click', () => {
-                    const tabId = tab.getAttribute('data-tab');
-                    document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
-                    tab.classList.add('active');
-                    document.querySelectorAll('.tab-content').forEach(content => {
-                        content.classList.remove('active');
+            for (let r = 1; r <= state.rows; r++) {
+                const row = document.querySelector(`tr[data-row-num="${r}"]`);
+                if (!row) continue;
+                let shouldHide = false;
+                if (state.isFilterActive) {
+                    const dVal = parseInt(state.data[`D${r}`] || '0');
+                    if (dVal <= 0) {
+                        shouldHide = true;
+                    }
+                }
+                if (state.searchTerm && !shouldHide) {
+                    if (!state.filteredRows.has(r)) {
+                        shouldHide = true;
+                    }
+                    // 不再添加黄色高亮
+                }
+                if (shouldHide) {
+                    row.classList.add('hidden-row');
+                } else {
+                    row.classList.remove('hidden-row');
+                }
+            }
+        }
+
+        function updateUndoRedoButtons() {
+            const undoBtn = document.getElementById('undoBtn');
+            const redoBtn = document.getElementById('redoBtn');
+            undoBtn.disabled = state.historyStack.length <= 1;
+            redoBtn.disabled = state.redoStack.length === 0;
+            if (state.historyStack.length > 1) {
+                const lastAction = state.historyStack[state.historyStack.length - 1].actionType || '上一步';
+                undoBtn.title = `返回上一步：${lastAction}`;
+            } else {
+                undoBtn.title = '没有可返回的操作';
+            }
+            if (state.redoStack.length > 0) {
+                const nextAction = state.redoStack[state.redoStack.length - 1].actionType || '下一步';
+                redoBtn.title = `恢复下一步：${nextAction}`;
+            } else {
+                redoBtn.title = '没有可恢复的操作';
+            }
+        }
+
+        async function handleExcelImport(e) {
+            const file = e.target.files[0];
+            if (!file) return;
+            if (state.editingCell) {
+                endEdit();
+            }
+            const importState = {
+                data: JSON.parse(JSON.stringify(state.data)),
+                headerData: JSON.parse(JSON.stringify(state.headerData)),
+                rows: state.rows,
+                isFilterActive: state.isFilterActive,
+                searchTerm: state.searchTerm,
+                filteredRows: Array.from(state.filteredRows),
+                scrollPosition: { ...state.scrollPosition }
+            };
+            state.data = {};
+            state.headerData = {};
+            state.selectedCell = null;
+            state.selectedCells.clear();
+            state.editingCell = null;
+            state.activeInput = null;
+            state.isFilterActive = false;
+            state.searchTerm = '';
+            state.filteredRows.clear();
+            state.highlightedRow = null;
+            state.historyStack = [];
+            state.redoStack = [];
+            state.isUndoRedo = false;
+            state.scrollPosition = { top: 0, left: 0 };
+            document.getElementById('searchInput').value = '';
+            const filterBtn = document.getElementById('filterToggle');
+            filterBtn.classList.remove('btn-active');
+            filterBtn.textContent = '筛选＞0';
+            updateUndoRedoButtons();
+            document.querySelectorAll('.cell-content.selected').forEach(el => {
+                el.classList.remove('selected');
+            });
+            document.querySelectorAll('tr.row-selected').forEach(tr => {
+                tr.classList.remove('row-selected');
+            });
+            document.querySelectorAll('.search-highlight').forEach(el => {
+                el.classList.remove('search-highlight');
+            });
+            document.querySelectorAll('tr.hidden-row').forEach(tr => {
+                tr.classList.remove('hidden-row');
+            });
+            document.querySelectorAll('.row-highlight').forEach(el => {
+                el.classList.remove('row-highlight');
+            });
+            document.getElementById('contextMenu').style.display = 'none';
+            document.getElementById('commentPopup').classList.remove('show');
+            document.getElementById('modalOverlay').classList.remove('show');
+            showLoading('正在导入...');
+            try {
+                const data = await file.arrayBuffer();
+                const workbook = XLSX.read(data, { type: 'array' });
+                const sheet = workbook.Sheets[workbook.SheetNames[0]];
+                const jsonData = XLSX.utils.sheet_to_json(sheet, { header: 1 });
+                if (jsonData.length > 0) {
+                    const headers = jsonData[0];
+                    headers.forEach((h, idx) => {
+                        if (idx < state.colLetters.length && h) {
+                            state.headerData[state.colLetters[idx]] = String(h);
+                        }
                     });
-                    document.getElementById(tabId).classList.add('active');
-                    if (tabId === 'admin') renderPriceList();
+                }
+                const rows = jsonData.slice(1);
+                state.rows = Math.max(rows.length, 100);
+                renderEmptyRows();
+                Object.entries(state.headerData).forEach(([col, value]) => {
+                    const th = document.querySelector(`th[data-col="${col}"] .header-text`);
+                    if (th) th.textContent = value;
+                });
+                rows.forEach((row, rIdx) => {
+                    row.forEach((val, cIdx) => {
+                        if (val !== undefined && val !== null && cIdx < state.colLetters.length) {
+                            const col = state.colLetters[cIdx];
+                            setCellData(`${col}${rIdx + 1}`, String(val), false);
+                        }
+                    });
+                });
+                calculateLHeader();
+                calculateDColumn();
+                checkDuplicates();
+                
+                // 关键修复：导入后还原颜色和备注
+                restoreStyles(); // 添加这一行，根据元数据列还原颜色和备注
+                
+                // 导入后自动调整列宽
+                setTimeout(() => autoResizeColumns(), 100);
+                
+                // 新增：保存并显示文件名
+                state.lastImportFilename = file.name;
+                const filenameDisplay = document.getElementById('importFilename');
+                filenameDisplay.textContent = file.name;
+                filenameDisplay.title = file.name;
+                
+                saveToHistory(ACTION_TYPES.IMPORT, { 
+                    rowCount: rows.length,
+                    previousState: importState,
+                    fileName: file.name
+                });
+                saveToLocalStorage();
+                hideLoading();
+                showToast(`成功导入 ${rows.length} 行数据`);
+            } catch (err) {
+                hideLoading();
+                showToast('导入失败: ' + err.message);
+            }
+            e.target.value = '';
+        }
+
+        function saveToExcel() {
+            showLoading('正在导出...');
+            try {
+                const data = [];
+                const header = state.colLetters.map(col => state.headerData[col] || col);
+                data.push(header);
+                for (let r = 1; r <= state.rows; r++) {
+                    const row = [];
+                    let hasData = false;
+                    state.colLetters.forEach(col => {
+                        const val = state.data[`${col}${r}`] || '';
+                        row.push(val);
+                        if (val) hasData = true;
+                    });
+                    if (hasData) data.push(row);
+                }
+                const ws = XLSX.utils.aoa_to_sheet(data);
+                const wb = XLSX.utils.book_new();
+                XLSX.utils.book_append_sheet(wb, ws, '药品数据');
+                const now = new Date();
+                const year = now.getFullYear();
+                const month = String(now.getMonth() + 1).padStart(2, '0');
+                const day = String(now.getDate()).padStart(2, '0');
+                const hours = String(now.getHours()).padStart(2, '0');
+                const minutes = String(now.getMinutes()).padStart(2, '0');
+                const filename = `yb数据${year}${month}${day} ${hours}${minutes}.xlsx`;
+                XLSX.writeFile(wb, filename);
+                hideLoading();
+                showToast('导出成功');
+            } catch (err) {
+                hideLoading();
+                showToast('导出失败: ' + err.message);
+            }
+        }
+
+        function saveToLocalStorage() {
+            try {
+                const data = {
+                    data: state.data,
+                    headerData: state.headerData,
+                    rows: state.rows,
+                    lastImportFilename: state.lastImportFilename,
+                    version: '2.7'
+                };
+                localStorage.setItem(CONFIG.storageKey, JSON.stringify(data));
+            } catch (e) {
+                console.error('保存失败:', e);
+            }
+        }
+
+        function loadFromLocalStorage() {
+            try {
+                const saved = localStorage.getItem(CONFIG.storageKey);
+                if (!saved) return false;
+                const parsed = JSON.parse(saved);
+                state.data = parsed.data || {};
+                state.headerData = parsed.headerData || {};
+                state.rows = parsed.rows || 100;
+                // 新增：恢复文件名显示
+                if (parsed.lastImportFilename) {
+                    state.lastImportFilename = parsed.lastImportFilename;
+                    const filenameDisplay = document.getElementById('importFilename');
+                    filenameDisplay.textContent = parsed.lastImportFilename;
+                    filenameDisplay.title = parsed.lastImportFilename;
+                }
+                renderEmptyRows();
+                Object.entries(state.headerData).forEach(([col, value]) => {
+                    const th = document.querySelector(`th[data-col="${col}"] .header-text`);
+                    if (th) th.textContent = value;
+                });
+                Object.entries(state.data).forEach(([cellId, value]) => {
+                    const cell = document.getElementById(`cell-${cellId}`);
+                    if (cell) cell.textContent = value;
+                });
+                calculateLHeader();
+                calculateDColumn();
+                checkDuplicates();
+                restoreStyles();
+                return true;
+            } catch (e) {
+                console.error('加载失败:', e);
+                return false;
+            }
+        }
+
+        function debounce(func, wait) {
+            let timeout;
+            return function executedFunction(...args) {
+                const later = () => {
+                    clearTimeout(timeout);
+                    func(...args);
+                };
+                clearTimeout(timeout);
+                timeout = setTimeout(later, wait);
+            };
+        }
+
+        function showLoading(text) {
+            document.getElementById('loadingText').textContent = text;
+            document.getElementById('loadingOverlay').style.display = 'flex';
+        }
+
+        function hideLoading() {
+            document.getElementById('loadingOverlay').style.display = 'none';
+        }
+
+        function showToast(msg, type = 'normal') {
+            const toast = document.getElementById('toast');
+            toast.textContent = msg;
+            toast.className = 'toast show';
+            if (type === 'undo') {
+                toast.classList.add('undo-toast');
+            } else if (type === 'redo') {
+                toast.classList.add('redo-toast');
+            }
+            setTimeout(() => {
+                toast.classList.remove('show');
+                setTimeout(() => {
+                    toast.classList.remove('undo-toast', 'redo-toast');
+                }, 300);
+            }, 2500);
+        }
+
+        function initSampleData() {
+            setCellData('A1', '6934114761936', false);
+            setCellData('B1', 'bt生脉饮党参方盾克康福', false);
+            setCellData('C1', '62', false);
+            setCellData('E1', '35', false);
+            setCellData('J1', '240', false);
+            setCellData('K1', '126.8', false);
+            document.getElementById('cell-B1').classList.add('cell-yellow');
+            document.getElementById('cell-C1').classList.add('cell-yellow');
+            calculateDColumn();
+        }
+
+        function handleGlobalKeydown(e) {
+            if (e.ctrlKey && e.key === 'z') {
+                e.preventDefault();
+                undo();
+            } else if (e.ctrlKey && e.key === 'y') {
+                e.preventDefault();
+                redo();
+            } else if (e.key === 'Delete' && (state.selectedCell || state.selectedCells.size > 0) && !state.editingCell) {
+                e.preventDefault();
+                clearSelectedCells();
+            } else if (e.key === 'F2' && state.selectedCell && !state.editingCell) {
+                e.preventDefault();
+                startEdit(state.selectedCell);
+            } else if (e.key === 'Enter' && state.editingCell) {
+                e.preventDefault();
+                endEdit();
+                moveToNextCell();
+            } else if (e.key === 'Escape' && state.editingCell) {
+                e.preventDefault();
+                const cell = document.getElementById(`cell-${state.editingCell}`);
+                cell.textContent = state.data[state.editingCell] || '';
+                endEdit();
+            }
+        }
+
+        function closeCommentPopup() {
+            document.getElementById('commentPopup').classList.remove('show');
+            document.getElementById('modalOverlay').classList.remove('show');
+        }
+
+        // 新增：双击列标题自动调整该列宽度
+        function initColumnResizeEvents() {
+            const headers = document.querySelectorAll('th.col-header');
+            headers.forEach(th => {
+                const col = th.dataset.col;
+                if (CONFIG.noResizeCols.includes(col)) return; // 跳过C-F列
+                
+                th.addEventListener('dblclick', (e) => {
+                    if (e.target.classList.contains('header-text')) return; // 双击标题文字时编辑
+                    resizeSingleColumn(col);
                 });
             });
-            
-            document.getElementById('calculateBtn').addEventListener('click', () => calculatePrice(true));
-            document.getElementById('clearBtn').addEventListener('click', clearInput);
-            
-            // 新增：上个/下个方剂按钮事件
-            document.getElementById('prevPrescriptionBtn').addEventListener('click', loadPreviousPrescription);
-            document.getElementById('nextPrescriptionBtn').addEventListener('click', loadNextPrescription);
-            
-            document.getElementById('uploadImageBtn').addEventListener('click', handleImageBtnClick);
-            document.getElementById('imageUpload').addEventListener('change', (e) => {
-                if (e.target.files.length > 0) {
-                    handleImageUpload(e.target.files[0]);
-                }
-            });
-            document.getElementById('addHerbBtn').addEventListener('click', () => {
-                const newHerb = {
-                    name: '新药材',
-                    location: '',
-                    price: 0,
-                    hint: ''
-                };
-                herbsData.push(newHerb);
-                filteredHerbsData.push(newHerb);
-                saveData();
-                renderPriceList();
-                showNotification('已添加新药材，请双击修改');
-            });
-            document.getElementById('uploadPriceBtn').addEventListener('click', handleBulkUpload);
-            document.getElementById('priceFileUpload').addEventListener('change', processUploadedFile);
-            document.getElementById('clearAllBtn').addEventListener('click', clearAllData);
-            
-            document.getElementById('priceToggle').addEventListener('click', togglePriceVisibility);
-            
-            document.getElementById('searchHerb').addEventListener('input', (e) => {
-                renderPriceList(e.target.value);
-            });
-            
-            // 新增：复制按钮事件
-            document.getElementById('copyHerbsBtn').addEventListener('click', copyHerbsList);
-            
-            // 初始化回车键计算功能
-            setupEnterKeyCalculation();
-            
-            renderPriceList();
-            document.getElementById('resultsContainer').classList.add('hidden');
-            document.getElementById('emptyResults').classList.remove('hidden');
-            
-            updatePriceDisplay();
         }
-        
-        document.addEventListener('DOMContentLoaded', initApp);
     </script>
 </body>
 </html>
